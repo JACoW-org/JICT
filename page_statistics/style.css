@@ -1,0 +1,117 @@
+body {
+  font-size: .875rem;
+  background: #eee;
+}
+
+h1 {
+	color: #eee;
+}
+
+.feather {
+  width: 16px;
+  height: 16px;
+  vertical-align: text-bottom;
+}
+
+/*
+ * Sidebar
+ */
+ 
+.loading {
+	position: fixed;
+	z-index: 999;
+	overflow: visible;
+	margin: auto;
+	height: 50px;
+	width: 50px;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+}
+
+
+/*
+ * Content
+ */
+
+[role="main"] {
+  padding-top: 133px; /* Space for fixed navbar */
+}
+
+@media (min-width: 768px) {
+  [role="main"] {
+    padding-top: 48px; /* Space for fixed navbar */
+  }
+}
+
+/*
+ * Navbar
+ */
+
+
+
+.navbar-brand {
+  padding-top: .55rem;
+  padding-bottom: .75rem;
+  font-size: 1rem;
+  background-color: rgba(0, 0, 0, .25);
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, .25);
+}
+
+
+.navbar-values {
+  padding-top: 0rem;
+  padding-bottom: .30rem;
+  font-size: 1.5rem;
+  color: #eee;
+  text-align: center;
+}
+.navbar-values small {
+  font-size: 0.75rem;
+  color: #bbb;
+}
+
+.navbar .form-control {
+  padding: .75rem 1rem;
+  border-width: 0;
+  border-radius: 0;
+}
+
+._sparklines {            
+  width: 150px;
+  height: 150px;
+}
+
+
+
+div.var {
+  width: 380px;
+  display: inline;
+  float: left;
+}
+
+table.layout td {
+  padding: 5px;
+}
+
+table.values {
+  _border: 1px solid #666;
+  border: 0;
+  border-collapse: collapse;
+  margin-top: 5px;
+}
+table.values td,
+table.values th {
+  font-size: 12px;
+  padding: 5px;
+  border-top: 1px solid #666;
+}
+table.values td {
+  text-align: right;
+  padding-left: 15px;
+
+}
+table.values th {
+  text-align: left;
+}

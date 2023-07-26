@@ -1,0 +1,275 @@
+body {
+	background: #333;
+	margin: 0;
+	width: 100%;
+	_height: 100%;
+	font-family: 'Lato', Arial;
+	font-size: 16px;
+	_overflow: hidden;
+	}
+	
+div.login {
+	text-align: center;
+	vertical-align: middle;
+	height: 100%;
+	}	
+div.login h1 {
+	font-size: 50px;
+	color: #eee;
+	}
+div.login input {
+	font-size: 30px;
+	margin-top: 20px;
+	padding: 20px;
+	background: #ddd;
+	border: 2px solid #333;
+	text-align: center;
+	width: 300px;
+	}	
+div.login input[type=submit] {
+	background: #8ec9ff;
+	}
+	
+div {
+	text-align: center;
+	border-bottom: 2px solid black;
+	color: #aaa;
+	background: #666;
+	padding: 10px;
+	}
+div.day {
+	font-size: 2em;
+	font-weight: bold;
+	line-height: 3em;
+	background: #444;
+	}
+div.today {
+	color: white;
+	font-style: italic;
+	}	
+div.day_selected {
+	font-size: 2em;
+	background: #444;
+	padding: 0.5em;
+	}
+div.session {
+	font-size: 2em;
+	font-weight: bold;
+	line-height: 3em;
+	background: #555;
+	}
+div.session_selected {
+	font-size: 2em;
+	background: #555;
+	padding: 0.5em;
+	}		
+div.poster {
+	font-size: 50px;
+	background: #aaa;
+	color: black;
+	width: 90px;
+	height: 90px;
+	display: inline-block;
+	_border: 1px solid black;
+	border: 0;
+	line-height: 95px;
+	margin: 10px;
+	_border-radius: 5px;
+	}
+div.ok {
+	background: #8ec9ff;
+	text-decoration: underline;
+	}
+	
+div.warning {
+	background: #ff8e8e;
+	text-decoration: underline;
+	font-style: italic;
+	}
+div.warning2 {
+	background: #cc0000;
+	color: white;
+	}
+div.unmanned {
+	background: #ffec81;
+	text-decoration: underline;
+	}
+	
+div.switch_container {
+	clear: both;
+	height: 200px;
+	border: 1px solid red;
+	}
+
+div.On,
+div.Off,
+div.PhotoNo,
+div.PhotoYes,
+div.Unset,
+div.switch {
+	border: 3px solid black;
+	background: #aaa;
+	font-size: 30px;
+	color: black;
+	width: 200px;
+	height: 80px;
+	display: inline-block;
+	line-height: 80px;
+	margin: 20px;
+	padding: 10px;
+	}
+div.On { // blue
+	border: 3px solid #0062a5;
+	background: #8ec9ff;
+	}
+div.Off { // red
+	border: 3px solid #a53f44;
+	background: #ff8e8e;
+	text-decoration: line-through;
+	}
+div.PhotoNo { // purple
+	border: 3px solid #b96b9f;
+	background: #e987c8;
+	text-decoration: line-through;
+	}
+div.PhotoYes { // green
+	border: 3px solid #adb96b;
+	background: #d5e485;
+	}	
+	
+	
+div.sync_ok,
+div.sync_error {
+	border: 3px solid black;
+	background: #aaa;
+	font-size: 20px;
+	color: black;
+	display: inline-block;
+	_line-height: 80px;
+	margin: 2px;
+	_border-radius: 5px;
+	padding: 5px;
+	}
+div.sync_ok {
+	background: #8ec9ff;
+	}
+div.sync_error {
+	background: #ff8e8e;
+	}
+
+
+h1, h2 {
+	color: black;
+	}
+
+h1.maintitle {
+	color: white;
+	text-align: center;
+	margin-top: 10px;
+	}
+
+p#user {
+	text-align: center;
+	color: #aaa;
+}
+
+div.syncbutton {
+	z-index: 101;
+	border: 1px solid black;
+	background: #aaa;
+	font-size: 30px;
+	color: black;
+	display: inline-block;
+	line-height: 40px;
+	margin: 5px;
+	_border-radius: 5px;
+	float: right;
+	}	
+	
+div.last_sync {
+	color: black;
+	border: 0;
+	background: 0;
+	font-size: 12px;
+	line-height: 14px;
+	text-align: right;
+	padding: 5px 0 0 0;
+	margin: 0;	
+	}	
+
+div.button {
+	border: 1px solid black;
+	background: #aaa;
+	font-size: 30px;
+	color: black;
+	width: 20%;
+	display: inline-block;
+	line-height: 50px;
+	margin: 10px;
+	_border-radius: 5px;
+	}	
+
+div.comment_set,
+div.comment {
+	border: 1px solid black;
+	background: #aaa;
+	font-size: 20px;
+	color: black;
+	width: 90%;
+	display: inline-block;
+	line-height: 30px;
+	margin: 10px;
+	_border-radius: 5px;
+	}
+
+div.comment_set {
+	background: #8ec9ff;
+	}
+	
+div.stats {
+	height: 5px;
+	border: 0;
+	background: #8ec9ff;
+	line-height: 0;
+	padding: 0;
+	margin: 0;
+	}
+
+	
+	
+#sync_bkg {
+	z-index: 99;
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.7);
+	}	
+	
+#sync_box {
+	z-index: 100;
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	border: 0;
+	text-align: center;
+	font-size: 40px;
+	color: white;
+	padding: 20px;
+	box-shadow: rgba(0,0,0,0.5) 10px 10px 20px;
+	}
+	
+#sync_box div {
+	border: 0;
+	}
+	
+#sync_bar {
+	background: #555;
+	font-size: 30px;
+	}	
+
+#sync_log {
+	font-size: 25px;
+	}	
+	

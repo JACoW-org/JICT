@@ -1,0 +1,63 @@
+<html>
+<head>
+    <title>{title}</title>
+
+    <link rel='stylesheet' href='../AdminLTE/bower_components/bootstrap/dist/css/bootstrap.min.css'>
+
+    <!-- DataTables -->
+    <link rel='stylesheet' href='../AdminLTE/bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css'>  
+    
+    <!-- jQuery 3 -->
+    <script src='../AdminLTE/bower_components/jquery/dist/jquery.min.js'></script>
+    
+    <!-- Bootstrap 3.3.7 -->
+    <script src='../AdminLTE/bower_components/bootstrap/dist/js/bootstrap.min.js'></script>
+    
+    <!-- DataTables -->
+    <script src='../AdminLTE/bower_components/datatables.net/js/jquery.dataTables.min.js'></script>
+    <script src='../AdminLTE/bower_components/datatables.net/js/dataTables.buttons.min.js'></script>
+    <script src='../AdminLTE/bower_components/datatables.net/js/buttons.html5.min.js'></script>
+    <script src='../AdminLTE/bower_components/datatables.net-bs/js/dataTables.bootstrap.min.js'></script>
+    <script src='../AdminLTE/bower_components/jszip/jszip.min.js'></script>
+
+    <style>
+        span.primary { background: blue; color: white; padding: 5px; font-size: 12px; border-radius: 5px; }
+        span.secondary { background: #ddd; padding: 5px; font-size: 12px; border-radius: 5px; }
+        span.speaker { background: orange; padding: 5px; font-size: 12px; border-radius: 5px; }
+    </style>
+</head>
+
+<body>
+<div style='padding:10px;'>
+<table id='{table_id}' class='table table-bordered table-striped'>
+<thead>
+{thead}
+</thead>
+<tbody>
+{tbody}
+</tbody>
+</table>
+{info}
+</div>
+<script>
+$(function () {
+    $('#{table_id}').DataTable({
+        dom: "<'row'<'col-sm-6'l><'col-sm-6'f>>" +"<'row'<'col-sm-12'tr>>" +"<'row'<'col-sm-6'i><'col-sm-6 text-right'B>>",
+        paging      : false,
+        pageLength  : 10,
+        lengthChange: true,
+        searching   : true,
+        ordering    : true,
+        order       : [[ {order}, 'asc' ]],
+        info        : true,
+        autoWidth   : false,
+        buttons     : [
+                { text: 'Export list as CSV', extend: 'csvHtml5', title: '{title}' },
+                { text: 'Export list as XLS (Excel)', extend: 'excelHtml5', title: '{title}' }
+                ]
+            });
+  })
+</script>
+
+</body>
+<html>

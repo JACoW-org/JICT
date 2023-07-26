@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+	
+    <meta name="description" content="Conference Dashboard">
+    <meta name="author" content="Stefano Deiuri">
+	
+	<meta name='theme-color' content='#343a40'>
+	
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name='mobile-web-app-capable' content='yes'>
+	
+	<link rel="manifest" href="manifest.webmanifest">		
+	
+	<link rel="shortcut icon" href="favicon.png" />	
+	<link rel="icon" size="192x192" href="icon-dark-192.png" />	
+	    
+	<title>{page_title}</title>
+
+    <!-- Bootstrap core CSS -->
+	<link href="../dist/bootstrap-4.3.1/css/bootstrap.min.css" rel="stylesheet">
+	
+	<!-- Custom styles for this template -->
+    <link href="dashboard.css" rel="stylesheet">
+	
+	<style>
+    {style}
+	select {
+		border: 0;
+		background: #343a40;
+		color: #eee;
+	}
+
+    canvas.chart { padding: 2em; }
+	</style>
+	
+  </head>
+<body onLoad="draw()">
+
+<nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
+    <div class="navbar-values col-6 col-md-2" id='conf_name'><a href='../'>CWS</a> {conf_name}</div>
+    <div class="navbar-values col-6 col-md-4" id='title'>{title}</div>
+    <div class="navbar-values col-6 col-md-2 text-right" id='user'>{user}</div>
+</nav>
+
+<nav class="navbar navbar-dark fixed-bottom bg-dark flex-md-nowrap p-0 shadow">
+    <div class="navbar-values col-6 col-md-2" id='abstracts'>{abstracts_n} <small>abstracts</small></div>
+    <div class="navbar-values col-6 col-md-2" id='registered'>{registrants_n} <small>registrants</small></div>
+    <div class="navbar-values col-6 col-md-2" id='country'>{country_n} <small>country</small></div>
+    <div class="navbar-values col-6 col-md-2" id='payments'>{payments_n} <small>payments</small></div>
+    <div class="navbar-values col-6 col-md-2" id='papers'>{papers_n} <small>papers</small></div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <main role="main" class="col-md-12 ml-sm-auto col-lg-12">
+            <div class="row">
+                <div class="col-md-6">
+                    <canvas id='papers_by_dates' class="chart"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <canvas id='papers_by_days_to_deadline' class="chart"></canvas>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <canvas id='registrants_by_dates' class="chart"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <canvas id='registrants_by_days_to_deadline' class="chart"></canvas>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <canvas id='payments_by_dates' class="chart"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <canvas id='payments_by_days_to_deadline' class="chart"></canvas>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <canvas id='registrants_country' class="chart"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <canvas id='registrants_country_code' class="chart"></canvas>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <canvas id='abstracts_stats_by_dates' class="chart"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <canvas id='abstracts_stats_by_days_to_deadline' class="chart"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script src="../dist/jquery-3.4.1/jquery.min.js"></script>
+<script src="../dist/bootstrap-4.3.1/js/bootstrap.bundle.min.js"></script>
+
+<!-- https://feathericons.com/ -->
+<script src="../dist/feather-icons-4.9.0/feather.min.js"></script>
+
+<!-- https://www.chartjs.org -->
+<script src="../dist/chartjs-3.9.1/chart.min.js"></script>
+<script src="https://unpkg.com/chartjs-chart-geo@3"></script>
+
+{content}
+
+<script>
+{js}    
+</script>
+</body>
+</html>

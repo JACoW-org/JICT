@@ -1,0 +1,187 @@
+/* --------------------------------------------- PROGRAMMA ------------------------- */
+
+table.day th {
+	font-size: 18px;
+	padding-bottom: 10px;
+	}
+
+table.day tr.days td {
+	border-bottom: 2px solid black;
+	border-right: 1px dotted black;
+	font-size: 12px;
+	background: #eeeeee;
+	text-align: center;
+	}
+
+table.day tr.days td.ms {
+	background: #888888;
+	color: white;
+	font-weight: bold;
+	}
+
+table.day tr.legend td {
+	font-size: 10px;
+	}
+
+table.day a {
+	text-decoration: none;
+	}
+
+table.day a:hover {
+	text-decoration: underline;
+	}
+
+table.prg a {
+	text-decoration: none;
+	}
+
+table.prg a:hover {
+	text-decoration: underline;
+	}
+
+
+table.event {
+	border-left: 2px solid white;
+	border-right: 2px solid white;
+	border-top: 3px solid white;
+}
+
+table.event th {
+	border-top: 1px solid Silver;
+	background: #eeeeee;
+	font-style: italic;
+	}
+table.event th.fst {
+	background: #cccccc;
+	padding: 0;
+	vertical-align: bottom;
+	}
+
+table.prg {
+	border-left: 2px solid white;
+	border-right: 2px solid white;
+	}
+
+table.prg th.day {
+	border-bottom: 2px solid #00a2e5;
+	font-family: Times;
+	font-size: 20px;
+	text-align: left;
+	padding-top: 30px;
+	}
+
+table.prg td.discussion {
+	font-style: italic;
+	}
+
+table.prg td.paper {
+	border-top: 1px solid Silver;
+	background: white;
+	}
+
+table.event td.time, table.prg td.time {
+	border-top: 1px solid Silver;
+	text-align: center;
+	background: white;
+	}
+
+table.prg td.session {
+	border-top: 3px solid white;
+	font-weight: bold;
+	text-align: center;
+	}
+
+table.prg td.shade {
+	padding: 0 0 0 0;
+	}	
+
+
+table.prg td.continue {
+	border-top: none;
+	}
+	
+table.event td.time, table.prg td.time, .time, .timeh {
+	font-weight: normal;
+	font-size: 10px;
+	}
+table.event th:last-child {
+	padding-right: 50px;
+	}
+
+.time {
+	border-right: 1px dotted silver;
+	}
+
+.session {
+	padding-top: 20px;
+	position: relative;
+	}
+	
+.code {
+	padding: 1px 1px 1px 1px;
+	background: #ffbb4f;
+	border-bottom: 2px solid #dc702e;
+	color: black;
+	font-weight: normal;
+	font-size: 10px;
+	width: 50px;
+	top: 0;
+	right: 3px;
+	position: absolute;
+	}
+
+.code2 {
+	padding: 1 3 1 3;
+	background: #eeeeee;
+	border-bottom: 2px solid #cccccc;
+	color: black;
+	font-weight: normal;
+	font-size: 9px;
+	width: 60px;
+	float: right;
+	text-align: center;
+	}
+
+.legend_point {
+	border: 1px solid black;
+	padding: 0 10 0 10;
+	margin-left: 20px;
+	}
+
+.legend_cell {
+	border: 1px solid black;
+	padding: 0 10 0 10;
+	margin-left: 10px;
+	width: 130px;
+	float: left;
+	}
+
+.legend_title2 {
+	padding: 0 10 0 10;
+	margin-left: 20px;
+	width: 120px;
+	float: left;
+	font-weight: bold;
+	}
+
+.legend_row	{
+	padding-bottom: 10px;
+	}
+
+.chair {
+	font-weight: normal;
+	}
+
+.inst {
+	font-weight: normal;
+	font-style: italic;
+	font-size: 12px;
+	}
+
+.abstract {
+	padding-top: 5px;
+	font-family: Times;
+	font-size: 14px;
+	padding: 5px 5px 5px 5px;
+	display: none;
+	}

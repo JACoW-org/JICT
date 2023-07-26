@@ -1,0 +1,49 @@
+body {
+	background: #eee;
+	margin: 0;
+	width: 100%;
+	max-width: 400px;
+	height: 100%;
+	font-family: 'Lato', Arial;
+	font-size: 30px;
+	text-align: center;
+	}
+	
+h1 {
+	margin-bottom: 20px;
+	}
+
+#status_msg{
+	padding: 10px;
+	
+	}
+#status {
+	padding: 20px 10px 10px 10px;
+	}
+	
+input {
+	font-size: 30px;
+	width: 90%;
+	margin-bottom: 20px;
+	padding: 10px;
+	text-align: center;
+	}
+	
+input[type=submit] {
+	border: 0;
+	background: #aaa;
+	}
+
+small {
+	font-size: 16px;
+	}
+
+input[type=button] {
+	margin-top: 10px; 
+	font-size: 30px;
+	width: 90%;
+	margin-bottom: 20px;
+	padding: 10px;
+	border: 0;
+	background: #aaa;
+	}

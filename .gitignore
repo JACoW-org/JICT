@@ -1,0 +1,10 @@
+cis/*
+data/*
+data_bak/*
+html/*
+logs/*
+tmp/*
+*.log
+*.json
+*.tmp
+conference-config.php

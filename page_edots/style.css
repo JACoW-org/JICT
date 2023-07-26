@@ -1,0 +1,121 @@
+body { 
+	margin: 0; 
+	overflow: hidden; 
+	background: #555; 
+}
+	
+body, td, th { 
+	font-family: 'Roboto Mono', monospace;
+}
+
+.b_nofiles { font-weight: normal; }
+.b_removed { text-decoration: line-through; }
+
+	
+#header {
+	height: 45px;
+	background: white;
+	clear: both;
+	font-size: 35px;
+	color: #666;
+	padding: 3px 0 7px 0;
+}
+
+#title {
+	padding-left: 10px;
+	float: left;
+}
+	
+#pages {
+	z-index: 11;
+	position: absolute;
+	top: 3px;
+	left: 910px;
+	display: block;
+	text-align: center;
+	width: 100px;
+}	
+	
+#timer {
+	z-index: 10;
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	height: 5px;
+	width: 100%;
+	background: #ccff1b;
+}
+	
+#clock {
+	position: absolute;
+	top: 3px;
+	right: 12px;
+}	
+	
+#logo {
+	display: block;
+	float: left;
+}
+
+div.page {
+	z-index: 11;
+	position: absolute;
+	background: #555;	
+	height: 1080px;
+	display: none;
+	border-top: 2px solid black;
+}	
+	
+#qrcode {
+	z-index: 13;
+	position: absolute;
+	right: 52px;
+	top: 842px;
+}	
+
+
+	
+table.edots {
+	width: 1920px;
+	height: 970px;
+	border-collapse: collapse;
+	border-spacing: 1px;
+}	
+
+table.edots td {
+	font-size: 20px;
+	border: 1px splid red;
+	text-align: center;
+	border: 1px solid #444;
+}
+
+table.edots td.empty {
+	background: #555;
+    border-bottom: 1px solid #555;	
+}
+	
+	
+table.legend {
+	z-index: 12;
+	position: absolute;
+	top: 1026px;
+    width: 100%;
+	height: 55px;
+	border-top: 2px solid black;
+	border-spacing: 0;
+    border-collapse: collapse;
+}	
+
+table.legend td {
+	width: 17%;
+	font-size: 18px;
+	font-weight: bold;
+    border: 1px solid black;
+	text-align: center;
+	vertical-align: middle;
+}
+
+table.legend td:nth-child(1) {
+    border-left: 0;
+}	
+	

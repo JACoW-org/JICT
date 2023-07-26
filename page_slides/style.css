@@ -1,0 +1,69 @@
+main a { 
+    color: black;
+    font-weight: bold;
+}
+
+th {
+    font-size: 10px;
+}
+
+td {
+    font-size: 14px;
+}
+
+_tr:hover td {
+    border-bottom: 2px solid black;
+}
+
+table.days {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+}
+table.days td {
+    border: 1px solid silver;
+    padding: 5px;
+    text-align: center;
+    background: #555;
+    width: 20%;
+    vertical-align: top;
+}
+table.days td.active {
+    background: #ccff1b;
+}
+table.days td a {
+    color: #ddd;
+    text-decoration: none;
+}
+table.days td a:hover {
+    text-decoration: underline;
+}
+table.days td.active a {
+    color: #555;
+}
+
+table#talks tr:hover td {
+    background: #ceff1b78 !important;
+}
+
+table#talks tr.ok {
+    background: #2ECC40;
+}
+
+div.status_bar {
+    margin-top: 5px;
+    background: #2ECC40;
+    color: white;
+    font-size: 10px;
+    padding: 2px 0 2px 0;
+    border-radius: 10px;
+}
+
+div.status_bar_completed {
+    margin-top: 5px;
+    background: #ff55da;
+    color: black;
+    font-size: 10px;
+    padding: 2px 0 2px 0;
+    border-radius: 10px;
+}

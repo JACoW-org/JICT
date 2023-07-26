@@ -1,0 +1,15 @@
+{ 
+	"short_name": "Dashboard", 
+	"name": "My Bike Charts", 
+	"icons": [ 
+		{ 
+			"src": "icon-dark-192.png", 
+			"sizes": "192x192", 
+			"type": "image/png" 
+			} 
+		], 
+	"start_url": ".", 
+	"display":  "fullscreen",
+	"theme_color": "#333333",
+	"background_color": "#333333"
+}

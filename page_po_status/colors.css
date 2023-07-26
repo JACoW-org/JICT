@@ -1,0 +1,273 @@
+
+/* (12,2,34) */
+.primary {
+	color: #0C0227; 
+}
+
+.b_primary {
+	background-color: #0C0227 !important;
+	color: white !important;
+}
+
+.b_primary a {
+	color: white;
+}
+
+
+    
+/* (239,137,147) */
+.secondary {
+	color: #ef893c; 
+}
+
+.b_secondary {
+	background-color: #ef893c !important;
+	color: black !important;
+}
+
+.b_secondary a {
+	color: black;
+}
+
+
+    
+/* (255,65,19) */
+.r {
+	color: #FF4136; 
+}
+
+.b_r {
+	background-color: #FF4136 !important;
+	color: black !important;
+}
+
+.b_r a {
+	color: black;
+}
+
+
+    
+/* (255,220,192) */
+.y {
+	color: #FFDC00; 
+}
+
+.b_y {
+	background-color: #FFDC00 !important;
+	color: black !important;
+}
+
+.b_y a {
+	color: black;
+}
+
+
+    
+/* (46,204,196) */
+.g {
+	color: #2ECC40; 
+}
+
+.b_g {
+	background-color: #2ECC40 !important;
+	color: black !important;
+}
+
+.b_g a {
+	color: black;
+}
+
+
+    
+/* (153,0,9) */
+.a {
+	color: #990099; 
+}
+
+.b_a {
+	background-color: #990099 !important;
+	color: white !important;
+}
+
+.b_a a {
+	color: white;
+}
+
+
+    
+/* (85,85,85) */
+.nofiles {
+	color: #555555; 
+}
+
+.b_nofiles {
+	background-color: #555555 !important;
+	color: white !important;
+}
+
+.b_nofiles a {
+	color: white;
+}
+
+
+    
+/* (127,219,191) */
+.files {
+	color: #7FDBFF; 
+}
+
+.b_files {
+	background-color: #7FDBFF !important;
+	color: black !important;
+}
+
+.b_files a {
+	color: black;
+}
+
+
+    
+/* (0,0,0) */
+.removed {
+	color: #000000; 
+}
+
+.b_removed {
+	background-color: #000000 !important;
+	color: white !important;
+}
+
+.b_removed a {
+	color: white;
+}
+
+
+    
+/* (0,116,77) */
+.qaok {
+	color: #0074D9; 
+}
+
+.b_qaok {
+	background-color: #0074D9 !important;
+	color: white !important;
+}
+
+.b_qaok a {
+	color: white;
+}
+
+
+    
+/* (137,75,181) */
+.room {
+	color: #894b52; 
+}
+
+.b_room {
+	background-color: #894b52 !important;
+	color: white !important;
+}
+
+.b_room a {
+	color: white;
+}
+
+
+    
+/* (12,2,34) */
+.roomSalaDarsena {
+	color: #0C0227; 
+}
+
+.b_roomSalaDarsena {
+	background-color: #0C0227 !important;
+	color: white !important;
+}
+
+.b_roomSalaDarsena a {
+	color: white;
+}
+
+
+    
+/* (107,103,118) */
+.roomSalaGrande {
+	color: #6b6764; 
+}
+
+.b_roomSalaGrande {
+	background-color: #6b6764 !important;
+	color: white !important;
+}
+
+.b_roomSalaGrande a {
+	color: white;
+}
+
+
+    
+/* (137,75,181) */
+.roomPosterArea {
+	color: #894b52; 
+}
+
+.b_roomPosterArea {
+	background-color: #894b52 !important;
+	color: white !important;
+}
+
+.b_roomPosterArea a {
+	color: white;
+}
+
+
+    
+/* (137,75,181) */
+.roomSalaLaguna {
+	color: #894b52; 
+}
+
+.b_roomSalaLaguna {
+	background-color: #894b52 !important;
+	color: white !important;
+}
+
+.b_roomSalaLaguna a {
+	color: white;
+}
+
+
+    
+/* (137,75,181) */
+.roomSalaMosaici2 {
+	color: #894b52; 
+}
+
+.b_roomSalaMosaici2 {
+	background-color: #894b52 !important;
+	color: white !important;
+}
+
+.b_roomSalaMosaici2 a {
+	color: white;
+}
+
+
+    
+/* (137,75,181) */
+.roomSaloneAdriatico {
+	color: #894b52; 
+}
+
+.b_roomSaloneAdriatico {
+	background-color: #894b52 !important;
+	color: white !important;
+}
+
+.b_roomSaloneAdriatico a {
+	color: white;
+}
+
+
+    

@@ -1,0 +1,54 @@
+body, td, p, h1, h2 {
+	font-family: Verdana, Geneva, sans-serif;
+	font-size: 14px;
+	}
+
+h1 {
+	color: ${color1};
+	font-size: 20px;
+	}
+	
+h2 {	
+	color: ${color1};
+	font-size: 16px;
+	border-top: 1px solid silver;
+	padding-top: 5px;
+	}
+
+
+p.participants_list {
+	line-height: 1.5em;
+	}
+	
+
+p.participants_total {
+	width: 530px;
+	text-align: center;
+	font-size: 10px;
+	padding-bottom: 20px;
+	}
+
+
+table.participants_countries {
+	border-spacing: 0;
+	}
+table.participants_countries td, 
+table.participants_countries th {
+	font-size: 10px;
+	vertical-align: bottom;
+	padding: 5px;
+	}
+table.participants_countries th {
+	text-align: right;
+	font-weight: bold;
+	}
+
+
+div.chart_bar {
+	background: ${color1};
+	height: 12px;
+	float: left;
+	margin-right: 5px;
+	-moz-border-radius: 5px 5px 5px 5px;
+	border-radius: 5px 5px 5px 5px;
+	}
