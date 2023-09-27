@@ -625,7 +625,7 @@ function update_rates_today( obj ) {
 	for (tm in obj) {
 		d =new Date(tm.slice(0, 10));
 		day =tm.substr( 5, 5 ) +'&nbsp;' +dayOfWeekAsString(d.getDay());
-		console.log(`${tm} ${d} ${day}`);
+		//console.log(`${tm} ${d} ${day}`);
 		days_rates[day] =obj[tm].processed; 
 		days_rates_qaok[day] =obj[tm].qaok; 
 	}

@@ -2,6 +2,7 @@
 
 /* by Stefano.Deiuri@Elettra.Eu
 
+2023.08.30 - fix count affiliation primary papers
 2023.04.05 - update (auth & template)
 2022.08.23 - 1st version
 
@@ -50,12 +51,13 @@ $papers =false;
 
 if ($show == 'affiliations') {
     $affiliations =false;
+
     foreach ($Indico->data['authors'] as $aid =>$a) {
         if (!empty($a['papers'])) {
             $affiliation =trim($a['affiliation']);
 
             if (empty($affiliations[$affiliation])) {
-                $affiliations[$affiliation] =[ 'name' =>$affiliation, 'n_authors' =>1, 'papers' =>[] ];
+                $affiliations[$affiliation] =[ 'name' =>$affiliation, 'n_authors' =>1, 'n_primary' =>0, 'papers' =>[] ];
 
             } else {
                 $affiliations[$affiliation]['n_authors'] ++;
@@ -69,9 +71,11 @@ if ($show == 'affiliations') {
                 if ($_GET['filter'] == 'green_only' && $p['status'] != 'g') {
                     // skip
 
-                } else {
+                } else if (empty($affiliations[$affiliation]['papers'][$pcode]['primary'])) {
                     $affiliations[$affiliation]['papers'][$pcode] =$p;
                 }
+
+                if ($p['primary']) $affiliations[$affiliation]['n_primary'] ++;
             }
 
             ksort( $affiliations[$affiliation]['papers'] );
@@ -80,17 +84,18 @@ if ($show == 'affiliations') {
 
     foreach ($affiliations as $affiliation =>$a) {
         $papers =false;
-        $papers_as_primary =0;
+//        $papers_as_primary =0;
         foreach ($a['papers'] as $pcode =>$p) {
             if (!empty($Indico->data['authors_check'][$pcode]['done'])) $p['status'] ='final';
             $papers .="<div class='paper_code b_$p[status]" .($p['primary'] ? ' primary' : false) ."' pid='$p[id]'>$pcode</div> ";
-            if ($p['primary']) $papers_as_primary ++;
+//            if ($p['primary']) $papers_as_primary ++;
         }
 
         $rows[] =[
             'Affiliation' =>$affiliation,
             'N_Authors' =>$a['n_authors'],
-            'N_Papers_Primary' =>$papers_as_primary,
+//            'N_Papers_Primary' =>$papers_as_primary,
+            'N_Papers_Primary' =>$a['n_primary'],
             'N_Papers' =>count($a['papers']),
             'Papers' =>$papers
             ];

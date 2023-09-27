@@ -37,6 +37,14 @@ $T->set([
     'js' =>false
     ]);
 
+if (!empty($_GET['pcode'])) {
+    $pcode =$_GET['pcode'];
+    $T->set( 'content', sprintf( "<pre>%s</pre>", print_r( $Indico->data['papers'][$pcode], true )) );
+    echo $T->get();
+    exit;
+}
+
+
 if ($cfg['post_load_f']) {
     $f =$cfg['post_load_f'];
     $f();
@@ -72,6 +80,7 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
             'Program_Code' =>$pcode,
             'Type' =>$p['type'],
             'Title' =>$p['title'],
+            'PAuthor' =>sprintf( "%s (%s)", $p['author'], $p['author_inst'] ),
             'Editor' =>$p['editor'],
             'Status' =>$p['status_indico'],
             'QA' =>$p['status_qa'],
@@ -122,6 +131,7 @@ foreach ($rows as $r) {
 <td><a href='$paper_url' target='_blank'>$pcode</a></td>
 <td>$r[Type]</td>
 <td>$r[Title]</td>
+<td>$r[PAuthor]</td>
 <td>$r[Editor]</td>
 <td class='b_$p[status]'>$r[Status]</td>
 <td class='$qa_class'>$r[QA]</td>

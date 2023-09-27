@@ -265,7 +265,7 @@ MOPL029,"A. Frasca, A. Abramov, B. Lindstrom, F. Ziliotto, F. Cerutti, F. Van de
 MOPL131,"B. Buonomo, C. Di Giulio, L. Foggetta","The Frascati DAFNE LINAC modulator upgrade",,1550
 MOPL011,"H. Huang, K. Hock, F. Meot, V. Morozov, V. Ptitsyn, V. Ranjbar, V. Schoefer","Strategy for proton polarization in the Electron Ion Collider",,1215
 MOPL120,"N. Iida, M. Kikuchi, Y. Seimiya, Y. Ohnishi, Y. Funakoshi, T. Kamitani, M. Satoh, T. Mori, T. Natsui, T. Yoshimoto, K. Oide","Beam injection issues at SuperKEKB",,1529
-MOPL152,"J. Grames, J. Benesch, M. Bruker, L. Cardman, S. Covrig, P. Ghoshal, S. Gopinath, J. Gubeli, S. Habet, C. Hernandez-Garcia, A. Hofler, R. Kazimi, F. Lin, V. Lizárraga-Rubio, S. Nagaitsev, M. Poelker, R. Rimmer, Y. Roblin, A. Seryi, M. Spata, A. Sy, D. Turner, A. Ushakov, C. Valerio-Lizárraga, E. Voutier","Positron beams at Ce+BAF",,1313
+MOPL152,"J. Grames, J. Benesch, M. Bruker, L. Cardman, S. Covrig, P. Ghoshal, J. Gubeli, S. Habet, C. Hernandez-Garcia, A. Hofler, R. Kazimi, F. Lin, V. Lizárraga-Rubio, S. Nagaitsev, M. Poelker, R. Rimmer, Y. Roblin, A. Seryi, M. Spata, A. Sy, D. Turner, A. Ushakov, C. Valerio-Lizárraga, E. Voutier, S. Gopinath","Positron beams at Ce+BAF",,1313
 MOPL014,"F. Carlier, A. Wegscheider, A. Costa Ojeda, E. Fol, E. Maclean, F. Soubelet, J. Keintzel, J. Dilly, L. van Riesen-Haupt, M. Le Garrec, M. Hofer, R. Tomas, T. Levens, T. Persson, V. Ferrentino","Challenges of K-modulation measurements in the LHC Run 3",,1090
 MOPL108,"S.H. Shaker, M. Boland, K. Dunkel, J. Hottenbacher, B. Keune","Study of a bunch train total energy spread in a Linac using SLED",,2441
 MOPL043,"V. Lebedev, O. Brovko, A. Butenko, E. Donets, A. Galimov, E. Gorbachev, V. Kekelidze, H. Khodzhibagiyan, S. Kostromin, I. Meshkov, M. Shandov, A. Sidorin, V. Smirnov, E. Syresin, G. Trubnikov, A. Tuzikov","NICA ion collider and its acceleration complex",,945
@@ -1057,7 +1057,6 @@ WEPL084,"C. Guyot, D. Minenna, P.A.P. Nghiem, L. Batista, P. Drobniak, D. Douill
 WEPL185,"D. Amorim, A. Chance, A. Lechner, C. Carli, D. Schulte, D. Calzolari, E. Métral, F. Boattini, K. Skoufaris, L. Bottura, T. Pieloni","Transverse impedance and beam stability studies for the muon collider ring",,983
 WEPL035,"J. Dumas, O. Kamalou, A. Orduz, E. Traykov","Beam dynamics in the NEWGAIN project at GANIL-SPIRAL2",,1519
 WEPL132,"M. Othman, A. Sy, B. Weatherford, H. Schult, M. Boyle","Progress of High-Efficiency L-Band IOT Design for Accelerator Applications at SLAC",,2488
-WEPL048,"M. Rossetti Conti, A. Bacci, A. Rossi, A. Giribono, C. Vaccarezza, M. Opromolla, V. Petrillo","Transfer line design for EuPRAXIA@SPARC_LAB.",,1602
 WEPL034,"M. Droba, H. Podlech, K. Schulte-Urlichs, K. Thoma, O. Meusel","Simulation Studies of the Particle Dynamic in Beam: Internal Target and Beam-Beam Interactions in the Figure-8 Storage Ring(F8SR)",,1373
 WEPL073,"A. Dixon, P. Williams, S. Thorin, T. Charles","The MAX-IV linac with variable bunch compressors",,641
 WEPL050,"M. Ning, A. Bernhard, S. Fatehi, A.-S. Mueller","Design, fabrication and measurement of a normal conducting quadrupole for a laser-plasma-accelerator-based beam transport line",,1525
@@ -1191,7 +1190,7 @@ WEPL064,"B. Yan","Post-linac beam collimation study at the beam distribution sec
 WEPL105,"B. Folsom, E. Laface","Relativistic beam loading and recoil effects using a covariant, retarded-potential iterator",,898
 WEPL179,"I. Bellafont, F. Perez, P. Solans","Longitudinal beam dynamics studies with a third harmonic RF system for ALBA-II",,2304
 WEPL139,"G. Bassi","Analytical formulae for the longitudinal impedance of two parallel layers with arbitrary complex permittivity and permeability",,2465
-WEPL055,"I. Neththikumara, A. Bogacz, D. Moser, T. Satogata, Y. Roblin, D. Turner","Beam study on low dispersion CEBAF arcs",,2329
+WEPL055,"I. Neththikumara, A. Bogacz, T. Satogata, Y. Roblin, D. Turner, D. Moser","Beam study on low dispersion CEBAF arcs",,2329
 WEPL067,"S. Littleton","Field-adapted coordinate transformations for rotating and accelerating beams",,1369
 WEPL009,"Y. Li, G. Wang, K. Ha, T. Shaftan, T. Tanabe, V. Smaluk, X. Yang, Y. Hidaka, Y. Tian","Linear optics compensation for the HEX superconducting wiggler at NSLS-II",,1729
 WEPL004,"N. Kuklev","Differentiable beam optics optimization and measurement",,2325
@@ -1199,6 +1198,7 @@ WEPL022,"S. Krecic, A. Carniel, F. Tripaldi","Emittance reduction of the actual 
 WEPL042,"Y. Chu, C.Y.J. Wong, W. Chen, Z. Xu, Z. Liang, K. sun, Z. Wang","Design of the gradient dipole magnet for LLICTF",,2035
 WEPL001,"G. Benedetti, M. Carlà, U. Iriso, Z. Martí, F. Perez","Progress on the 6BA lattice for ALBA-II",,1118
 WEPL133,"M. Carillo, L. Palumbo, J. Rosenzweig, B. Spataro, M. Migliorati, A. Mostacci, L. Giuliano, L. Faillace, E. Chiadroni, F. Bosco","A space charge forces analytical model for emittance compensation",,1621
+WEPL048,"M. Rossetti Conti, A. Bacci, A. Rossi, A. Giribono, C. Vaccarezza, M. Opromolla, V. Petrillo","Transfer line design for EuPRAXIA@SPARC_LAB",,1602
 WEPL054,"S. Pokharel, A. Hofler, G. Krafft, J. Grames, M. Bruker, R. Kazimi, S. Zhang","CEBAF Injector Model for K-Long bunch charge at 200 kV",,526
 WEPL072,"M.-A. Tordeux, A. Loulergue, A. Moutardier, A. Gamelin, A. Le Jollec, C. Kitegi, E. Dupuy, F. Marteau, F. Ribeiro, F. Bouvet, J.-P. Pollina, L. Nadolski, M. Labat, M. Diop, N. Béchu, N. Hubert, P. Alexandre, R. Lopes, S. Thoraud, T. Souske, V. Leroux, W. Foosang, Z. Bai","Progress on the New Booster for SOLEIL II",,1437
 WEPL017,"I. Agapov, T. Charles, E. Musa","Orbit-response based optics corrections for FCC-ee",,632
@@ -1605,7 +1605,7 @@ THOGB3,"C.S. Park","A Study on Differentiable Space Charge Model Based on the Gr
 THYG1,"S. De Silva, T. Satogata","SRF cavities for crabbing at the Electron-Ion Collider",,39
 THPA125,"X. Lu, X. Cui, D. Ji, H. Ji, Y. Jiao, X. Huang, J. Li, N. Li, C. Meng, Y. Peng, S. Tian, G. Xu, H. Xu, J. Wan, Y. Wei, Y. Zhao","Development progress of high-level applications for the HEPS",,1282
 THPA181,"M. Quispe","Thermal mechanical simulations of a new germanium detector developed in the European project LEAPS-INNOV for X-ray spectroscopy applications at synchrotron facilities",,821
-THPA004,"G. Blume, B. Moffit, B. Fernandes Neres, C. Cuevas, C. Le Galliard, E. Voutier, H. Dong, J. Grames, M. Poelker, M. Bruker, P. Ghoshal, R. Suleiman, S. Gopinath, S. Marsillac, T. Nguyen Trung, S. Zhang","A Compton transmission polarimeter for DC and SRF electron photo-injectors",,1233
+THPA004,"G. Blume, B. Moffit, B. Fernandes Neres, C. Cuevas, C. Le Galliard, E. Voutier, H. Dong, J. Grames, M. Poelker, M. Bruker, P. Ghoshal, R. Suleiman, S. Marsillac, T. Nguyen Trung, S. Zhang, S. Gopinath","A Compton transmission polarimeter for DC and SRF electron photo-injectors",,1233
 THPA005,"C. Song, S. Gu, W. Huang","Study and simulation of cavity bunch length monitor based on monopole mode",,2247
 THPA174,"S. Thielk, R. Agustsson, P. Carriere, S. Kutsaev","Evaluation of low-loss alumina material for high-power RF windows",,711
 THPA124,"W. Sulaiman Khail, J. Bengtsson, M. Ries, P. Schnizer","Status of online model developments for BESSY II",,2095
