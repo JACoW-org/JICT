@@ -7,4 +7,5 @@ tmp/*
 *.log
 *.json
 *.tmp
+page_author_check/images/*
 conference-config.php
