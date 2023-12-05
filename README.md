@@ -1,1 +1,1 @@
-# CWSi - JACOW Conference Website Scripts (Indico version)
+# JICT - JACOW-Indico Conference Tools
