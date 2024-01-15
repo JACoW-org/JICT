@@ -9,7 +9,7 @@
 
 require( '../config.php' );
 
-require_lib( 'cws', '1.0' );
+require_lib( 'jict', '1.0' );
 require_lib( 'indico', '1.0' );
 
 
@@ -51,16 +51,10 @@ $Indico->load();
 
 $Indico->import();
 
-$Indico->import_abstracts_list();
+$Indico->import_abstracts();
 $Indico->import_posters();
 
 $Indico->save_all([ 'save_empty' =>true ]);
-
-/* foreach ([ 'programme', 'papers', 'abstracts', 'editing_tags', 'authors', 'persons' ] as $obj) {
-    $Indico->save_file( $obj, 'out_' .$obj, strtoupper($obj), array( 'save_empty' =>true ));
-} */
-
-//$Indico->export_po(); 
 
 $Indico->export_refs();
 

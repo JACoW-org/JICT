@@ -14,77 +14,33 @@ if (in_array( '--help', $argv )) {
 }
 
 require( '../config.php' );
-require_lib( 'cws', '1.0' );
+require_lib( 'jict', '1.0' );
+require_lib( 'indico', '1.0' );
 
 $cfg =config();
 
-if (INDICO) {
-    require_lib( 'indico', '1.0' );
+$Indico =new INDICO( $cfg );
+$Indico->import();
 
-    $Indico =new INDICO( $cfg );
-    $Indico->import();
+$countries =[];
+$participants =[];
 
-    $countries =array();
-    $participants =array();
+foreach ($Indico->data['registrants']['registrants'] as $rid =>$r) {
+    $participants[$r['type']]["$r[surname] $r[name]"] ="<b>$r[surname] $r[name]</b> ($r[inst]" .(empty($r['nation']) ? false : ", $r[nation]") .")";
 
-    foreach ($Indico->data['registrants']['registrants'] as $rid =>$r) {
-        $participants[$r['type']]["$r[surname] $r[name]"] ="<b>$r[surname] $r[name]</b> ($r[inst]" .(empty($r['nation']) ? false : ", $r[nation]") .")";
+    if (empty($countries[$r['nation']])) $countries[$r['nation']] =1;
+    else $countries[$r['nation']] ++;
 
-        if (empty($countries[$r['nation']])) $countries[$r['nation']] =1;
-        else $countries[$r['nation']] ++;
-
-        $date =date( 'Y-m-d', $r['ts'] );
-        if (empty($chart[$date][0])) $chart[$date][0] =1;
-        else $chart[$date][0] ++;
-    }
-
-    ksort( $chart );
-
-    $Indico->GoogleChart( $chart );
-
-    print_r( $Indico->data['registrants']['stats'] );
-
-} else {
-    require_lib( 'spms_importer', '1.0' );
-
-    $SPMS =new SPMS_Importer( config() );
-    
-    $cfg =$SPMS->cfg;
-    
-    $SPMS->GoogleChart();
-    
-    
-    // list
-    
-    $url =SPMS_URL .'/xtract.'.$cfg['xtract2'];
-        
-    echo "Get data from: $url... ";
-    $csv =file( $url );
-    //if ($cfg['debug']) 
-    file_write( TMP_PATH .'/' .$cfg['xtract2'] .'.csv', $csv );
-    
-    $n =count($csv);
-    
-    if ($n) echo_ok( "OK ($n records)\n" );
-    else {
-        echo_error( "ERROR (no records!)" );
-        return;
-    }
-    
-    
-    $participants =array();
-    $countries =array();
-                
-    foreach ($csv as $id =>$line) {
-        $line =iconv( 'ISO-8859-1', 'UTF-8//TRANSLIT', trim($line) );
-        list( $surname, $name, $inst, $nation, $type ) =explode( '","', substr( $line, 1, -1 ) );
-                
-        $participants[$type]["$surname $name"] ="<b>$surname $name</b> ($inst, $nation)";
-        $countries[$nation] ++;
-    } 
-    
+    $date =date( 'Y-m-d', $r['ts'] );
+    if (empty($chart[$date][0])) $chart[$date][0] =1;
+    else $chart[$date][0] ++;
 }
 
+ksort( $chart );
+
+$Indico->GoogleChart( $chart );
+
+print_r( $Indico->data['registrants']['stats'] );
 
 
 $D =&$participants['D'];

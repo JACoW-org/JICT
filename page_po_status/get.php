@@ -10,7 +10,7 @@
 error_reporting(E_ERROR);
 
 require( '../config.php' );
-require_lib( 'cws', '1.0' );
+require_lib( 'jict', '1.0' );
 
 define( 'CFG_VERSION', 6 );
 

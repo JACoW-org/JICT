@@ -9,7 +9,7 @@
 */
 
 require( '../config.php' );
-require_lib( 'cws', '1.0' );
+require_lib( 'jict', '1.0' );
 require_lib( 'indico', '1.0' );
 
 $cfg =config( 'page_slides' );
@@ -68,10 +68,10 @@ $T->set([
     'conf_name' =>$cfg['conf_name'],
     'user' =>__h( 'small', $user['email'] ),
     'path' =>'../',
-    'head' =>"<link rel='stylesheet' type='text/css' href='../html/datatables.min.css' />
+    'head' =>"<link rel='stylesheet' type='text/css' href='../dist/datatables/datatables.min.css' />
     <link rel='stylesheet' type='text/css' href='../page_edots/colors.css' />
     <link rel='stylesheet' type='text/css' href='style.css?20230508' />",
-    'scripts' =>"<script src='../html/datatables.min.js'></script>",
+    'scripts' =>"<script src='../dist/datatables/datatables.min.js'></script>",
     'js' =>false
     ]);
 
@@ -118,6 +118,8 @@ if (empty($conf_day)) {
     }
 }
 
+//print_r( $Indico->data['programme'] );
+
 $stats =false;
 $day_id =1;
 $day_active =false;
@@ -134,23 +136,28 @@ foreach ($Indico->data['programme']['days'] as $day =>$x) {
         }
     }
 
+    $wday =date( 'l', strtotime( $day ));
+    
     if ($day_talks) {
         $day_status =ceil( $day_ok *100 /$day_talks );
 
-        $wday =date( 'l', strtotime( $day ));
-    
-//        $cls =$day == $conf_day ? 'active' : false;
-    
         if ($day == $conf_day) $day_active =$day_id;
 
         if ($day_status == 100) $status_bar ="<center><div class='status_bar_completed' title='talks verified' style='width: 100%'>completed</div></center>";
-        else $status_bar =$day_ok ? "<center><div class='status_bar' title='talks verified' style='width: $day_status%'>$day_status%</div></center>" : "<div class='status_bar'style='width: 0'>&nbsp;</div>";
-
-  //      $content .=sprintf( "<td class='%s'><a href='%s?day=%s'>%s, %s</a>%s</td>\n", $cls, $_SERVER['PHP_SELF'], $day, $day, $wday, $status_bar );
+        else $status_bar =$day_ok ? "<center><div class='status_bar' title='talks verified' style='width: $day_status%'>$day_status%</div></center>" : "<div class='status_bar' style='width: 0'>&nbsp;</div>";
 
         $T->set( "day$day_id", sprintf( "<a href='%s?day=%s'>%s, %s</a>%s", $_SERVER['PHP_SELF'], $day, $day, $wday, $status_bar ));
 
         $day_id ++;
+//    } else {
+//        $T->set( "day$day_id", sprintf( "<a>%s, %s</a><div class='status_bar_empty'>no presentations!</div>", $day, $wday ));
+    }
+
+}
+
+if ($day_id <= 5) {
+    for (; $day_id <=5; $day_id ++) {
+        $T->set( "day$day_id", "" );
     }
 }
 

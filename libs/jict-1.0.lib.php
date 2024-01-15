@@ -180,12 +180,7 @@ function config( $_app =false, $_check_in_file_exit =false, $_check_in_file =tru
  
 // print_r($cws_config);
 
- $mode =strtolower($cws_config['global']['mode']);
-
- define( 'INDICO', $mode == 'indico');
-
-
- foreach (array( 'mode', 'conf_name', 'indico_server_url', 'indico_event_id', 'indico_token', 'cws_timezone', 'root_url', 'root_path') as $var) {
+ foreach (array( 'conf_name', 'indico_server_url', 'indico_event_id', 'indico_token', 'cws_timezone', 'root_url', 'root_path') as $var) {
     if (!isset($cws_config['global'][$var]) || $cws_config['global'][$var] == '') {
         echo_error( "\n\nWrong configuration! Please check config.php! (global\\$var)\n\n\n" );
         die;
@@ -207,8 +202,6 @@ function config( $_app =false, $_check_in_file_exit =false, $_check_in_file =tru
  cws_define( 'app', $_app );
   
  $cfg =$cws_config[$_app];
- 
- if (empty($cfg['tmp_path'])) $cfg['tmp_path'] =$cws_config['global']['tmp_path'] .'/' .$mode;
 
  foreach (array( 'data_path', 'tmp_path', 'out_path' ) as $path_name) {
 	if (!isset($cfg[$path_name])) $$path_name =$cfg[$path_name] =$cws_config['global'][$path_name];
@@ -229,7 +222,7 @@ function config( $_app =false, $_check_in_file_exit =false, $_check_in_file =tru
 	
 	cws_define( $name, $value );
  }
- 
+
  foreach ($cfg as $name =>$value) {
 	if (strpos( $name, '_' ) !== false) list( $name1, $name2 ) =explode( '_', $name );
     else $name1 =$name2 =false;
@@ -274,17 +267,18 @@ function config( $_app =false, $_check_in_file_exit =false, $_check_in_file =tru
 	if (!isset($cfg[$name])) $cfg[$name] =$value;
  }
 
- foreach (array( 'data_path', 'tmp_path', 'out_path' ) as $path_name) {
+ foreach ([ 'data_path', 'tmp_path', 'out_path' ] as $path_name) {
 	$name =strtoupper( substr( $path_name, 0, -5 ));
 	$path =$cfg[$path_name];
 
 	if (!file_exists( $path )) {
 		echo "Create $name directory ($path)... ";
 
-		if (mkdir( $path )) {
+		if (mkdir( $path, 0775, true )) {
 			system( 'chown apache.apache ' .$path );
-			system( 'chmod 775 ' .$path );
+//			system( 'chmod 775 ' .$path );
 			echo_ok();
+
 		} else {
 			echo_error( "ERROR! (unable to create $name directory)" );
 			die;
@@ -472,7 +466,9 @@ function gz_http_response( $_text ) {
 //-----------------------------------------------------------------------------
 class TMPL {
     function __construct( $_fname ) {
-        $this->vars =[];
+        global $cws_config;
+
+        $this->vars =[ 'index_url' =>$cws_config['global']['root_url'] ];
         $this->template_fname =$_fname;
     }
 

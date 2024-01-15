@@ -23,7 +23,7 @@ var change_page =true;
 var timeout_pointer =false;
 
 var history_chart =false;
-var history_max_total =100;
+var history_max_total =30;
 
 var rates_page_ok =false;
 
@@ -244,7 +244,7 @@ function load_data() {
 				update_history( stats_history );
 				update_stats( stats );
 				
-				if (stats.processed > 10) {
+				if (stats.processed >= 2) {
 					update_rates_today( stats_history );
 					update_editors( editors );
 					update_editors_qa( editors_qa );
@@ -283,7 +283,7 @@ function update_history( obj ) {
 	console.log( "Update history" );
 	console.dir( obj );
 	
-	var max_value =Math.ceil( (history_max_total +10) / 100 ) *100;
+	var max_value =Math.ceil( (history_max_total +10) / 10 ) *10;
 	
 	var data =new google.visualization.DataTable();
 	data.addColumn('date','Date');
@@ -480,7 +480,7 @@ function update_editors( obj ) {
 	console.log( `Update editors` );
 
 	var eds =Object.keys( obj );
-	if (eds.length < 4) {
+	if (eds.length < 2) {
 		console.log( "  No data!" );
 		return;
 	}

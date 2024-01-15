@@ -2,6 +2,7 @@
 
 /* bY Stefano.Deiuri@Elettra.Eu
 
+2023.11.27 - handle public access mode
 2023.03.31 - update
 2022.08.29 - update
 
@@ -9,14 +10,14 @@
 
 require( 'config.php' );
 
-require_lib( 'cws', '1.0' );
+require_lib( 'jict', '1.0' );
 require_lib( 'indico', '1.0' );
 
 $cfg =config( 'global' );
 
 $Indico =new INDICO( $cfg );
 
-session_start();
+//session_start();
 
 $user =$Indico->auth();
 if (!$user) exit;
@@ -24,10 +25,10 @@ if (!$user) exit;
 $T =new TMPL( 'template.html' );
 $T->set([
     'style' =>'main { font-size: 22px; } main ul { margin: 20px; }',
-    'title' =>'JACoW Conference Website Scripts',
+    'title' =>'JACoW-Indico Conference Tools',
     'logo' =>$cfg['logo'],
     'conf_name' =>$cfg['conf_name'],
-    'user' =>__h( 'small', $user['email'] ) ." " .__h( 'i', "", [ 'class' =>'fa fa-power-off', 'onClick' =>"document.location =\"$_SERVER[PHP_SELF]?cmd=logout\"" ]),
+    'user' =>__h( 'small', $user['email'] ) ." " .(empty($user['public']) ? __h( 'i', "", [ 'class' =>'fa fa-power-off', 'onClick' =>"document.location =\"$_SERVER[PHP_SELF]?cmd=logout\"" ]) : false),
     'path' =>'./',
     'scripts' =>false,
     'js' =>false
@@ -53,7 +54,7 @@ foreach ($cws_config as $app =>$x) {
 		if (file_exists($href)) $links[$x['name']] ="<a href='$href' target='_blank'>$x[name]</a>";
 		else $links[$x['name']] ="$x[name]" .(substr($app,0,4) == 'make' ? "<br /><small>(run $app/make.php)</small>" : false);
 
-		if (!empty($x['allow_roles'])) $links[$x['name']] .=sprintf( ' <i class="fa-solid fa-lock" title="roles allowed: %s"></i>', implode( ',', $x['allow_roles'] ));
+		if (!empty($x['allow_roles']) && empty($user['public'])) $links[$x['name']] .=sprintf( ' <i class="fa-solid fa-lock" title="roles allowed: %s"></i>', implode( ',', $x['allow_roles'] ));
 	}
 }
 
@@ -64,14 +65,17 @@ $gcfg =$cws_config['global'];
 $logo =file_exists( $gcfg['logo'] ) ? "<img src='$gcfg[logo]' style='border:0; width:200px;' />" : $gcfg['conf_name'];
 $logo2 =sprintf( "<a href='%s' target='blank'>%s</a>", $gcfg['conf_url'], $logo );
 
-$ds =explode( ' ', date( 'Y M j', strtotime( $cws_config['global']['date_start'] )));
-$de =explode( ' ', date( 'Y M j', strtotime( $cws_config['global']['date_end'] )));
+$dates_c =$gcfg['dates']['conference'];
+
+$ds =explode( ' ', date( 'Y M j', strtotime( $dates_c['from'] )));
+$de =explode( ' ', date( 'Y M j', strtotime( $dates_c['to'] )));
 
 if ($ds[1] == $de[1]) $dates ="$ds[2] - $de[2] $ds[1] $ds[0]";
 else $dates ="$ds[2]/$ds[1] - $de[2]/$de[1], $ds[0]";
 
-if (!empty( $cws_config['global']['location'] )) $dates =$cws_config['global']['location'] ."<br />" .$dates;
+if (!empty( $gcfg['location'] )) $dates =$gcfg['location'] ."<br />" .$dates;
 
+$dates .=sprintf( "<br /><a href='%s/event/%d/manage' target='_blank'>Indico</a>", $gcfg['indico_server_url'], $gcfg['indico_event_id'] );
 
 $T->set( 'content',
     __h( "div",

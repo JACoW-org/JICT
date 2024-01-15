@@ -16,7 +16,7 @@ https://developer.mozilla.org/en-US/docs/Web/API/Media_Streams_API/Taking_still_
 */
 
 require( '../config.php' );
-require_lib( 'cws', '1.0' );
+require_lib( 'jict', '1.0' );
 require_lib( 'indico', '1.0' );
 
 //session_start();

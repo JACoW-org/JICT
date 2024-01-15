@@ -5,7 +5,7 @@
 error_reporting(E_ERROR);
 
 require( '../config.php' );
-require_lib( 'cws', '1.0' );
+require_lib( 'jict', '1.0' );
 
 if (!$cfg =config( 'page_po_status', true )) {
 	echo json_encode(array( 'error' => true ));

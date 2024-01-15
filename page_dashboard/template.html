@@ -11,7 +11,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 	<meta name='mobile-web-app-capable' content='yes'>
 	
-	<link rel="manifest" href="manifest.webmanifest">		
+	<link rel="_manifest" href="manifest.webmanifest">		
 	
 	<link rel="shortcut icon" href="favicon.png" />	
 	<link rel="icon" size="192x192" href="icon-dark-192.png" />	
@@ -39,7 +39,7 @@
 <body onLoad="draw()">
 
 <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
-    <div class="navbar-values col-6 col-md-2" id='conf_name'><a href='../'>CWS</a> {conf_name}</div>
+    <div class="navbar-values col-6 col-md-2" id='conf_name'><a href='{index_url}'>JICT</a> {conf_name}</div>
     <div class="navbar-values col-6 col-md-4" id='title'>{title}</div>
     <div class="navbar-values col-6 col-md-2 text-right" id='user'>{user}</div>
 </nav>
@@ -55,46 +55,7 @@
 <div class="container-fluid">
     <div class="row">
         <main role="main" class="col-md-12 ml-sm-auto col-lg-12">
-            <div class="row">
-                <div class="col-md-6">
-                    <canvas id='papers_by_dates' class="chart"></canvas>
-                </div>
-                <div class="col-md-6">
-                    <canvas id='papers_by_days_to_deadline' class="chart"></canvas>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <canvas id='registrants_by_dates' class="chart"></canvas>
-                </div>
-                <div class="col-md-6">
-                    <canvas id='registrants_by_days_to_deadline' class="chart"></canvas>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <canvas id='payments_by_dates' class="chart"></canvas>
-                </div>
-                <div class="col-md-6">
-                    <canvas id='payments_by_days_to_deadline' class="chart"></canvas>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <canvas id='registrants_country' class="chart"></canvas>
-                </div>
-                <div class="col-md-6">
-                    <canvas id='registrants_country_code' class="chart"></canvas>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <canvas id='abstracts_stats_by_dates' class="chart"></canvas>
-                </div>
-                <div class="col-md-6">
-                    <canvas id='abstracts_stats_by_days_to_deadline' class="chart"></canvas>
-                </div>
-            </div>
+{main}
         </main>
     </div>
 </div>

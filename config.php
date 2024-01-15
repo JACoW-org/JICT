@@ -2,35 +2,30 @@
 
 // 2022.08.30 bY Stefano.Deiuri@Elettra.Eu
 
-$cws_config =array(
-	'global' =>array(	
+$cws_config =[
+	'global' =>[
 		'conf_name'			=>'', // IPAC XX
-		'conf_url'			=>'', // https://ipac_xx.org/
+		'conf_url'			=>'', // https://www.ipacXX.org/
 		
-		'mode'				=>'', // Indico OR SPMS
-
 		'indico_server_url' =>'', // https://indico.jacow.org
-		'indico_event_id'	=>'', // XX
+		'indico_event_id'	=>'', // XY
 		'indico_token'		=>'', // indp_....
 
-		'indico_client_id'	=>"",
-		'indico_secret'		=>"",
-		
-		'indico_oauth' 		=>[
-			'client_id' =>"",
-			'client_secret'    =>"",
-			'redirect_uri' =>""
+		'indico_oauth' =>[
+			'client_id'		=>"", // ask the Indico Team
+			'client_secret' =>"", // ask the Indico Team
+			'redirect_uri' 	=>""  // https://www.ipacXX.org/JICT/indico_oauth.php
 			],
+
+		'root_url'			=>'', // https://www.ipacXX.org/JICT
+		'root_path'			=>'', // /var/www/html/ipacXX/JICT';
+
+		'location'			=>'', // Malmö, Sweden
+//		'date_start'		=>'', // 2099-05-19
+//		'date_end'			=>'', // 2099-05-23
 
 		'cws_timezone'		=>'', // Australia/Melbourne
 		
-		'root_url'			=>'', // https://www.test.eu/ipac_xx
-		'root_path'			=>'', // /var/www/html/ipac_xx';
-
-		'location'			=>'', // Malmö, Sweden
-		'date_start'		=>'', // 2099-05-19
-		'date_end'			=>'', // 2099-05-23
-
         'dates' =>[
             'conference' =>[ 'from' =>'', 'to' =>'' ],
             'abstracts_submission' =>[ 'from' =>'', 'to' =>'' ],
@@ -41,9 +36,10 @@ $cws_config =array(
 
 		'data_path'			=>'{root_path}/data',
 		'out_path'			=>'{root_path}/html',
+		'logs_path'			=>'{root_path}/logs',
 		'tmp_path'			=>'{root_path}/tmp',
 		
-		'cron_enabled'		=>true,
+//		'cron_enabled'		=>false,
 		
 		'wget_options'		=>'-q',
 		
@@ -87,10 +83,16 @@ $cws_config =array(
 		'label_y'			=>'Please check your e-mail',
 		'label_r'			=>'Please check your e-mail',
 		'label_nofiles' 	=>'No valid files uploaded yet'
-	),
+		],
 	
 	//-------------------------------------------------------------------------------------------------
-	'indico_importer' =>array(
+	'cron' =>[
+		'name'					=>'Cron job',
+		'enabled'				=>false
+		],
+
+	//-------------------------------------------------------------------------------------------------
+	'indico_importer' =>[
 		'name'					=>'Indico Importer',
 		'cron'					=>'*:00',
 
@@ -116,10 +118,10 @@ $cws_config =array(
 
 		'export_refs'			=>'{root_path}/exports/refs.csv',
 		'export_transp'			=>'{out_path}/transparencies.csv'
-	    ),
+		],
 
 	//-------------------------------------------------------------------------------------------------
-	'indico_stats_importer' =>array(
+	'indico_stats_importer' =>[
 		'name'				    =>'Indico Statistics Importer',
 		'cron'				    =>'*:05',
 
@@ -141,19 +143,21 @@ $cws_config =array(
         'out_registrants'	    =>'{data_path}/registrants.json',
 		'out_last_nums'			=>'{data_path}/last_nums.json',
 		'out_revisions'			=>'{data_path}/papers-revisions.json',
-	    ),
+		],
 
 	//-------------------------------------------------------------------------------------------------
-	'data_bak' =>array(
+	'data_bak' =>[
 		'name'			=>'Data Backup',
 		'cron'			=>'*:59',
-	),
+		],
 
     //-------------------------------------------------------------------------------------------------
-	'page_dashboard' =>array(
+	'page_dashboard' =>[
 		'allow_roles'		=>[ '*' ],
 
 		'name'				    =>'Dashboard',
+
+		'order'					=>[ 'abstracts', 'registrants', 'country', 'payments', 'papers' ],
 
         'in_abstracts_stats'	=>'{data_path}/abstracts_stats.json',
         'in_registrants'	    =>'{data_path}/registrants.json',
@@ -163,75 +167,18 @@ $cws_config =array(
 
 		// out
 		'default_page'		    =>'{app}/index.php'        
-	    ),
+		],
 
 	//-------------------------------------------------------------------------------------------------
-	'make_colors_css' =>array(
+	'make_colors_css' =>[
 		'name'				=>'Colors Style Sheet',
 		'cron'				=>'*:05',
 
         'out_css'           =>'{out_path}/colors.css'
-	),
-
-	//-------------------------------------------------------------------------------------------------
-/* 	'make_chart_abstracts' =>array(
-		'name'				=>'Chart Abstracts Submission',
-		'cron'				=>'*:10',
-		
-		'xtract'			=>'abstractsubmissions',
-		'y_title'			=>'Abstracts',
-		'startdate'			=>false, // ex. Y-m-d '2017-1-1', m =(month -1) 1 = feb
-		
-		// in
-		'chart_js'			=>'chart.js',
-		'chart_html'		=>'chart.html',
-
-		// out
-		'out_js'			=>'chart_abstracts.js',
-		'out_html'			=>'chart_abstracts.html'
-	), */
+		],
 		
 	//-------------------------------------------------------------------------------------------------
-/* 	'make_chart_papers' =>array(
-		'name'				=>'Chart Papers Submission',
-		'cron'				=>'*:10',
-		
-		'y_title'			=>'Papers',
-		'startdate'			=>false,
-		
-		// in		
-		'in_stats'			=>'{data_path}/stats.json', // Indico
-
-		'chart_js'			=>'chart.js',
-		'chart_html'		=>'chart.html',
-		
-		// out
-		'out_js'			=>'chart_papers.js',
-		'out_html'			=>'chart_papers.html'
-	),	 */	
-		
-	//-------------------------------------------------------------------------------------------------
-/* 	'make_chart_registrants' =>array(
-		'name'				=>'Chart Registrants',
-		'cron'				=>'*:10',
-		
-		'xtract'			=>'regstats',
-		'y_title'			=>'Registrants',
-		'startdate'			=>false,
-		
-		// in		
-		'chart_js'			=>'chart.js',
-		'chart_html'		=>'chart.html',
-
-		// out
-		'out_js'			=>'chart_registrants.js',
-		'out_html'			=>'chart_registrants.html',
-        
-        'out_registrants'   =>'{data_path}/registrants.json'
-	),		 */
-		
-	//-------------------------------------------------------------------------------------------------
-	'page_authors' =>array(
+	'page_authors' =>[
 		'name'				=>'Authors',
 
 		'allow_roles'		=>[ '*' ],
@@ -244,10 +191,10 @@ $cws_config =array(
 
 		// out
 		'default_page'		=>'{app}/index.php'
-	), 
+		], 
 
 	//-------------------------------------------------------------------------------------------------
-	'page_statistics' =>array(
+	'page_statistics' =>[
 		'name'				=>'Statistics',
 		'allow_roles'		=>[ '*' ],
 
@@ -263,10 +210,10 @@ $cws_config =array(
 
 		// out
 		'default_page'		=>'{app}/index.php'
-	), 
+		], 
 
 	//-------------------------------------------------------------------------------------------------
-	'page_slides' =>array(
+	'page_slides' =>[
 		'name'				=>'Slides',
 		'allow_roles'		=>[ 'WSA', 'WSP' ],		
 
@@ -275,18 +222,18 @@ $cws_config =array(
 
 		// in
 		'in_programme'		=>'{data_path}/programme.json',
-		'in_status'			=>'{data_path}/talks_status.json',
+		'in_status'			=>'{data_path}/slides.json',
 
 		'template'			=>'template.html',
 
 		// out
-		'out_status'		=>'{data_path}/talks_status.json',
+		'out_status'		=>'{data_path}/slides.json',
 		
 		'default_page'		=>'{app}/index.php'
-	), 
+		], 
 
 	//-------------------------------------------------------------------------------------------------
-	'page_papers' =>array(
+	'page_papers' =>[
 		'name'				=>'Papers',
 
 		'allow_roles'		=>[ '*' ],
@@ -307,10 +254,10 @@ $cws_config =array(
 
 		// out
 		'default_page'		=>'{app}/index.php'
-	), 
+		], 
 
 	//-------------------------------------------------------------------------------------------------
-	'page_authors_check' =>array(
+	'page_authors_check' =>[
 		'name'			=>'Authors Check',
 		'cron'			=>'*:05',
 //		'cron_options'	=>'-f',
@@ -328,10 +275,10 @@ $cws_config =array(
 		// out
 		'default_page'	=>'{app}/index.php',
 		'out_data'		=>'{data_path}/author_reception.json'
-	), 
+		], 
 
 	//-------------------------------------------------------------------------------------------------
-	'make_page_participants' =>array(
+	'make_page_participants' =>[
 		'name'				=>'Registrants',
 		'cron'				=>'*:12',
 		
@@ -353,10 +300,10 @@ $cws_config =array(
 		'out_js'			=>'chart_participants.js',
 		'out_css'			=>'participants.css',		
 		'out_html'			=>'participants.html'
-	),
+		],
 		
 	//-------------------------------------------------------------------------------------------------
-	'make_page_programme' =>array( 
+	'make_page_programme' =>[
 		'name'			=>'Programme',
 		'cron'			=>'*:10',
 		
@@ -386,10 +333,10 @@ $cws_config =array(
 		// out
 		'out_path'		=>'{out_path}/programme',
 		'ics'			=>'{app_out_path}/programme.ics'
-	),
+		],
 		
 	//-------------------------------------------------------------------------------------------------
-	'app_paper_status' =>array(
+	'app_paper_status' =>[
 		'name'			=>'App Paper Status',
 
 		'echo_mode'		=>'web',
@@ -410,10 +357,10 @@ $cws_config =array(
 
 		// out
 		'log'			=>'{app_data_path}/usage.log'
-	),
+		],
 		
 	//-------------------------------------------------------------------------------------------------
-	'app_poster_police' =>array(
+	'app_poster_police' =>[
 		'name'			=>'App Poster Police',
 
 		'allow_roles'		=>[ 'WSA', 'WPP' ],
@@ -435,7 +382,7 @@ $cws_config =array(
 		// out
 		'out_posters'	=>'{data_path}/posters.json',
         'out_posters_status'    =>'{data_path}/posters-status.json'
-	),
+		],
 	
 	
 	//-------------------------------------------------------------------------------------------------
@@ -458,7 +405,7 @@ $cws_config =array(
 
 
 	//-------------------------------------------------------------------------------------------------
-	'page_edots' =>array(
+	'page_edots' =>[
 		'name'				=>'Paper Processings Status (Dotting Board)',
 
 		'echo_mode'			=>'web',
@@ -478,10 +425,10 @@ $cws_config =array(
 
 		// in
 		'in_papers'			=>'{data_path}/papers.json'
-	),	
+		],	
 		
 	//-------------------------------------------------------------------------------------------------
-	'page_po_status' =>array(
+	'page_po_status' =>[
 		'name'			=>'Proceedings Office Status',
 
 		'echo_mode'		=>'web',
@@ -500,10 +447,10 @@ $cws_config =array(
 		'in_editors'	=>'{data_path}/editors.json',
 		'in_papers'		=>'{data_path}/papers.json',
 		'in_stats'		=>'{data_path}/stats.json'
-	),
+		],
 		
 	//-------------------------------------------------------------------------------------------------
-	'barcode' =>array(
+	'barcode' =>[
 		'name'			=>'BarCode Page',
 		
 		'echo_mode'		=>'web',
@@ -524,8 +471,8 @@ $cws_config =array(
 		// in
 		'template_html'	=>'template.html',
 		'po'			=>'{data_path}/po.json'
-	)
-);
+		]
+	];
 
 
 if (empty($cws_config['global']['root_path'])) require( 'conference-config.php' );

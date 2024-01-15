@@ -11,7 +11,7 @@
 */
 
 require( '../config.php' );
-require_lib( 'cws', '1.0' );
+require_lib( 'jict', '1.0' );
 require_lib( 'indico', '1.0' );
 
 session_start();
@@ -34,7 +34,7 @@ $T->set([
     'conf_name' =>$cfg['conf_name'],
     'user' =>__h( 'small', $user['email'] ),
 //     ." " .__h( 'i', "", [ 'class' =>'fa fa-power-off', 'onClick' =>"document.location =\"$_SERVER[PHP_SELF]?cmd=logout\"" ]),
-    'scripts' =>"<script src='../html/jquery.sparkline.min.js'></script>\n<script src='../html/chart.min.js'></script>"
+    'scripts' =>"<script src='../dist/jquery.sparkline.min.js'></script>\n<script src='../dist/chart.min.js'></script>"
     ]);
 
 $vars =[
@@ -104,10 +104,13 @@ if (!empty($Indico->data['editing_tags'])) {
             $percent =round( $percent, ($percent < 5 ? 1 : 0) );
             $tags .="<tr><th>$label</th><td>$value</td><td>$percent%</td></tr>\n";
         }
-    }
+	}
+
+} else {
+	$tags ="<i>No data available!</i>";
 }
 
-
+$editor_content =false;
 if (!empty($Indico->data['editors'])) {
     foreach ($Indico->data['editors'] as $x) {
         $serie['status_indico_1st']['Accepted'] +=$x['stats']['g'];
@@ -131,8 +134,20 @@ if (!empty($Indico->data['editors'])) {
     }
 
     $options =false;
-    
+
+	$editor_content ="<table class='values editors'>\n"
+	    ."<thead>"
+	    ."<tr><th>Name</th><th>" .implode( "</th><th>", array_keys( $row )) ."</th></tr>"
+	    ."</thead>"
+	    ."<tbody>"
+	    .$editors
+	    ."</tbody>"
+	    ."</table>\n";
+
     $js .="\$('.sparklines_editor').sparkline( 'html', { enableTagOptions: true, sliceColors: " .json_encode( $sliceColors ) .", offset: -90 });\n";
+
+} else {
+	$editor_content ="<i>No data available!</i>";
 }
 
 
@@ -144,17 +159,7 @@ $content .="</div>\n";
 
 $content .="<div class='row p-5'><div class='col-md-6'>\n<h2>Tags</h2>\n<table class='values'>\n$tags\n</table>\n</div>\n";
 
-$content .="<div class='col-md-1'></div><div class='col-md-5'>"
-    ."<h2>Editors</h2>"
-    ."<table class='values editors'>\n"
-    ."<thead>"
-    ."<tr><th>Name</th><th>" .implode( "</th><th>", array_keys( $row )) ."</th></tr>"
-    ."</thead>"
-    ."<tbody>"
-    .$editors
-    ."</tbody>"
-    ."</table>\n"
-    ."</div>\n"
+$content .="<div class='col-md-1'></div><div class='col-md-5'>\n<h2>Editors</h2>\n$editor_content</div>\n"
     ."</div>\n";
 
 

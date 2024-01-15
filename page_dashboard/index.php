@@ -8,7 +8,7 @@
 */
 
 require( '../config.php' );
-require_lib( 'cws', '1.0' );
+require_lib( 'jict', '1.0' );
 require_lib( 'indico', '1.0' );
 
 define( 'DAYS', 86400 );
@@ -24,6 +24,76 @@ $Indico->load();
 $user =$Indico->auth();
 if (!$user) exit;
 
+$old_confs =[
+    'ipac23' =>import_data_conf( 'ipac23' )
+    ];
+
+//echo sprintf( '<pre>%s</pre>', print_r( $old_confs, true )); return;
+
+$colors =[ 
+    '49,139,66', // verde
+    '47,75,140', // blu
+    '186,31,50',  // rosso
+    '114,135,206', // azzurro
+    '255,126,0', // arancio
+    ];
+
+$main_parts =[ 
+    'papers' =>
+'<div class="row">
+<div class="col-md-6">
+    <canvas id="papers_by_dates" class="chart"></canvas>
+</div>
+<div class="col-md-6">
+    <canvas id="papers_by_days_to_deadline" class="chart"></canvas>
+</div>
+</div>',
+
+    'registrants' =>
+'<div class="row">
+<div class="col-md-6">
+    <canvas id="registrants_by_dates" class="chart"></canvas>
+</div>
+<div class="col-md-6">
+    <canvas id="registrants_by_days_to_deadline" class="chart"></canvas>
+</div>
+</div>',
+
+    'payments' =>
+'<div class="row">
+<div class="col-md-6">
+    <canvas id="payments_by_dates" class="chart"></canvas>
+</div>
+<div class="col-md-6">
+    <canvas id="payments_by_days_to_deadline" class="chart"></canvas>
+</div>
+</div>',
+
+    'country' =>
+'<div class="row">
+<div class="col-md-6">
+    <canvas id="registrants_country" class="chart"></canvas>
+</div>
+<div class="col-md-6">
+    <canvas id="registrants_country_code" class="chart"></canvas>
+</div>
+</div>',
+
+    'abstracts' =>
+'<div class="row">
+<div class="col-md-6">
+    <canvas id="abstracts_stats_by_dates" class="chart"></canvas>
+</div>
+<div class="col-md-6">
+    <canvas id="abstracts_stats_by_days_to_deadline" class="chart"></canvas>
+</div>
+</div>'
+];
+
+$main =false;
+foreach ($cfg['order'] as $order) {
+    $main .=str_replace( '"row"', '"row" id="grp_'.$order.'"', $main_parts[$order] );
+}
 
 $T =new TMPL( 'template.html' );
 $T->set([
@@ -34,11 +104,12 @@ $T->set([
     'user' =>__h( 'small', $user['email'] ),
     'path' =>'./',
     'scripts' =>false,
-    'js' =>false
+    'js' =>false,
+    'main' =>$main
     ]);
 
 
-$payments =import_payments();
+//$payments =import_payments();
 
 $vars =[ 
     'page_title' =>APP_NAME, 
@@ -111,13 +182,13 @@ $charts[$chart_id] =[
     ];
 
 $charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME, $Indico->data[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>10 ] );
-$vars[ $group .'_n' ] =number_format( $sum, 0, ',', '.' );;
+$vars[ $group .'_n' ] =number_format( $sum, 0, ',', '.' );
 
 
 
 // PAYMENTS -------------------------------------------------------------------
 
-$group ='payments';
+/* $group ='payments';
 $id ='by_dates';
 $chart_id ="${group}_${id}";
 $charts[$chart_id] =[
@@ -140,7 +211,7 @@ $charts[$chart_id] =[
     ];
 
 $charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME,  $payments[$id]['count'], [ 'sum' =>true ] );
-$vars['payments_n'] =number_format( $sum, 0, ',', '.' );;
+$vars['payments_n'] =number_format( $sum, 0, ',', '.' ); */
 
 
 
@@ -172,15 +243,20 @@ $charts[$chart_id] =[
     ];
 
 $dtd_limit =-15;
-$charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME, $Indico->data[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>10 ] );
+$x_upper_limit =0;
+
+$charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME, $Indico->data[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit ] );
 $vars['abstracts_n'] =number_format( $sum, 0, ',', '.' );
 
 
-for ($year =22; $year >=19; $year --) {
+/* for ($year =22; $year >=19; $year --) {
     $charts[$chart_id]['series']['IPAC'.$year] =import_data( "abstracts-ipac${year}.txt", $dtd_limit );
+} */
+
+$group ='abstracts';
+foreach ($old_confs as $cname =>$cdata) {
+    $charts[$chart_id]['series'][$cname] =get_chart_serie( $cname, $cdata[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit  ] );
 }
-
-
 
 // REGISTRANTS -------------------------------------------------------------------
 
@@ -207,15 +283,17 @@ $charts[$chart_id] =[
     'series' =>false
     ];
 
-$dtd_limit =-120;
-$charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME, $Indico->data[$group]['stats'][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit ] );
+$dtd_limit =-200;
+$x_upper_limit =0;
+$charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME, $Indico->data[$group]['stats'][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit ] );
 $vars['registrants_n'] =number_format( $sum, 0, ',', '.' );
 
+foreach ($old_confs as $cname =>$cdata) {
+    $charts[$chart_id]['series'][$cname] =get_chart_serie( $cname, $cdata[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit ] );
+}
 
-
-$year =17;
-$charts[$chart_id]['series']['IPAC'.$year] =import_data( "${group}-ipac${year}.txt" );
-
+/* $year =17;
+$charts[$chart_id]['series']['IPAC'.$year] =import_data( "${group}-ipac${year}.txt" ); */
 
 // COUNTRIES -------------------------------------------------------------------
 
@@ -278,8 +356,13 @@ const chart = new Chart(document.getElementById(\"registrants_country_code\").ge
 });
 ";
 
-foreach([ 'papers', 'payments', 'country'] as $k) {
-    if (!$vars[$k.'_n']) $vars['js'] .="$('#$k').hide();\n";
+
+foreach([ 'papers', 'payments', 'country' ] as $k) {
+    if (!$vars[$k.'_n']) {
+        $vars['js'] .="$('#$k').hide();\n";
+        $vars['js'] .="$('#grp_$k').hide();\n";
+
+    }
 }
 
 $T->set( $vars );
@@ -289,18 +372,12 @@ echo $T->get();
 
 //-----------------------------------------------------------------------------
 function make_charts( $_def ) {
-    global $vars;
+    global $vars, $colors;
 
     $out =false;
 
     $cfg =[
-        'colors' =>[ 
-            '47,75,140', // blu
-            '186,31,50',  // rosso
-            '49,139,66', // verde
-            '114,135,206', // azzurro
-            '255,126,0', // arancio
-            ]
+        'colors' =>$colors
         ];
 
     $color =$cfg['colors'][1];
@@ -361,7 +438,7 @@ function make_charts( $_def ) {
                 ];
 
             if ($chart['type'] == 'scatter') {
-                $datasets[$s]['pointRadius'] =1;
+                $datasets[$s]['pointRadius'] =count( $serie ) > 25 ? 0 : 1;
                 if ($s > 0) $datasets[$s]['backgroundColor'] ="rgba( " .$cfg['colors'][$s] .", 0 )";
             }
 
@@ -444,6 +521,34 @@ function import_payments() {
 }
 
 
+
+//-----------------------------------------------------------------------------
+function import_data_conf( $_name ) {
+    $data =file_read_json( $_name .'.json', true );
+
+    foreach ($data as $grp =>$x) {
+        if (!empty($x['dates']['deadline'])) {
+            $serie =[];
+
+            $ts_deadline =strtotime( substr( $x['dates']['deadline'], 0, 10 ));
+        
+            foreach ($x['history'] as $date =>$val) {
+                if ($val || true) {
+                    $ts =strtotime( $date );
+                    $ttd =($ts -$ts_deadline) /86400;
+                    $serie[$ttd] =$val;
+                }
+            }
+
+            $data[$grp]['by_days_to_deadline'] =$serie;
+        }
+    }
+
+    return $data;
+}
+
+
+
 //-----------------------------------------------------------------------------
 function import_data( $_fname, $_dtd_limit =-100 ) {
     $out =[];
@@ -479,6 +584,9 @@ function get_chart_serie( $_serie_name, $_data, $_cfg =[]) {
 
     $serie =[];
     
+    if (!isset($_cfg['x_low_limit'])) $_cfg['x_low_limit'] =false;
+    if (!isset($_cfg['x_upper_limit'])) $_cfg['x_upper_limit'] =false;    
+
     $ldate_ts =false;
     $sum =0;
 
@@ -486,7 +594,7 @@ function get_chart_serie( $_serie_name, $_data, $_cfg =[]) {
         if (!empty($_cfg['by_dates_show_zero'])) {
             $date_ts =strtotime($x);
             if ($ldate_ts && ($date_ts -$ldate_ts >DAYS)) {
-                for ($ts =$ldate_ts +DAYS; $ts < $date_ts && (empty($_cfg['x_upper_limit']) || $ts <= $_cfg['x_upper_limit']); $ts +=DAYS) {
+                for ($ts =$ldate_ts +DAYS; $ts < $date_ts && ($_cfg['x_upper_limit'] === false || $ts <= $_cfg['x_upper_limit']); $ts +=DAYS) {
                     $serie[] =[ 'x' =>date( 'y-m-d', $ts ), 'y' =>0 ];
                 }
             }
@@ -499,14 +607,14 @@ function get_chart_serie( $_serie_name, $_data, $_cfg =[]) {
         if ($_cfg['x_type'] == 'date') {
             $x_ts =strtotime($x);
 
-            if ((empty($_cfg['x_low_limit']) || $x_ts >= $_cfg['x_low_limit'])
-                && (empty($_cfg['x_upper_limit']) || $x_ts <= $_cfg['x_upper_limit'])) $serie[] =[ 'x' =>$x, 'y' =>$val_y ];
+            if (($_cfg['x_low_limit'] === false || $x_ts >= $_cfg['x_low_limit'])
+                && ($_cfg['x_upper_limit'] === false || $x_ts <= $_cfg['x_upper_limit'])) $serie[] =[ 'x' =>$x, 'y' =>$val_y ];
         
             if (!empty($_cfg['by_dates_show_zero'])) $ldate_ts =$date_ts;
 
         } else {
-            if ((empty($_cfg['x_low_limit']) || $x >= $_cfg['x_low_limit'])
-                && (empty($_cfg['x_upper_limit']) || $x <= $_cfg['x_upper_limit'])) $serie[] =[ 'x' =>$x, 'y' =>$val_y ];
+            if (($_cfg['x_low_limit'] === false || $x >= $_cfg['x_low_limit'])
+                && ($_cfg['x_upper_limit'] === false || $x <= $_cfg['x_upper_limit'])) $serie[] =[ 'x' =>$x, 'y' =>$val_y ];
         }
 
     }

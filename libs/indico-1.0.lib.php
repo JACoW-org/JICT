@@ -2,6 +2,7 @@
 
 /* by Stefano.Deiuri@Elettra.Eu
 
+2023.11.27 - handle public access mode
 2023.03.01 - fix session block handlers
 2022.08.29 - remove edots
 2022.08.18 - save_citations
@@ -24,7 +25,7 @@ require( 'cachedata-1.1.class.php' );
 
 define( 'FAIL_QA_STRING', 'his revision has failed QA.' );
 
-define( 'MAP_STATUS', [ 'accepted' =>'g', 'needs_submitter_confirmation' =>'y', 'needs_submitter_changes' =>'r', 
+define( 'MAP_STATUS', [ 'accepted' =>'g', 'acceptance' =>'g', 'needs_submitter_confirmation' =>'y', 'needs_submitter_changes' =>'r', 
 'assigned' =>'a', 'nofiles' =>'nofiles', 'ready_for_review' =>'files', 'rejected' =>'x' ]);
 
 //-----------------------------------------------------------------------------
@@ -50,6 +51,16 @@ class INDICO extends CWS_OBJ {
 	//-----------------------------------------------------------------------------
 	function auth() {
 		session_start();
+
+		if (empty($this->cfg['indico_oauth']) || empty($this->cfg['indico_oauth']['client_id'])) {
+			$user =[
+				'full_name' =>'public',
+				'email' =>'public',
+				'public' =>true
+				];
+
+			return $user;
+		}
 
 		$login_message ="To use the utility please login with your Indico account<br /><br /><a href='$_SERVER[PHP_SELF]?cmd=login'>Log In</a>";
 
@@ -239,9 +250,6 @@ class INDICO extends CWS_OBJ {
 			}
 		*/
 
-		$this->import_abstracts_list();
-		$this->import_registrants();
-
 		$this->verbose( "\nProcess stats" );
 
 		$papers_list =$this->request( '/event/{id}/editing/api/paper/list', 'GET', false, 
@@ -272,7 +280,7 @@ class INDICO extends CWS_OBJ {
 				$paper_status =empty($x['editable']) ? 'nofiles' : $x['editable']['state'];
 				
 				$editor =false;
-				$istatus =false;
+				$istatus =false;  // indico status
 
 				if (!empty($x['editable']['editor'])) {
 					$rev =$x['editable']['revision_count'] .'-' .$x['editable']['state'];
@@ -288,7 +296,7 @@ class INDICO extends CWS_OBJ {
 
 					//if ($pedit_options['cache_time']) $pedit_options['cache_time']+=rand(0,3600);
 					$pedit =$this->request( "/event/{id}/api/contributions/$p[id]/editing/paper", 'GET', false, $pedit_options );
-					$editor =$pedit['editor']['full_name'];
+/* 					$editor =$pedit['editor']['full_name'];
 
 					if (empty($editor_stats[$editor])) {
 						$editor_stats[$editor] =[ 'g' =>0, 'y' =>0, 'r' =>0, 'a' =>0, 'revisions' =>0, 'qa_fail' =>0 ];
@@ -296,36 +304,62 @@ class INDICO extends CWS_OBJ {
 					}
 
 					if ($this->debug) echo sprintf( "\n%s [%d] - %s (%d revisions)\n", $pedit['contribution']['code'], $p['id'], $editor, count($pedit['revisions']) );
-
+ */
+					$first_editing_state =false;
 					foreach ($pedit['revisions'] as $r) {
-						if (!empty($r['editor']) && $r['editor']['full_name'] == $editor && $r['final_state']['name'] != 'undone') $editor_stats[$editor]['revisions'] ++;
+						if ($r['is_editor_revision'] && $r['is_undone'] == false) {
+							$reditor =$r['user']['full_name'];
+							$editor_stats[$reditor]['revisions'] ++;
+
+							if (!$first_editing_state) {
+								$first_editing_state =empty($map_status[ $r['type']['name'] ]) ? $r['type']['name'] : $map_status[ $r['type']['name'] ];
+//								$first_editing_state =$r['type']['name'];
+								$editor =$reditor;
+							}
+						}
+
+//						if (!empty($r['editor']) && $r['editor']['full_name'] == $editor && $r['is_undone'] == false) $editor_stats[$editor]['revisions'] ++;
 					}
 
-					foreach ($pedit['revisions'] as $r_id =>$r) {
-						if (!empty($r['editor']) && $r['editor']['full_name'] == $editor) {
-							if ($this->debug) echo sprintf("%s | %s > %s\n", substr( $r['reviewed_dt'], 0, 16 ), $r['initial_state']['name'], $r['final_state']['name']);
-	
-							if ($r['initial_state']['name'] == 'ready_for_review' && !in_array( $r['final_state']['name'], [ 'ready_for_review', 'none', 'undone' ])) {
-								$istatus =$r['final_state']['name'];
+					if (empty($editor_stats[$editor])) {
+						$editor_stats[$editor] =[ 'g' =>0, 'y' =>0, 'r' =>0, 'a' =>0, 'revisions' =>0, 'qa_fail' =>0 ];
+						$editor_papers_list[$editor] =[ 'g' =>false, 'y' =>false, 'r' =>false, 'a' =>false ];
+					}
 
+					if ($first_editing_state) {
+						$editor_stats[$editor][$first_editing_state] =1 +(empty($editor_stats[$editor][$first_editing_state]) ? 0 : $editor_stats[$editor][$first_editing_state]);						
+						$editor_papers_list[$editor][$first_editing_state][] =$p['id'];
+						$editor_papers[$editor] =1 +(empty($editor_papers[$editor]) ? 0 : $editor_papers[$editor]);
+					}
+
+ 					$istate =false; // initial state
+					foreach ($pedit['revisions'] as $r_id =>$r) {
+						$state =$r['type']['name'];
+
+						if (!empty($r['editor']) && $r['editor']['full_name'] == $editor) {
+							if ($this->debug) echo sprintf("%s | %s > %s\n", substr( $r['created_dt'], 0, 16 ), $istate, $state);
+	
+							if ($istate == 'ready_for_review' && !in_array( $state, [ 'ready_for_review', 'none', 'undone' ])) {
 								if ($istatus == 'needs_submitter_confirmation' && !empty($pedit['revisions'][$r_id +1])) {
 									$rn =$pedit['revisions'][$r_id +1];
 
-									if ($rn['submitter']['full_name'] == $editor && $rn['final_state']['name'] == 'accepted') {
+									if ($rn['submitter']['full_name'] == $editor && $rn['type']['name'] == 'accepted') {
 										$r =$rn;
 										//$editor_stats[$editor]['revisions'] --;
-										$istatus =$r['final_state']['name'];
-										if ($this->debug) echo sprintf("%s | %s > %s\n", substr( $r['reviewed_dt'], 0, 16 ), $r['initial_state']['name'], $r['final_state']['name']);
+										$istatus =$state;
+										if ($this->debug) echo sprintf("%s | %s > %s\n", substr( $r['created_dt'], 0, 16 ), $istate, $state);
 									}
 								}
 	
-								$ymd =substr( $r['reviewed_dt'], 0, 10 );
+								$ymd =substr( $r['created_dt'], 0, 10 );
 								$days['processed'][$ymd] =1 +(empty($days['processed'][$ymd]) ? 0 : $days['processed'][$ymd]);
 
 								break;
 							}
 						}
-					}
+
+						$istate =$state;
+					} 
 
 					$ceditor =false;
 					foreach ($pedit['revisions'] as $revision) {
@@ -351,14 +385,14 @@ class INDICO extends CWS_OBJ {
 
 					$istatus =$map_status[$istatus];
 
-					echo sprintf( "%s - %s - %s (%s)\n", $pcode, substr( $r['reviewed_dt'], 0, 10 ), $istatus, $r['final_state']['name'] );
+					echo sprintf( "%s - %s - %s (%s)\n", $pcode, substr( $r['created_dt'], 0, 10 ), $istatus, $r['type']['name'] );
 
-					if ($istatus != "" && $istatus != 'x') {
+/* 					if ($istatus != "" && $istatus != 'x') {
 						$editor_stats[$editor][$istatus] =1 +(empty($editor_stats[$editor][$istatus]) ? 0 : $editor_stats[$editor][$istatus]);						
 						$editor_papers_list[$editor][$istatus][] =$p['id'];
 						$editor_papers[$editor] =1 +(empty($editor_papers[$editor]) ? 0 : $editor_papers[$editor]);
 					}
-
+ */
 //					if ($p['qa_fail_count']) $editor_stats[$editor]['qa_fail'] ++;
 				}
 
@@ -422,12 +456,14 @@ class INDICO extends CWS_OBJ {
     function import_registrants( $_details =true ) {
         global $cws_config;
 
-        if (strtotime($this->cfg['dates']['registration']['from']) > time()
-            || strtotime($this->cfg['dates']['registration']['to']) < time()
+/* 		$now =time();
+
+        if (strtotime($this->cfg['dates']['registration']['from']) > $now
+            || strtotime($this->cfg['dates']['registration']['to']) < $now
             ) {
 				unset($this->cfg['out_registrants']);
 				return false;
-			}		
+			}	 */	
 
 		$this->verbose( "Process registrants" );
 
@@ -522,21 +558,25 @@ class INDICO extends CWS_OBJ {
     }
 
     //-------------------------------------------------------------------------
-    function import_abstracts_list() {
-        if (strtotime($this->cfg['dates']['abstracts_submission']['from']) > time()
-            || strtotime($this->cfg['dates']['abstracts_submission']['to']) < time()
+    function import_abstracts() {
+		$now =time();
+
+/*         if (strtotime($this->cfg['dates']['abstracts_submission']['from']) < $now
+            || strtotime($this->cfg['dates']['abstracts_submission']['to']) < $now
             ) {
 				unset($this->cfg['out_abstracts_stats']);
 				unset($this->cfg['out_persons']);
 				return false;
 			}
-
+ */
 		$this->verbose( "Process Abstracts List" );
 
 		$data_key =$this->request( '/event/{id}/manage/abstracts/abstracts.json' );
 
         $persons =[];
         $abstracts =[];
+
+		$withdrawn =0;
 
 		$this->data['affiliations'] =[];
         $affiliations =&$this->data['affiliations'];
@@ -548,14 +588,7 @@ class INDICO extends CWS_OBJ {
 					$cf[$cfa['name']] =$cfa['value'];
 				}
 
-				$abstracts[ $x['id'] ] =[
-/* 					
-					'id' =>$x['id'],
-					'fid' =>$x['friendly_id'],
-	                'text' =>$x['content'],
-	                'footnote' =>$cf['Footnotes'],
-	                'agency' =>$cf['Funding Agency'],
-*/					
+				$abstracts[ $x['id'] ] =[			
 					'title' =>$x['title'],
 					'ts' =>strtotime( $x['submitted_dt'] )
 					];
@@ -576,6 +609,13 @@ class INDICO extends CWS_OBJ {
                 }
 
 //				if (!empty($cf['Footnotes'])) print_r($abstracts[ $x['id'] ]);
+			} else {
+				$abstracts[ $x['id'] ] =[			
+					'withdrawn' =>true,
+					'ts' =>strtotime( $x['submitted_dt'] )
+					];		
+					
+				$withdrawn ++;
 			}
         }
 
@@ -604,6 +644,8 @@ class INDICO extends CWS_OBJ {
 
         $this->data['abstracts_stats']['by_dates'] =$chart_by_dates;
         $this->data['abstracts_stats']['by_days_to_deadline'] =$chart_by_days_to_deadline;
+        $this->data['abstracts_stats']['count'] =count( $abstracts );
+        $this->data['abstracts_stats']['withdrawn'] =$withdrawn;
     }
 
 	//-------------------------------------------------------------------------
@@ -612,7 +654,7 @@ class INDICO extends CWS_OBJ {
             case 'indico_stats_importer': return $this->import_stats();
             case 'make_page_participants': return $this->import_registrants();
             case 'make_chart_registrants': return $this->import_registrants();
-            case 'make_chart_abstracts': return $this->import_abstracts_list();
+            case 'make_chart_abstracts': return $this->import_abstracts();
         } 
 
 		$prev_papers =$this->data['papers'];
@@ -710,9 +752,9 @@ class INDICO extends CWS_OBJ {
 								"source_type" =>false,
 								"pdf_url" =>false,
 								"created_ts" =>false,
-								'prev_status' =>false,
+//								'prev_status' =>false,
 								"status" =>false,
-                                "status_ts" =>false,
+//                                "status_ts" =>false,
 								"status_indico" =>false,
 								"paper_state" =>empty($editing_status[$pcode]) ? false : $editing_status[$pcode]['state'],
 								"revision_count" =>empty($editing_status[$pcode]) ? false : $editing_status[$pcode]['revision_count'],
@@ -773,9 +815,14 @@ class INDICO extends CWS_OBJ {
                         $p =$papers[$pcode];
 						
 						if (!empty($papers[$pcode]['revision_count']) && $papers_submission_ok) {
-							$new_revision =
-								$papers[$pcode]['revision_count'] != $prev_papers[$pcode]['revision_count']
-								|| $papers[$pcode]['paper_state'] != $prev_papers[$pcode]['paper_state'];
+							if (empty($prev_papers[$pcode])) {
+								$new_revision =true;
+
+							} else {
+								$new_revision =
+									$papers[$pcode]['revision_count'] != $prev_papers[$pcode]['revision_count']
+									|| $papers[$pcode]['paper_state'] != $prev_papers[$pcode]['paper_state'];
+							}
 
 							//echo ($new_revision ? '.' : '*');
 
@@ -810,33 +857,46 @@ class INDICO extends CWS_OBJ {
 									do {
 										$nr --;
 										$revision =$pedit['revisions'][$nr];
-									} while ($revision['final_state']['name'] == 'undone');
+									} while ($revision['is_undone']);
+									//	} while ($revision['final_state']['name'] == 'undone');
 
 									foreach ($revision['files'] as $f) {
 										if ($f['filename'] == "$pcode.pdf") $p['pdf_url'] =$f['external_download_url'];
 									}
-									$p['status_ts'] =strtotime( $revision['created_dt'] );
-									$p['prev_status'] =$map_status[ $revision['initial_state']['name'] ];
+
+//									$p['status_ts'] =strtotime( $revision['created_dt'] );
+//									$p['prev_status'] =$map_status[ $revision['initial_state']['name'] ];
 	
 									foreach ($revision['comments'] as $comment) {
 										if (strpos( $comment['text'], FAIL_QA_STRING )) $p['status_qa'] ='QA Failed';
 									}
 
 									// check QA ok & tags
-									foreach ($revision['tags'] as $tag) {
-										if (substr( $tag['code'], 0, 2 ) == 'QA') {
-											$p['status_qa'] =$tag['title'];
-											if ($p['status_qa'] == 'QA Approved') $p['qa_ok'] =true;
-										}
+									foreach ($pedit['revisions'] as $revision) {
+										if (empty($revision['is_undone']) && !empty($revision['is_editor_revision'])) {
+											$paper_tags =[];
+											foreach ($revision['tags'] as $tag) {
+												if (substr( $tag['code'], 0, 2 ) == 'QA') {
+													$p['status_qa'] =$tag['title'];
+													if ($p['status_qa'] == 'QA Approved') $p['qa_ok'] =true;
 
-										if (!$tag['system']) {
-											if (empty($editing_tags[$tag['verbose_title']])) $editing_tags[$tag['verbose_title']] =1;
-											else $editing_tags[$tag['verbose_title']] ++;
+												} else if (!$tag['system']) {
+													$paper_tags[] =$tag['verbose_title'];
+
+											//if (empty($editing_tags[$tag['verbose_title']])) $editing_tags[$tag['verbose_title']] =1;
+											//else $editing_tags[$tag['verbose_title']] ++;
+												}
+	 										}
+	
+											foreach (array_unique($paper_tags) as $tag) {
+												if (empty($editing_tags[$tag])) $editing_tags[$tag] =1;
+												else $editing_tags[$tag] ++;
+											}
 										}
 									}
-	
-									// tags
-/* 									foreach ($pedit['revisions'] as $revision) {
+
+		/* 							// tags
+ 									foreach ($pedit['revisions'] as $revision) {
 										foreach ($revision['tags'] as $tag) {
 											if (!$tag['system']) {
 												if (empty($editing_tags[$tag['verbose_title']])) $editing_tags[$tag['verbose_title']] =1;

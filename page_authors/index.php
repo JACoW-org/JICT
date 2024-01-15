@@ -9,7 +9,7 @@
 */
 
 require( '../config.php' );
-require_lib( 'cws', '1.0' );
+require_lib( 'jict', '1.0' );
 require_lib( 'indico', '1.0' );
 
 $cfg =config( 'page_authors' );
@@ -30,9 +30,9 @@ $T->set([
     'conf_name' =>$cfg['conf_name'],
     'user' =>__h( 'small', $user['email'] ),
     'path' =>'../',
-    'head' =>"<link rel='stylesheet' type='text/css' href='../html/datatables.min.css' /><link rel='stylesheet' type='text/css' href='../page_edots/colors.css' />",
+    'head' =>"<link rel='stylesheet' type='text/css' href='../dist/datatables/datatables.min.css' /><link rel='stylesheet' type='text/css' href='../page_edots/colors.css' />",
     'scripts' =>false,
-    '__scripts' =>"<script src='../html/datatables.min.js'></script>",
+    '__scripts' =>"<script src='../dist/datatables/datatables.min.js'></script>",
     '__head' =>"<link rel='stylesheet' type='text/css' href='../page_edots/colors.css' />",
     'js' =>false
     ]);

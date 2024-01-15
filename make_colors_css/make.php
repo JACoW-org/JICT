@@ -9,7 +9,7 @@
 */
 
 require( '../config.php' );
-require_lib( 'cws', '1.0' );
+require_lib( 'jict', '1.0' );
 
 $cfg =config( 'make_colors_css' );
 

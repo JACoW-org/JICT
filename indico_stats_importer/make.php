@@ -9,10 +9,7 @@
 
 require( '../config.php' );
 
-//require( 'api_request-1.1.class.php' );
-//require( 'cachedata-1.1.class.php' );
-
-require_lib( 'cws', '1.0' );
+require_lib( 'jict', '1.0' );
 require_lib( 'indico', '1.0' );
 
 
@@ -37,6 +34,15 @@ for ($i =1; $i <count($argv); $i ++) {
 			return $Indico->cleanup( );
 			break;
 
+		case '-skip-abstracts':
+			$cfg['skip-abstracts'] =true;
+			break;
+
+		case '-skip-registrants':
+			$cfg['skip-registrants'] =true;
+			break;
+
+
         case '-help':
 			echo "Program options:\n"
 				."\t-cleanup: clear cached data\n"
@@ -48,11 +54,12 @@ for ($i =1; $i <count($argv); $i ++) {
 
 
 $Indico =new INDICO( $cfg );
-//print_r( $cfg );
 
 $Indico->load();
 
-$Indico->import();
+$Indico->import_stats();
+if (empty($cfg['skip-abstracts'])) $Indico->import_abstracts();
+if (empty($cfg['skip-registrants'])) $Indico->import_registrants();
 
 $Indico->save_all([ 'save_empty' =>true ]);
 

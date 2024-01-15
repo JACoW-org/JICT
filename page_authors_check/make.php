@@ -10,14 +10,9 @@
 */
 
 require( '../config.php' );
-require_lib( 'cws', '1.0' );
+require_lib( 'jict', '1.0' );
 require_lib( 'indico', '1.0' );
 $cfg =config();
-
-if (!INDICO) {
-    echo "Scripts available only for Indico!\n\n";
-    exit;
-}
 
 
 for ($i =1; $i <count($argv); $i ++) {
@@ -94,13 +89,21 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
         $pdf_fname ="$cfg[data_path]/papers/$pcode.pdf";
 
         if (!file_exists( $pdf_fname ) || !empty($cfg['force']) || $p['status_ts'] > filemtime( $pdf_fname )) { 
-            $Indico->verbose_next( " $pcode", false );
+            $Indico->verbose_next( " $pcode ($p[id])", false );
 
-            $pdf_url =$Indico->get_pdf_url( $p['id'] );
+			$pdf_url =$Indico->get_pdf_url( $p['id'] );
+
+			if (empty($pdf_url)) {
+            	$Indico->verbose_next( "!", false );
+
+			} else {
+
             $Indico->verbose_next( ".", false );
             
             $cmd ="wget -q -O $pdf_fname --header='Authorization: Bearer $token' $pdf_url; touch $pdf_fname";
             system( $cmd );
+
+//			echo "$cmd\n";
 
             $Indico->verbose_next( ".", false );
             $pdf_n ++;
@@ -154,7 +157,8 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
             $app_data[$pcode]['pdf_ts'] =$now;
             $app_data[$pcode]['title_lines'] =$tl;
             $app_data[$pcode]['head'] =$head;
-        }
+			}
+		}
 
         if ($p['revision_count'] > 1 && $p['prev_status'] == 'y') {
             $yellow_to_green[$pcode] =$p['status_ts'];

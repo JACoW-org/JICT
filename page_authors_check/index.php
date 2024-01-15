@@ -10,7 +10,7 @@
 */
 
 require( '../config.php' );
-require_lib( 'cws', '1.0' );
+require_lib( 'jict', '1.0' );
 require_lib( 'indico', '1.0' );
 
 $cfg =config( 'page_authors_check' );
@@ -33,10 +33,9 @@ $T->set([
     'conf_name' =>$cfg['conf_name'],
     'user' =>__h( 'small', $user['full_name'] ),
     'path' =>'../',
-    'head' =>"<link rel='stylesheet' type='text/css' href='../html/datatables.min.css' />
-    <link rel='stylesheet' type='text/css' href='../page_edots/colors.css' />
+    'head' =>"<link rel='stylesheet' type='text/css' href='../page_edots/colors.css' />
     <link rel='stylesheet' type='text/css' href='style.css' />",
-    'scripts' =>"<script src='../html/datatables.min.js'></script>",
+    'scripts' =>"",
     'js' =>false
     ]);
 
@@ -102,7 +101,7 @@ if (!empty($_GET['action'])) {
 
 $done_n =0;
 $todo_n =0;
-$undone_n =3;
+$undone_n =0;
 $now =time();
 
 foreach ($Indico->data['data'] as $pcode =>$x) {

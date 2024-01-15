@@ -11,8 +11,8 @@ var cfg ={
 	change_page_delay: 10, // seconds
 	reload_data_delay: 120, // seconds	
 	pages: 1,
-	cols: 10,
-	rows: 33
+	cols: 7,
+	rows: 3
 	};
 	
 var active_page =0;

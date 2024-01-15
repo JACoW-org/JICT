@@ -67,3 +67,14 @@ div.status_bar_completed {
     padding: 2px 0 2px 0;
     border-radius: 10px;
 }
+
+
+div.status_bar_empty {
+    margin-top: 5px;
+    _background: #ff55da;
+    _color: black;
+    font-size: 10px;
+    font-style: italic;
+    padding: 2px 0 2px 0;
+    _border-radius: 10px;
+}
