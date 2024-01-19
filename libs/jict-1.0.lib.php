@@ -624,4 +624,193 @@ function __h( $_tag, $_content, $_attributes =false, $_raw_attributes =false ) {
 }
 
 
+
+/*-----------------------------------------
+*/
+define( 'CACHE_DIR', './cache' );
+
+class CACHEDATA {
+ var $cached, $mtime, $objfname, $age_sec;
+
+ //------------------------------------------------------------------------
+ function __construct( $_objname, $_maxage, $_cachedir =false, $_debug =false ) {
+	$this->cached =false;
+	$this->age_sec =0;
+ 
+	if ($_cachedir && !file_exists( $_cachedir)) mkdir( $_cachedir, 0770 );
+ 
+	$this->objfname =($_cachedir ? $_cachedir : CACHE_DIR) ."/$_objname";
+	
+	if (!file_exists( $this->objfname )) {
+		if ($_debug) echo "\n<!-- cachedata: " .$this->objfname ." not exist -->\n";
+		return;
+	}
+	
+	$this->mtime =filemtime( $this->objfname );
+	
+	if ($this->age() > $_maxage) {
+		if ($_debug) echo "\n<!-- cachedata: " .$this->objfname ." too old -->\n";
+		return;
+	}
+ 
+	$this->cached =true;
+ }
+
+ //------------------------------------------------------------------------
+ function check() {
+ 	if (!$this->cached) return false;
+	return true;
+ }
+ 
+ //------------------------------------------------------------------------
+ function touch() {
+	touch( $this->objfname );
+ }
+ 
+ //------------------------------------------------------------------------
+ function fname() {
+	return end(explode('/',$this->objfname));
+ }
+ 
+ //------------------------------------------------------------------------
+ function clear() {
+ 	if ($this->cached) {
+		@unlink( $this->objfname );
+		$this->cached =false;
+		$this->mtime =false;
+	}
+ }
+
+ //------------------------------------------------------------------------
+ function time() {
+	return $this->mtime;
+ }
+ 
+ //------------------------------------------------------------------------
+ function date( $_fmt ='r' ) {
+	return date( $_fmt, $this->mtime );
+ }
+ 
+ //------------------------------------------------------------------------
+ function age() {
+	$this->age_sec =time() - $this->mtime;
+	return $this->age_sec;
+ }
+
+ //------------------------------------------------------------------------
+ function get( &$_obj, $_info =false, $_return_cache =false, $_force_cache =false ) {
+ 	if ($this->cached || $_force_cache) {
+		$_obj =file_read_object( $this->objfname );
+		
+		if ($_info) $_obj ="\n<!-- begin_cache: " .substr( $this->objfname, strrpos( $this->objfname, '/' ) +1 ) .", age: " .$this->age_sec ." -->\n" .$_obj ."\n<!-- end_cache -->\n";
+		
+		if ($_return_cache) return $_obj;
+		
+		return true;
+	}
+	
+	return false;
+ }
+
+ //------------------------------------------------------------------------
+ function save( $_obj ) {
+	$this->cached =true;
+	return file_write_object( $this->objfname, $_obj );
+ }
+}
+
+
+/*-----------------------------------------
+*/
+class API_REQUEST {
+	var $api_url, $api_headers, $response_code, $result, $error, $cfg;
+	
+	//-----------------------------------------------------------------------------
+	function __construct( $_url ) {
+		$this->api_url =$_url;
+
+		$this->cfg =[
+			'http_timeout' =>60,
+			'authorization_header' =>false,
+            'header' =>"Accept: */*\r\n",
+            'header_content_type' =>"application/x-www-form-urlencoded",
+            'ignore_errors' =>false
+            ];
+	}
+	
+	//-----------------------------------------------------------------------------
+	function config( $_key, $_val ) {
+		$this->cfg[ $_key ] =$_val;
+	}
+
+	//-----------------------------------------------------------------------------
+	function configs( $_configs ) {
+		foreach ($_configs as $key =>$val) {
+			$this->cfg[ $key ] =$val;
+		}
+	}
+
+	//-----------------------------------------------------------------------------
+	function request( $_name =false, $_method ='GET', $_data =false ) {
+        $content =false;
+        if (!empty($_data)) {
+            if ($this->cfg['header_content_type'] == 'application/json') $content =json_encode( $_data );
+            else if (is_array($_data)) $content =http_build_query($_data);
+			else $content =$_data;
+        }
+
+		$this->request_options =array(	
+			'http' =>array(
+				'header'  =>($this->cfg['authorization_header'] ? "Authorization: " .$this->cfg['authorization_header'] ."\r\n" : false) 
+                    .$this->cfg['header']
+                    .(empty($this->cfg['header_content_type']) ? false : 'Content-Type:' .$this->cfg['header_content_type'] ."\r\n"),
+				'method'  =>$_method,
+				'timeout' =>$this->cfg['http_timeout'],
+                'ignore_errors' =>$this->cfg['ignore_errors'],
+				'content' =>$content
+                ));
+		
+		$s =@stream_context_create( $this->request_options );
+
+		$this->api_request =$this->api_url .$_name
+			.($_method == 'GET' && !empty($_data) ? '?' .http_build_query($_data) : false );
+
+		$result =@file_get_contents( $this->api_request, false, $s );
+
+		$headers =$this->parseHeaders( $http_response_header );
+		
+		$this->api_headers =$headers;
+		$this->response_code =$headers['reponse_code'];
+
+		if ($headers['reponse_code'] != 200) {
+			$this->result =$result;
+			$this->error =error_get_last();
+			
+		} else {
+            if (strpos( $headers['Content-Type'], 'html' )) $this->result =$result;
+			else $this->result =json_decode( $result, true );
+		}
+		
+		return $this->result;
+	}
+
+	//-----------------------------------------------------------------------------
+	function parseHeaders( $headers ) {
+		$head =[];
+
+		foreach( $headers as $k=>$v ) {
+			$t = explode( ':', $v, 2 );
+			if (isset( $t[1] )) {
+				$head[ trim($t[0]) ] = trim( $t[1] );
+				
+			} else {
+				$head[] = $v;
+				if( preg_match( "#HTTP/[0-9\.]+\s+([0-9]+)#",$v, $out ) ) $head['reponse_code'] = intval($out[1]);
+			}
+		}
+		
+		return $head;
+	}
+}
+
 ?>

@@ -20,9 +20,6 @@ https://codimd.web.cern.ch/s/d2XPNF5L9#Editing-states
 
 */
 
-require( 'api_request-1.1.class.php' );
-require( 'cachedata-1.1.class.php' );
-
 define( 'FAIL_QA_STRING', 'his revision has failed QA.' );
 
 define( 'MAP_STATUS', [ 'accepted' =>'g', 'acceptance' =>'g', 'needs_submitter_confirmation' =>'y', 'needs_submitter_changes' =>'r', 
