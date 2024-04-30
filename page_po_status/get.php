@@ -14,7 +14,7 @@ require_lib( 'jict', '1.0' );
 
 define( 'CFG_VERSION', 6 );
 
-class PO_STATUS extends CWS_OBJ {
+class PO_STATUS extends JICT_OBJ {
     var $ret;
 
 	//-------------------------------------------------------------------------

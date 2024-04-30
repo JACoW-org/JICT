@@ -118,7 +118,7 @@ if (empty($conf_day)) {
     }
 }
 
-//print_r( $Indico->data['programme'] );
+//print_r( $Indico->data['programme'] ); return;
 
 $stats =false;
 $day_id =1;
@@ -128,7 +128,7 @@ foreach ($Indico->data['programme']['days'] as $day =>$x) {
     $day_ok =0;
 
     foreach ($x as $s) {
-        if (empty($s['poster_session'])) {
+        if (empty($s['poster_session']) && !empty($s['papers'])) {
             foreach ($s['papers'] as $pcode =>$p) {
                 $day_talks ++;
                 if (!empty($status[$pcode])) $day_ok ++;
@@ -179,7 +179,7 @@ $i =1;
 
 $rows =false;
 foreach ($Indico->data['programme']['days'][$conf_day] as $sid =>$s) {
-    if (empty($s['poster_session'])) {
+    if (empty($s['poster_session']) && !empty($s['papers'])) {
         foreach ($s['papers'] as $pcode =>$p) {
             $papers_id[$pcode] =$p['id'];
 
@@ -206,7 +206,7 @@ foreach ($Indico->data['programme']['days'][$conf_day] as $sid =>$s) {
     }
 }
 
-$day_status =ceil( count($rows)*100/$day_ok );
+$day_status =$day_ok ? ceil( count($rows)*100/$day_ok ) : 0;
 
 $thead .="<tr><th>" .strtr( implode( "</th><th>", array_keys( $rows[1] )), '_', ' ' ) ."</th></tr>\n";
 

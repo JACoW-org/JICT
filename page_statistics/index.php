@@ -86,7 +86,9 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
     }
 }
 
-arsort($serie['source_type_rfr']);
+//print_r( $serie ); exit;
+
+if (!empty($serie['source_type_rfr'])) arsort($serie['source_type_rfr']);
 
 $colors =$cfg['colors'];
 $sliceColors =[ $colors['g'], $colors['r'], $colors['y'], $colors['files'], $colors['a'], $colors['removed'] ];

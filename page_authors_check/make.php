@@ -39,11 +39,11 @@ for ($i =1; $i <count($argv); $i ++) {
 		case '-c':
 		case '-cleanup':
             echo "Remove temporary PDF files... ";
-            system( "rm -f $cfg[data_path]/papers/*.pdf" );
+            system( "rm -f $cfg[out_path]/*.pdf" );
             echo "OK\n";
 
             echo "Remove temporary TXT files... ";
-            system( "rm -f $cfg[data_path]/papers/*.txt" );
+            system( "rm -f $cfg[out_path]/*.txt" );
             echo "OK\n";
 
             echo "Remove temporary JPG files... ";
@@ -86,7 +86,7 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
     if ($p['status'] == 'g') {	
         $n ++;
         
-        $pdf_fname ="$cfg[data_path]/papers/$pcode.pdf";
+        $pdf_fname ="$cfg[out_path]/$pcode.pdf";
 
         if (!file_exists( $pdf_fname ) || !empty($cfg['force']) || $p['status_ts'] > filemtime( $pdf_fname )) { 
             $Indico->verbose_next( " $pcode ($p[id])", false );
@@ -95,6 +95,7 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
 
 			if (empty($pdf_url)) {
             	$Indico->verbose_next( "!", false );
+                print_r( $Indico->api ); exit;
 
 			} else {
 
@@ -120,7 +121,7 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
             $title_block =true;
             $head =false;
             
-            foreach (explode( "\n", file_read( "$cfg[data_path]/papers/$pcode.txt" ) ) as $line_nt) {
+            foreach (explode( "\n", file_read( "$cfg[out_path]/$pcode.txt" ) ) as $line_nt) {
 //					$line =trim($line_nt);
                 $line =preg_replace( '/[^[:print:]]/', "", trim($line_nt));
 
@@ -148,7 +149,7 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
             if (!$h) $h =800;
             $Indico->verbose_next( ".", false );
             
-            $cmd ="pdftoppm -f 1 -l 1 -scale-to 1600 -y 100 -H $h -gray -jpeg $cfg[data_path]/papers/$pcode.pdf >./images/$pcode.jpg";
+            $cmd ="pdftoppm -f 1 -l 1 -scale-to 1600 -y 100 -H $h -gray -jpeg $cfg[out_path]/$pcode.pdf >./images/$pcode.jpg";
             system( $cmd );
             $Indico->verbose_next( ".", false );
 
@@ -160,7 +161,7 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
 			}
 		}
 
-        if ($p['revision_count'] > 1 && $p['prev_status'] == 'y') {
+        if ($p['revision_count'] > 1 && !empty($p['prev_status']) && $p['prev_status'] == 'y') {
             $yellow_to_green[$pcode] =$p['status_ts'];
         }
     }

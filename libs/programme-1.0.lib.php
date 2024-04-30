@@ -8,7 +8,7 @@
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-class Programme extends CWS_OBJ {
+class Programme extends JICT_OBJ {
  var $abstracts;
  var $classes;
  var $programme;
@@ -47,25 +47,29 @@ class Programme extends CWS_OBJ {
  }
  
  //-----------------------------------------------------------------------------
-/*  
  function make_rooms_css() {
 	$colors =array( '#7FDBFF','#39CCCC','#3D9970','#2ECC40','#01FF70','#FFDC00','#FF851B','#FF4136','#85144b','#F012BE','#B10DC9','#AAAAAA','#DDDDDD' );
 	 
 	arsort( $this->programme['rooms'] );
-	print_r( $this->programme['rooms'] );
-	 
+//	print_r( $this->programme['rooms'] );
+
+	echo "Make rooms css...\n";
 	 
 	$c =0;
 	$css =false;
 	foreach ($this->programme['rooms'] as $room =>$n) {
-		if ($n) $css .=".room$room { background: " .$colors[$c] ."; }\n";
+		if ($n) {
+			$css .=sprintf( ".b_room%s { background: %s; }\n", $room, $colors[$c] );
+			echo sprintf( "%s %s\n",  str_pad( $room, 20, '.', STR_PAD_RIGHT ), $colors[$c] );
+		}
 		$c ++;
 	}
+
+	echo "\n";
 	
 	$this->verbose( "\n# Write programme-rooms.css", 1 );
 	file_write( OUT_PATH .'/programme-rooms.css', $css );
  }
-	  */
 	 
  //-----------------------------------------------------------------------------
  function make_abstracts() {
@@ -86,7 +90,7 @@ class Programme extends CWS_OBJ {
 		}
 	}
 	
-	$this->verbose_ok();
+	$this->verbose( "OK\n", 1 );
  }
 
  //-----------------------------------------------------------------------------
@@ -230,7 +234,7 @@ DESCRIPTION:Session: $S[title]
 
 		$menu =false;
 
-		$dow =array( 'Fri', 'Thu', 'Wed', 'Tue', 'Mon' );
+		$dow =[ 'Fri', 'Thu', 'Wed', 'Tue', 'Mon' ];
 		$daynt =0;
 		foreach ($days as $d) {
 			$daynt ++;
@@ -288,27 +292,6 @@ DESCRIPTION:Session: $S[title]
 			
 			if ($id == '999999_END') break;
 						
-			if ($S['code'] == 'THZG' && false) {
-
-				echo "\n!!!  $day | $id !!!\n";
-
-				$S['papers']['THZG01'] =[
-					'title' =>'Prize session presentation by the Chair',
-					'time_from' =>'14:30',
-					'time_to' =>'14:35'
-					];
-
-				$S['papers']['THZG02'] =[
-					'title' =>'Award cerimony of the 2 best student posters; award ceremony of the Touschek prize, presentation by the Touschek prize winner',
-					'time_from' =>'14:35',
-					'time_to' =>'14:50'
-					];
-
-				ksort($S['papers']);
-
-				print_r( $S['papers'] );
-			}
-
 			$sid =$S['code'];
 //            $sidb ="${sid}_${sidx}"; // Session id block
             $sidb ="S$sidx"; // Session id block
@@ -381,6 +364,7 @@ DESCRIPTION:Session: $S[title]
 					$fst =false;
 				}
 			}
+
 			$SHTML["{$sidb}_"] .="</table>";
 			$SHTML[$sidb] .="</table>";
 
@@ -407,13 +391,17 @@ DESCRIPTION:Session: $S[title]
 	$a =$b =false;
 
 	foreach ($_codes as $c) {
-		$a .="\t" .$html["_{$c}"] ."\n";
-		$b .=$html["{$c}_"] ."\n";
+		if ($c == 'EMPTY') {
+			$a .="\t" .$html["_{$c}"] ."\n";
+
+		} else {
+			$a .="\t" .$html["_{$c}"] ."\n";
+			$b .=$html["{$c}_"] ."\n";
+		}
 	}
 
 	$a =str_replace( '##W##', "$width%", $a );
 	$a =str_replace( '##OSID##', implode(',',$_codes), $a );
-
 	$b =str_replace( '##COLSPAN##', (count($_codes) +1), $b );
 	
 	return "<table border='0' cellpadding='3' cellspacing='0' class='prg'" .APP_TAB_W ."><tr valign='top'>\n"

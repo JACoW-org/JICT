@@ -53,7 +53,7 @@ function need_file() {
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-class CWS_OBJ {
+class JICT_OBJ {
     var $cfg =false;
     var $data =false;
     var $verbose_next =false;
@@ -203,33 +203,36 @@ function config( $_app =false, $_check_in_file_exit =false, $_check_in_file =tru
   
  $cfg =$cws_config[$_app];
 
- foreach (array( 'data_path', 'tmp_path', 'out_path' ) as $path_name) {
-	if (!isset($cfg[$path_name])) $$path_name =$cfg[$path_name] =$cws_config['global'][$path_name];
-	else {
+ foreach ([ 'data_path', 'tmp_path', 'out_path' ] as $path_name) {
+	if (!isset($cfg[$path_name])) {
+        $$path_name =$cfg[$path_name] =$cws_config['global'][$path_name];
+
+    } else {
 		$$path_name =$cfg[$path_name];
 	}
  }
- 
+
  foreach ($cws_config['global'] as $name =>$value) {
-	$value =str_replace( '{root_path}', ROOT_PATH, $value );
+    if (!is_array($value)) {
+        $value =str_replace( '{root_path}', ROOT_PATH, $value );       
+        cws_define( $name, $value );
 
-	if (strpos( $name, '_' ) !== false) {
-        list( $name1, $name2 ) =explode( '_', $name );
-
-	    if ($name1 == 'color') $cfg['colors'][$name2] =$value;
-	    else if ($name1 == 'label') $cfg['labels'][$name2] =$value;	 
+    } else {
+        foreach ($value as $name1 =>$value1) {
+            if (!is_array($value1)) {
+                $name2 =(in_array( $name, [ 'colors', 'labels' ] ) ? substr( $name, 0, -1 ) : $name) .'_' .$name1;
+                $cfg[$name2] =$value1;
+                cws_define( $name2, $value1 );
+            }
+        }
     }
-	
-	cws_define( $name, $value );
  }
 
  foreach ($cfg as $name =>$value) {
 	if (strpos( $name, '_' ) !== false) list( $name1, $name2 ) =explode( '_', $name );
     else $name1 =$name2 =false;
 	 
-	if ($name1 == 'color') $cfg['colors'][$name2] =$value;
-	else if ($name1 == 'label') $cfg['labels'][$name2] =$value;	 
-	else if ($name != 'colors' && $name != 'labels') {
+    if (!is_array($value)) {
 		$value =str_replace( '{app_data_path}', $data_path, $value );
 		$value =str_replace( '{app_out_path}', $out_path, $value );
 		$value =str_replace( '{app_tmp_path}', $tmp_path, $value );
@@ -295,6 +298,8 @@ function config( $_app =false, $_check_in_file_exit =false, $_check_in_file =tru
  date_default_timezone_set( CWS_TIMEZONE );
  
  $cws_echo_mode =$cfg['echo_mode'];
+
+// print_r( $cfg ); $d =get_defined_constants(true); print_r( $d['user'] ); exit;
 
  return $cfg;
 }

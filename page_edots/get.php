@@ -15,7 +15,7 @@ require_lib( 'jict', '1.0' );
 
 define( 'CFG_VERSION', 1 );
 
-class DOTTING_BOARD extends CWS_OBJ {
+class DOTTING_BOARD extends JICT_OBJ {
     var $ret;
 
 	//-------------------------------------------------------------------------

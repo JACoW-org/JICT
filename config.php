@@ -20,6 +20,11 @@ $cws_config =[
 		'root_url'			=>'', // https://www.ipacXX.org/JICT
 		'root_path'			=>'', // /var/www/html/ipacXX/JICT';
 
+		'data_path'			=>'{root_path}/data',
+		'out_path'			=>'{root_path}/html',
+		'logs_path'			=>'{root_path}/logs',
+		'tmp_path'			=>'{root_path}/tmp',
+
 		'location'			=>'', // Malmö, Sweden
 //		'date_start'		=>'', // 2099-05-19
 //		'date_end'			=>'', // 2099-05-23
@@ -33,11 +38,6 @@ $cws_config =[
             'registration' =>[ 'from' =>'', 'to' =>'', 'early_bird_to' =>'' ],
             'proceeding_office' =>[ 'from' =>'', 'to' =>'' ],
 			],
-
-		'data_path'			=>'{root_path}/data',
-		'out_path'			=>'{root_path}/html',
-		'logs_path'			=>'{root_path}/logs',
-		'tmp_path'			=>'{root_path}/tmp',
 		
 //		'cron_enabled'		=>false,
 		
@@ -54,7 +54,7 @@ $cws_config =[
 	
 		'logo'			=>'logo.png',
 
-        'colors'    =>[
+        'colors' =>[
             'primary'		=>'#0062a3',
             'secondary'	    =>'#d73d06',
             'r' 			=>'#FF4136',
@@ -68,7 +68,7 @@ $cws_config =[
             ],
 		
 		// Labels
-		'labels'			=>[
+		'labels' =>[
 			'files'		=>'Ready for processing',
 			'a'			=>'Assigned to an Editor',
 			'g'			=>'Paper successfully processed',
@@ -98,8 +98,8 @@ $cws_config =[
 
 		'cache_time'			=>600, // useful for test
 		'skip_sessions'			=>false,
-        'papers_hidden_sessions' =>[],
-        'refs_hidden_sessions' =>[],
+        'papers_hidden_sessions'=>[],
+        'refs_hidden_sessions'  =>[],
 		
 		'tmp_path'				=>'{tmp_path}/indico',
 		
@@ -274,7 +274,8 @@ $cws_config =[
 		
 		// out
 		'default_page'	=>'{app}/index.php',
-		'out_data'		=>'{data_path}/author_reception.json'
+		'out_data'		=>'{data_path}/author_reception.json',
+		'out_path'		=>'{data_path}/papers'
 		], 
 
 	//-------------------------------------------------------------------------------------------------
@@ -470,7 +471,7 @@ $cws_config =[
 		
 		// in
 		'template_html'	=>'template.html',
-		'po'			=>'{data_path}/po.json'
+		'in_papers'		=>'{data_path}/papers.json'
 		]
 	];
 

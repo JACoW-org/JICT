@@ -109,12 +109,15 @@ $T->set([
     ]);
 
 
-//$payments =import_payments();
+$payments =import_payments();
+
+//echo sprintf( '<pre>%s</pre>', print_r( $payments, true )); return;
 
 $vars =[ 
     'page_title' =>APP_NAME, 
     'registered_n' =>0,
     'papers_n' =>0,
+    'payments_n' =>0,
     'content' =>"",
     'js' =>""
     ];
@@ -188,7 +191,7 @@ $vars[ $group .'_n' ] =number_format( $sum, 0, ',', '.' );
 
 // PAYMENTS -------------------------------------------------------------------
 
-/* $group ='payments';
+$group ='payments';
 $id ='by_dates';
 $chart_id ="${group}_${id}";
 $charts[$chart_id] =[
@@ -211,7 +214,7 @@ $charts[$chart_id] =[
     ];
 
 $charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME,  $payments[$id]['count'], [ 'sum' =>true ] );
-$vars['payments_n'] =number_format( $sum, 0, ',', '.' ); */
+$vars['payments_n'] =number_format( $sum, 0, ',', '.' );
 
 
 
@@ -383,6 +386,8 @@ function make_charts( $_def ) {
     $color =$cfg['colors'][1];
 
     foreach ($_def as $canvas_id =>$chart) {
+        $x_label =$chart['x_label'] ?? "";
+
         $out .="
         var options ={
             plugins: {
@@ -411,7 +416,7 @@ function make_charts( $_def ) {
                 scales: {
                     xAxes: { 
                         title: {
-                            text: '$chart[x_label]',
+                            text: '$x_label',
                             display: true
                             }
                         }            
@@ -604,7 +609,7 @@ function get_chart_serie( $_serie_name, $_data, $_cfg =[]) {
 
         $val_y =(empty($_cfg['sum']) ? $y : $sum);
 
-        if ($_cfg['x_type'] == 'date') {
+        if (!empty($_cfg['x_type']) && $_cfg['x_type'] == 'date') {
             $x_ts =strtotime($x);
 
             if (($_cfg['x_low_limit'] === false || $x_ts >= $_cfg['x_low_limit'])

@@ -3,12 +3,12 @@
 // 2019.04.30 bY Stefano.Deiuri@Elettra.Eu
 
 require( '../config.php' );
-require_lib( 'cws','1.0' );
+require_lib( 'jict','1.0' );
 
 config( 'barcode' );
 
-if (!need_file( APP_PO )) {
-	echo_error( "\n\nTry to run spms_importer/make.php!" );
+if (!need_file( APP_IN_PAPERS )) {
+	echo_error( "\n\nTry to run indico_importer/make.php!" );
 	die;
 }
 
@@ -80,7 +80,7 @@ switch (_G('cmd')) {
 		$client_obj =read_client_obj( _G('client') );
 		
 		if ($client_obj && _G('pair_code') == $client_obj['pair_code'] && $paper_id) {
-			$db =file_read_json( APP_PO, true );
+			$db =file_read_json( APP_IN_PAPERS, true );
 			if (isset($db[$paper_id]['abstract_id'])) {
 				$action =_G('action');
 				$client_obj['paper_id'] =$paper_id;
@@ -101,7 +101,7 @@ switch (_G('cmd')) {
 	case 'get':
 		$client_obj =read_client_obj( $_SERVER['REMOTE_ADDR'] );
 		if ($client_obj) {
-			$db =file_read_json( APP_PO, true );
+			$db =file_read_json( APP_IN_PAPERS, true );
 			
 			$paper_id =$client_obj['paper_id'];
 			$abs_id =$db[$paper_id]['abstract_id'];

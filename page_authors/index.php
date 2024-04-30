@@ -127,7 +127,7 @@ if ($show == 'affiliations') {
     }
 }
 
-$thead .="<tr><th>" .str_replace( '_', '&nbsp;', implode( "</th><th>", array_keys(reset($rows)))) ."</th></tr>\n";
+if ($rows) $thead .="<tr><th>" .str_replace( '_', '&nbsp;', implode( "</th><th>", array_keys(reset($rows)))) ."</th></tr>\n";
 
 $content ="
 <p>Switch to " .($show == 'affiliations' ?  "<a href='index.php'>Authors</a>" : "<a href='index.php?show=affiliations'>Affiliations</a>") ."</h1>

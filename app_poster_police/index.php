@@ -23,13 +23,13 @@ require_lib( 'indico', '1.0' );
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-class PosterPolice extends CWS_OBJ {
+class PosterPolice extends JICT_OBJ {
  var $PP; // PosterPolicy
  var $PPS; // PosterPolicyStatus
  var $cfg;
  
  //-----------------------------------------------------------------------------
- function __construct() {
+ function __construct( $_cfg =false, $_load =false ) {
 	$this->PP =false;
 	$this->PPS =false;
 		
@@ -37,44 +37,20 @@ class PosterPolice extends CWS_OBJ {
 	$this->session =_G('session');
 	$this->poster =_G('poster');
 
-	$this->cfg =array( 
+	$this->cfg =[ 
 		'pps_fname' =>false
-		);
+		];
+
+	parent::__construct( $_cfg, $_load );
  }
  
  //-----------------------------------------------------------------------------
- public function config( $_cfg =false ) {
-	parent::config( $_cfg );
+ public function config( $_var =false, $_val =false ) {
+	parent::config( $_var, $_val );
 
 	if ($_cfg && $this->cfg['dummy_mode']) $this->cfg['sync_url'] ='http://' .$_SERVER['SERVER_NAME'] .str_replace( 'index.php', 'dummy_sync.php', $_SERVER['PHP_SELF'] );
 //	if ($_cfg && $this->cfg['dummy_mode']) $this->cfg['sync_url'] ='dummy_sync.php';
  }
- 
- //-----------------------------------------------------------------------------
-/*  function check_auth() {
-	$auth_code =md5(SPMS_PASSPHRASE .APP_PASSWORD .'OkeY!');
-	
-	if ($_SESSION['auth'] == $auth_code) return true;
-	
-	if (isset($_POST['pass']) && $_POST['pass'] == APP_PASSWORD) {
-		$_SESSION['auth'] =$auth_code;
-		return true;
-	}
-	
-	$this->cfg['dummy_mode'] =false;
-	
-	$this->draw_begin();
-	echo "<!--\n$_SERVER[HTTP_USER_AGENT]\n-->
-<div class='login'>
-<form method='POST'>
-<h1>" .CONF_NAME ." PosterPolice</h1>
-<input type='password' name='pass' id='code' autocomplete='off' placeholder='PASSWORD' autofocus />
-<br /><input type='submit' value='Login' />
-</div>
-</form>";
-	$this->draw_end();
-	die;
- } */
  
  //-----------------------------------------------------------------------------
  function draw_begin() {
@@ -308,6 +284,8 @@ class PosterPolice extends CWS_OBJ {
  
  //-----------------------------------------------------------------------------
  function select_session() {
+
+
 	if ($this->session) {
 		list( $tp, $tpc, $percent ) =$this->session_stats();
 		
@@ -320,14 +298,14 @@ class PosterPolice extends CWS_OBJ {
 	}
 
 	if (!isset($this->PP[$this->day])) return;
-	
+
 	foreach ($this->PP[$this->day] as $code =>$co) {
 		if (empty($this->cfg['hide_sessions']) || !in_array( $code, $this->cfg['hide_sessions'] )) {
 			list( $tp, $tpc, $percent, $last_sync, $sync_pending ) =$this->session_stats( $code );
 			
             $style ="background-image: url(1px.png); background-repeat: no-repeat; background-size: $percent% 100%;";
 
-			if (INDICO) $percent =0;
+			$percent =0;
             
             $sync_button =($sync_pending ? 'Finish sync' : 'Sync')
                 .($last_sync ? "<div class='last_sync'>last sync: $last_sync</div>" : false);
@@ -412,7 +390,7 @@ class PosterPolice extends CWS_OBJ {
  }
  
  //-----------------------------------------------------------------------------
- function save() {
+ function save( $_name =false ) {
 	file_write_json( APP_PP, $this->PP );
  }
  

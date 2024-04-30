@@ -27,7 +27,7 @@ define( 'MAP_STATUS', [ 'accepted' =>'g', 'acceptance' =>'g', 'needs_submitter_c
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-class INDICO extends CWS_OBJ {
+class INDICO extends JICT_OBJ {
 
 	//-------------------------------------------------------------------------
 	function __construct( $_cfg =false, $_load =false ) {
@@ -61,15 +61,17 @@ class INDICO extends CWS_OBJ {
 
 		$login_message ="To use the utility please login with your Indico account<br /><br /><a href='$_SERVER[PHP_SELF]?cmd=login'>Log In</a>";
 
-		if ($_GET['cmd'] == 'logout') {
-			$_SESSION['indico_oauth'] =false;
-			echo $login_message;
-			exit;
-		}
-
-		if ($_GET['cmd'] == 'login') {
-			$this->oauth( 'authorize' );
-			exit;
+		if (!empty($_GET['cmd'])) {
+			if ($_GET['cmd'] == 'logout') {
+				$_SESSION['indico_oauth'] =false;
+				echo $login_message;
+				exit;
+			}
+	
+			if ($_GET['cmd'] == 'login') {
+				$this->oauth( 'authorize' );
+				exit;
+			}
 		}
 
 		if (empty($_SESSION['indico_oauth']['token']) || strlen($_SESSION['indico_oauth']['token']) < 20) {
@@ -205,15 +207,18 @@ class INDICO extends CWS_OBJ {
 
 	//-------------------------------------------------------------------------
 	function get_pdf_url( $_paper_id ) {
-		$x =$this->request( "/event/{id}/api/contributions/$_paper_id/editing/paper", 'GET', false, array( 'return_data' =>true, 'quiet' =>true ));
+		$x =$this->request( "/event/{id}/api/contributions/$_paper_id/editing/paper", 'GET', false, [ 'return_data' =>true, 'quiet' =>true ]);
 
 		$pcode =$x['contribution']['code'];
 
 		$last_revision =end($x['revisions']);
 
+		print_r( $last_revision );exit;
+
+
 		$url =false;
 		foreach ($last_revision['files'] as $f) {
-					if ($f['filename'] == "$pcode.pdf") $url =$f['external_download_url'];
+			if ($f['filename'] == "$pcode.pdf") $url =$f['external_download_url'];
 		}
 
 		$this->data['papers'][$pcode]['editor'] =$x['editor']['full_name'];
@@ -247,6 +252,8 @@ class INDICO extends CWS_OBJ {
 			}
 		*/
 
+		$this->import_registrants();
+
 		$this->verbose( "\nProcess stats" );
 
 		$papers_list =$this->request( '/event/{id}/editing/api/paper/list', 'GET', false, 
@@ -259,6 +266,7 @@ class INDICO extends CWS_OBJ {
 		$nums =[ 'qaok' =>0, 'files' =>0, 'a' =>0, 'g' =>0, 'y' =>0, 'r' =>0, 'nofiles' =>0, 'processed' =>0, 'total' =>0 ];
 		
 		$editors =[];
+		$editor_papers =[];
 		$editor_papers_list =[];
 		$editor_stats =[];
 		$days =[ 'processed' =>[] ];
@@ -423,20 +431,22 @@ class INDICO extends CWS_OBJ {
 
 		$this->data['last_nums'] =$nums;
 
-		arsort( $editor_papers );
-
-		foreach ($editor_papers as $e =>$n) {
-			$completed =$n -$editor_stats[$e]['a'];
-
-			$eid =str_pad( $completed, 3, '0', STR_PAD_LEFT ) .'|' .$e;
-
-			$editors[$eid] =[
-				'name' =>$e,
-				'stats' =>$editor_stats[$e],
-				'complete' =>$completed,
-				'qa' =>0,
-				'papers' =>$editor_papers_list[$e]
-				];
+		if (!empty($editor_papers)) {
+			arsort( $editor_papers );
+	
+			foreach ($editor_papers as $e =>$n) {
+				$completed =$n -$editor_stats[$e]['a'];
+	
+				$eid =str_pad( $completed, 3, '0', STR_PAD_LEFT ) .'|' .$e;
+	
+				$editors[$eid] =[
+					'name' =>$e,
+					'stats' =>$editor_stats[$e],
+					'complete' =>$completed,
+					'qa' =>0,
+					'papers' =>$editor_papers_list[$e]
+					];
+			}
 		}
 
 		echo "\n\n";
@@ -451,6 +461,116 @@ class INDICO extends CWS_OBJ {
 
     //-------------------------------------------------------------------------
     function import_registrants( $_details =true ) {
+        global $cws_config;
+
+/* 		$now =time();
+
+        if (strtotime($this->cfg['dates']['registration']['from']) > $now
+            || strtotime($this->cfg['dates']['registration']['to']) < $now
+            ) {
+				unset($this->cfg['out_registrants']);
+				return false;
+			}	 */	
+
+		$this->verbose( "Process registrants" );
+
+		$conf_registrants =[];
+        $registrants =[];
+        $stats =[];
+
+        $this->cfg['cache_time'] =3600*24;
+
+		$data_key2 =$this->request(sprintf( '/api/checkin/event/{id}/forms/%s/registrations', $cws_config['indico_stats_importer']['registrants_form_id'] ));
+		foreach ($this->data[$data_key2] as $r) {
+			$conf_registrants[ $r['id'] ] =[
+				'ts' =>strtotime( $r['registration_date'] ),
+				'paid' =>$r['is_paid'] ? $r['price'] : 0
+				];
+		}
+
+/* 		print_r( $data_key2 );
+		print_r( $this->data[$data_key2] );
+		print_r( $conf_registrants ); */
+
+		$data_key =$this->request( '/api/events/{id}/registrants' );
+		
+        foreach ($this->data[$data_key]['registrants'] as $r) {
+			$rid =$r['registrant_id'];
+            $p =$r['personal_data'];
+
+            $type ='D';
+
+			if (empty($conf_registrants[$rid])) { // is registered to another forms
+				$ok =false;
+
+			} else if (!empty($cws_config['make_chart_registrants']['skip_by_tags']) && !empty($r['tags'])) {
+                foreach ($r['tags'] as $tag) {
+                    if (in_array( $tag, $cws_config['make_chart_registrants']['skip_by_tags'] )) $ok =false;
+                }
+
+            } else {
+                $ok =true;
+            }
+
+            if ($ok) {
+                $registrants[$rid] =[
+                    'surname' =>$p['surname'],
+                    'name' =>$p['firstName'],
+                    'email' =>$p['email'],
+                    'inst' =>$p['affiliation'],
+                    'nation' =>$p['country'],
+                    'country' =>$p['country'],
+                    'country_code' =>$p['country_code'],
+                    'type' =>$type,
+                    'tags' =>$r['tags'],
+                    'present' =>$r['checked_in'],
+					'ts' =>$conf_registrants[$rid]['ts'],
+					'paid' =>$conf_registrants[$rid]['paid'],
+					];
+    
+                if (!empty($r['tags'])) {
+                    foreach ($r['tags'] as $tag) {
+                        if (empty($stats['by_tag'][$tag])) $stats['by_tag'][$tag] =1;
+                        else $stats['by_tag'][$tag] ++;
+                    }
+                }
+                
+                if (empty($stats['by_type'][$type])) $stats['by_type'][$type] =1;
+                else $stats['by_type'][$type] ++;
+            }         
+        }
+
+        foreach ([ 'by_dates', 'by_days_to_deadline', 'country', 'country_code'] as $k) {
+            $stats[$k] =[];
+        }
+
+        $ts_deadline =strtotime($this->cfg['dates']['registration']['chart_to_deadline']);
+
+        foreach ($registrants as $x) {
+            $x['by_dates'] =date( 'Y-m-d', $x['ts'] );
+            $x['by_days_to_deadline'] =-floor( ($ts_deadline -$x['ts']) /86400 );
+
+            foreach ([ 'by_dates', 'by_days_to_deadline', 'country', 'country_code'] as $k) {
+                if (empty($stats[$k][$x[$k]])) $stats[$k][$x[$k]] =1;
+                else $stats[$k][$x[$k]] ++;  
+            }            
+        }
+
+        ksort( $stats['by_dates'] );
+        ksort( $stats['by_days_to_deadline'] );
+        arsort( $stats['country'] );
+
+        $this->data['registrants'] =array( 
+            'registrants' =>$registrants,
+            'stats' =>$stats
+            ); 
+
+        print_r( $stats );
+    }
+
+	
+    //-------------------------------------------------------------------------
+    function import_registrants_old( $_details =true ) {
         global $cws_config;
 
 /* 		$now =time();
@@ -1061,7 +1181,8 @@ class INDICO extends CWS_OBJ {
         }
 
         if ($cfg['counter']) {
-            $counter =' (' .(is_numeric($cfg['counter']) ? $cfg['counter'] : @count($this->data[$_data_id])) .')';
+            if (is_numeric($cfg['counter'])) $counter =sprintf( ' (%d)', $cfg['counter'] );
+			else if (!empty($this->data[$_data_id])) $counter =sprintf( ' (%d)', count($this->data[$_data_id]) );
 
         } else {
             $counter =false;
@@ -1070,26 +1191,10 @@ class INDICO extends CWS_OBJ {
 		$this->verbose_status( !file_write_json( $fname, $this->data[$_data_id] ), "Unable to write file $fname", "OK" .$counter );
 	}
 
-/* 	//-----------------------------------------------------------------------------
-	function export_po() {
-		$PO =false;
 
-		foreach ($this->data['papers'] as $pid =>$p) {
-			$PO[$pid] =array(
-				'code' =>$pid,
-				'primary_code' =>$p['primary_code'],
-				'title' =>$p['title'],
-				'abstract_id' =>$p['abstract_id']
-				);
-		}
-
-        $this->data['po'] =$PO;
-
-        $this->save_file( 'po', 'out_po', 'PO' );
-	}  */
 
 	//-----------------------------------------------------------------------------
-	function export_refs( $_fname =false ) {
+	function export_refs( $_fname =false, $_final =false ) {
 		
 		$out_fname =$_fname ? $_fname : $this->cfg['export_refs'];
 		
@@ -1102,7 +1207,7 @@ class INDICO extends CWS_OBJ {
 					'paper' =>$pid,
 					'authors' =>$p['authors'],
 					'title' =>$p['title'],
-					'position' =>"",
+					'position' =>$p['position'],
 					'contribution ID' =>$p['abstract_id']
 					);
 			}
@@ -1122,6 +1227,49 @@ class INDICO extends CWS_OBJ {
 			$this->verbose_error( "(No data)" );
 		}
 	}
+
+
+
+	//-----------------------------------------------------------------------------
+	function export_refs_v3( $_fname =false ) {
+		
+		$out_fname =$_fname ? $_fname : $this->cfg['export_refs'];
+		
+		$this->verbose( "# Save REFS data (" .$out_fname .")... ", 1, false );
+		$citations =false;
+
+		foreach ($this->data['papers'] as $pid =>$p) {
+			if (!empty($p['authors']) && !in_array( $p['session_code'], $this->cfg['refs_hidden_sessions'] )) {
+				$citations[] =array(
+					'PaperId' =>$pid,
+					'Authors' =>$p['authors'],
+					'Title' =>$p['title'],
+					'PageRange' =>$p['position'],
+					'Contribution_ID' =>$p['abstract_id'],
+					'DOI' =>$p['position'] ? '10.18429/JACoW-IPAC2023-' .$pid : false,
+					'PubStatus' =>$p['position'] ? 1 : 3,
+					'SPMS_Id' =>41,
+					'Publication_Date' =>'9,2023'
+					);
+			}
+		}
+		
+		if ($citations) {
+			$fp =fopen( $out_fname, 'w' );
+			fputcsv( $fp, array_keys( $citations[0] ) );
+			foreach ($citations as $cit) {
+				fputcsv( $fp, $cit );
+			}
+			fclose( $fp );
+
+			$this->verbose_ok( "(" .count($citations) .") " );
+			
+		} else {
+			$this->verbose_error( "(No data)" );
+		}
+	}
+
+
 
 	//-----------------------------------------------------------------------------
 	function import_posters() {
@@ -1157,7 +1305,7 @@ class INDICO extends CWS_OBJ {
 						$poster_count ++;
 					}
 
-					ksort( $PP[$day][$sid]['posters'] );
+					if (!empty($PP[$day][$sid]['posters'])) ksort( $PP[$day][$sid]['posters'] );
 				}
 			}
 		}
