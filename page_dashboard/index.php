@@ -134,32 +134,16 @@ $papers_stats =[];
 $ts_from =strtotime($dates['papers_submission']['from']);
 $ts_deadline =strtotime($dates['papers_submission']['deadline']);
 
-foreach ($Indico->data['stats'] as $ymdh =>$x) {
-    if ($x['ts'] >= $ts_from) {
-        $date =substr( $ymdh, 0, 10 );
+foreach ($Indico->data['stats']['papers_submission'] as $date =>$x) {
+    $ts =strtotime( $date );
+    if ($ts >= $ts_from) {
         $papers_stats[$date] =$x;
-    }
-}
 
-foreach ($papers_stats as $date =>$x) {
-    $ts =$x['ts'];
-    
-//    $val =$x['total'] -$x['nofiles'] -$last;
-    $val =$x['files'] +$x['processed'] -$last;
-    if ($val < 0) $val =0;
-    $Indico->data['papers']['by_dates'][$date] =$val;
-    
-    if ($val) {
         $ttd =($ts -$ts_deadline) /86400;
-        $Indico->data['papers']['by_days_to_deadline'][$ttd] =$val;
-
-        //$last =$val;
+        $Indico->data['papers']['by_dates'][$date] =$x;
+        $Indico->data['papers']['by_days_to_deadline'][$ttd] =$x;
     }
-
-    $last =$x['files'] +$x['processed'];
 }
-
-//print_r( $Indico->data['papers'] );
 
 $group ='papers';
 $id ='by_dates';

@@ -336,9 +336,7 @@ class INDICO extends JICT_OBJ {
 
 								$ymd =substr( $r['created_dt'], 0, 10 );
 								$days['processed'][$ymd] =1 +(empty($days['processed'][$ymd]) ? 0 : $days['processed'][$ymd]);
-							}
-
-							
+							}						
 						}
 
 						if ($rid == $pedit['last_revision'] && $r['type']['name'] == 'ready_for_review') {
@@ -439,14 +437,22 @@ if (false) {
                 
                 if (empty($nums[$status])) $nums[$status] =1;
                 else $nums[$status] ++;
+
+				if ($p['created_ts']) {
+					$d =date( 'Y-m-d', $p['created_ts'] );
+					if (empty($this->data['stats']['papers_submission'][$d])) $this->data['stats']['papers_submission'][$d] =1;
+					else $this->data['stats']['papers_submission'][$d] ++;
+				}
 			}
 		}
 		
+		ksort( $this->data['stats']['papers_submission'] );
+
 		$nums['processed'] =$nums['g'] +$nums['y'] +$nums['r'];
 
 		if (json_encode($nums) != json_encode($this->data['last_nums'])) {
 			$tm =date( 'Y-m-d-H' );
-			$this->data['stats'][$tm] =array_merge( $nums, array( 'ts' =>$now ));
+			$this->data['stats'][$tm] =array_merge( $nums, [ 'ts' =>$now ]);
 		}
 
 		ksort( $days['processed'] );
@@ -590,111 +596,6 @@ if (false) {
         //print_r( $stats );
     }
 
-	
-    //-------------------------------------------------------------------------
-    function import_registrants_old( $_details =true ) {
-        global $cws_config;
-
-/* 		$now =time();
-
-        if (strtotime($this->cfg['dates']['registration']['from']) > $now
-            || strtotime($this->cfg['dates']['registration']['to']) < $now
-            ) {
-				unset($this->cfg['out_registrants']);
-				return false;
-			}	 */	
-
-		$this->verbose( "Process registrants" );
-
-		$data_key =$this->request( '/api/events/{id}/registrants' );
-
-        $registrants =[];
-        $stats =[];
-
-        $this->cfg['cache_time'] =3600*24;
-
-        foreach ($this->data[$data_key]['registrants'] as $r) {
-            $p =$r['personal_data'];
-
-            $type ='D';
-/* 
-			if (!empty($this->cfg['map_tag_to_type'])) {
-
-			}
- */
-
-            if (!empty($cws_config['make_chart_registrants']['skip_by_tags']) && !empty($r['tags'])) {
-                foreach ($r['tags'] as $tag) {
-                    if (in_array( $tag, $cws_config['make_chart_registrants']['skip_by_tags'] )) $ok =false;
-                }
-            } else {
-                $ok =true;
-            }
-
-            if ($ok) {
-                $registrants[$r['registrant_id']] =array(
-                    'surname' =>$p['surname'],
-                    'name' =>$p['firstName'],
-                    'email' =>$p['email'],
-                    'inst' =>$p['affiliation'],
-                    'nation' =>$p['country'],
-                    'country' =>$p['country'],
-                    'country_code' =>$p['country_code'],
-                    'type' =>$type,
-                    'tags' =>$r['tags'],
-                    'present' =>$r['checked_in']
-                    );
-    
-                if (!empty($r['tags'])) {
-                    foreach ($r['tags'] as $tag) {
-                        if (empty($stats['by_tag'][$tag])) $stats['by_tag'][$tag] =1;
-                        else $stats['by_tag'][$tag] ++;
-                    }
-                }
-                
-                if (empty($stats['by_type'][$type])) $stats['by_type'][$type] =1;
-                else $stats['by_type'][$type] ++;
-    
-                if ($_details) {
-                    $details =$this->request( '/api/events/{id}/registrants/' .$r['registrant_id'], 'GET', false, array( 'return_data' =>true ));
-                    
-                    $registrants[$r['registrant_id']]['ts'] =strtotime( $details['registration_date'] );
-                    $registrants[$r['registrant_id']]['paid'] =$details['paid'];
-                    
-                    if (empty($registrants[$r['registrant_id']]['ts'])) {
-                        echo "# $r[registrant_id] - $details[registration_date]: $details[paid]\n";
-                    }
-                }
-            }         
-        }
-
-        foreach ([ 'by_dates', 'by_days_to_deadline', 'country', 'country_code'] as $k) {
-            $stats[$k] =[];
-        }
-
-        $ts_deadline =strtotime($this->cfg['dates']['registration']['chart_to_deadline']);
-
-        foreach ($registrants as $x) {
-            $x['by_dates'] =date( 'Y-m-d', $x['ts'] );
-            $x['by_days_to_deadline'] =-floor( ($ts_deadline -$x['ts']) /86400 );
-
-            foreach ([ 'by_dates', 'by_days_to_deadline', 'country', 'country_code'] as $k) {
-                if (empty($stats[$k][$x[$k]])) $stats[$k][$x[$k]] =1;
-                else $stats[$k][$x[$k]] ++;  
-            }            
-        }
-
-        ksort( $stats['by_dates'] );
-        ksort( $stats['by_days_to_deadline'] );
-        arsort( $stats['country'] );
-
-        $this->data['registrants'] =array( 
-            'registrants' =>$registrants,
-            'stats' =>$stats
-            ); 
-
-//        print_r( $stats );
-    }
 
     //-------------------------------------------------------------------------
     function import_abstracts() {
