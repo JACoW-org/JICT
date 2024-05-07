@@ -139,6 +139,7 @@ $cws_config =[
 		// out
 		'out_editors'			=>'{data_path}/editors.json',
 		'out_stats'				=>'{data_path}/stats.json',
+		'out_papers'			=>'{data_path}/papers.json',
 		'out_abstracts_stats'	=>'{data_path}/abstracts_stats.json',
         'out_registrants'	    =>'{data_path}/registrants.json',
 		'out_last_nums'			=>'{data_path}/last_nums.json',
@@ -185,7 +186,7 @@ $cws_config =[
 
 		// in
 		'in_authors'		=>'{data_path}/authors.json',
-		'in_authors_check'	=>'{data_path}/author_reception.json',
+		'in_authors_check'	=>'{data_path}/author_reception.json*',
 
 		'template'			=>'template.html',
 
@@ -321,6 +322,8 @@ $cws_config =[
 		'sessions'		=>'collapsed',
         'sessions_details' =>true,
 		'special_sessions_class' =>false,
+
+		'session_func' =>false,
 		
         'coffee_break_time_end' =>[ '11:00' ],
         'lunch_break_time_end' =>[ '14:30' ],

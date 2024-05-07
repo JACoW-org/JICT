@@ -74,6 +74,6 @@ if (false) {
 	}
 }
 
-$Indico->export_refs_v3();
+$Indico->export_refs();
 
 ?>

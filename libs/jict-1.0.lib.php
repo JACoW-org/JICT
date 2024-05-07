@@ -160,6 +160,12 @@ class JICT_OBJ {
         $fname =$this->cfg[$out_name];
 
         $this->verbose( "# SAVE $out_name ($fname)... " );
+
+        if (empty($this->data[$_name])) {
+            echo "NO DATA!\n";
+            return false;
+        }
+
         $status =file_write_json( $fname, $this->data[$_name] );
         $this->verbose_status( !$status );
 
@@ -243,7 +249,10 @@ function config( $_app =false, $_check_in_file_exit =false, $_check_in_file =tru
 		$value =str_replace( '{root_url}', ROOT_URL, $value );
 		$value =str_replace( '{app}', $_app, $value );
 		 
-		if ($_check_in_file && $name1 == 'in' && empty($cfg[ 'out' .substr( $name, 2 ) ])) {
+        if (substr( $value, -1 ) == '*') {
+            $value =substr( $value, 0, -1 );
+
+        } else if ($_check_in_file && $name1 == 'in' && empty($cfg[ 'out' .substr( $name, 2 ) ])) {
 			if (!file_exists( $value ) || filesize( $value ) == 0) {
 				if ($_check_in_file_exit) return false;
 				echo_error( "ERROR! Missing file $value!" );

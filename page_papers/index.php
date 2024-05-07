@@ -52,18 +52,21 @@ if ($cfg['post_load_f']) {
 
 /* $posters =false; */
 
-$registrants_email =false;
-$presents_email =false;
-foreach ($Indico->data['registrants']['registrants'] as $rid =>$r) {
-    $registrants_email[] =$r['email'];
-    if (!empty($r['present'])) $presents_email[] =$r['email'];
+$registrants_email =[];
+$presents_email =[];
+if (!empty($Indico->data['registrants']['registrants'])) {
+    foreach ($Indico->data['registrants']['registrants'] as $rid =>$r) {
+        $registrants_email[] =$r['email'];
+        if (!empty($r['present'])) $presents_email[] =$r['email'];
+    }
+
 }
 
 $rows =false;
 foreach ($Indico->data['papers'] as $pcode =>$p) {
     if (empty($p['hide'])) {
 
-        $poster_police =$p['poster'] ? $Indico->data['posters_status'][$pcode]['status'] : "";
+        $poster_police =$p['poster']  && !empty($Indico->data['posters_status'][$pcode]['status']) ? $Indico->data['posters_status'][$pcode]['status'] : "";
  
         $author_present ='Not present';
         $author_registered ='Not registered';
@@ -93,7 +96,7 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
     }
 }
 
-$thead .="<tr><th>" .strtr( implode( "</th><th>", array_keys( $rows[0] ) ), '_', ' ' ) ."</th></tr>\n";
+$thead ="<tr><th>" .strtr( implode( "</th><th>", array_keys( $rows[0] ) ), '_', ' ' ) ."</th></tr>\n";
 
 $content ="<table id='papers' class='cell-border'>
 <thead>

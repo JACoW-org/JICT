@@ -102,7 +102,7 @@ if (!empty($Indico->data['editing_tags'])) {
     arsort( $Indico->data['editing_tags'] );
     foreach ($Indico->data['editing_tags'] as $label =>$value) {
         if (substr( $label, 0, 3 ) != 'PRC' && substr( $label, 0, 2 ) != 'QA') {
-            $percent =$value*100/$papers_processed;
+            $percent =$papers_processed ? $value*100/$papers_processed : 0;
             $percent =round( $percent, ($percent < 5 ? 1 : 0) );
             $tags .="<tr><th>$label</th><td>$value</td><td>$percent%</td></tr>\n";
         }
@@ -121,14 +121,16 @@ if (!empty($Indico->data['editors'])) {
 
         $pie_values =$x['stats']['g'] .',' .$x['stats']['r'] .',' .$x['stats']['y'];
 
+        $sum =$x['stats']['g'] +$x['stats']['r'] +$x['stats']['y'];
+
         $row =[
             'Revisions' =>$x['stats']['revisions'],
-            'Completed' =>$x['complete'], 
             'Under processing' =>$x['stats']['a'], 
-            'QA Failed' =>__h( 'span', round($x['stats']['qa_fail']*100/$x['complete'],0) .'%', [ 'title' =>$x['stats']['qa_fail'] ]),
-            'Green' =>round($x['stats']['g']*100/$x['complete'],0) .'%',
-            'Yellow' =>round($x['stats']['y']*100/$x['complete'],0) .'%',
-            'Red' =>round($x['stats']['r']*100/$x['complete'],0) .'%',
+            'QA Approved' =>$x['stats']['qa_ok'], 
+            'QA Failed' =>__h( 'span', round($x['stats']['qa_fail']*100/$sum,0) .'%', [ 'title' =>$x['stats']['qa_fail'] ]),
+            'Green' =>round($x['stats']['g']*100/$sum,0) .'%',
+            'Yellow' =>round($x['stats']['y']*100/$sum,0) .'%',
+            'Red' =>round($x['stats']['r']*100/$sum,0) .'%',
             'Chart' =>"<span class='sparklines_editor' sparkType='pie' sparkWidth='30px' sparkHeight='30px' values='$pie_values'></span>"
             ];
 
@@ -165,7 +167,9 @@ $content .="<div class='col-md-1'></div><div class='col-md-5'>\n<h2>Editors</h2>
     ."</div>\n";
 
 
-$T->set( 'content', $content );
+$T->set( 'content', $content
+    .sprintf( "<pre>\n%s</pre>", print_r($Indico->data['editors'],true))
+    );
 $T->set( 'js', $js );
 
 echo $T->get();

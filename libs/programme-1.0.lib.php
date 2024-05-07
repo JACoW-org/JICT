@@ -2,6 +2,7 @@
 
 /* by Stefano.Deiuri@Elettra.Eu & R.Mueller@gsi.de
 
+2024.05.03 - handle session_func
 2022.08.19 - new option: special_sessions_class
 
 */
@@ -379,7 +380,11 @@ DESCRIPTION:Session: $S[title]
 
  //-----------------------------------------------------------------------------
  function session( &$ps, $sid, &$html ) {
-	if (APP_SESSIONS == 'collapsed') return $this->multi_session( $ps, $html );
+	if ($this->cfg['session_func']) {
+		$this->cfg['session_func']( $ps, $sid, $html );
+	}
+
+	if ($this->cfg['sessions'] == 'collapsed') return $this->multi_session( $ps, $html );
 	 
 	return (count($ps) == 1) ? $html["_${sid}"] : $this->multi_session( $ps, $html );
  }
