@@ -56,24 +56,6 @@ $Indico->import_posters();
 
 $Indico->save_all([ 'save_empty' =>true ]);
 
-// https://www.jacow.org/jict_ipac23/exports/refs.csv
-if (false) {
-	foreach ($Indico->data['papers'] as $pid =>$p) {
-		$position =false;
-	
-		$doi_fname =sprintf( "%s/doi/%s.json", $cfg['data_path'], $pid );
-		if (file_exists( $doi_fname)) {
-			$doi =file_read_json( $doi_fname, true );
-			if ($doi && !empty($doi['data']['attributes']['sizes'][0])) $position =trim(str_replace( ' pages', "", $doi['data']['attributes']['sizes'][0] ));
-		}
-		
-		echo "$pid: $position\n";
-		$p['position'] =$position;
-	
-		$Indico->data['papers'][$pid] =$p;
-	}
-}
-
 $Indico->export_refs();
 
 ?>

@@ -12,6 +12,7 @@ require( '../config.php' );
 	<title><?php echo $cws_config['global']['conf_name']; ?> / Programme</title>
 	<meta http-equiv='Content-Type' content='text/html; charset=UTF-8'>
 	<link rel='stylesheet' href='programme.css' type='text/css' />
+	<link rel='stylesheet' href='programme-rooms.css' type='text/css' />
 	<link rel='stylesheet' href='colors.css' type='text/css' />
 	<script language='javascript' src='programme-jquery.js'></script>
 	<script language='javascript' src='jquery.js'></script>

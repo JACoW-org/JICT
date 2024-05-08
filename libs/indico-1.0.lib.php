@@ -235,6 +235,8 @@ class INDICO extends JICT_OBJ {
 
 	//-------------------------------------------------------------------------
 	function import_stats() {
+
+		global $cws_config;
 		/*         
         $now =time();
 
@@ -269,6 +271,8 @@ class INDICO extends JICT_OBJ {
 		$nums =[ 'qaok' =>0, 'files' =>0, 'a' =>0, 'g' =>0, 'y' =>0, 'r' =>0, 'nofiles' =>0, 'processed' =>0, 'total' =>0 ];
 		$editor_stats_init =[ 'g' =>0, 'y' =>0, 'r' =>0, 'a' =>0, 'revisions' =>0, 'qa_fail' =>0, 'qa_ok' =>0 ];
 		
+		$this->data['stats']['papers_submission'] =[];
+
 		$editors =[];
 		$editor_papers =[];
 		$editor_papers_list =[];
@@ -440,13 +444,22 @@ if (false) {
 
 				if ($p['created_ts']) {
 					$d =date( 'Y-m-d', $p['created_ts'] );
-					if (empty($this->data['stats']['papers_submission'][$d])) $this->data['stats']['papers_submission'][$d] =1;
-					else $this->data['stats']['papers_submission'][$d] ++;
+					if (empty($this->data['stats']['papers_submission']['by_dates'][$d])) $this->data['stats']['papers_submission']['by_dates'][$d] =1;
+					else $this->data['stats']['papers_submission']['by_dates'][$d] ++;
 				}
 			}
 		}
 		
-		ksort( $this->data['stats']['papers_submission'] );
+		ksort( $this->data['stats']['papers_submission']['by_dates'] );
+
+		$ts_deadline =strtotime($cws_config['global']['dates']['papers_submission']['deadline']);
+		
+		foreach ($this->data['stats']['papers_submission']['by_dates'] as $date =>$x) {
+			$ts =strtotime( $date );
+			$ttd =($ts -$ts_deadline) /86400;
+			$this->data['stats']['papers_submission']['by_days_to_deadline'][$ttd] =$x;
+		}
+
 
 		$nums['processed'] =$nums['g'] +$nums['y'] +$nums['r'];
 
@@ -1030,13 +1043,12 @@ if (false) {
             return;
         }
 
+		$counter =false;
+
         if ($cfg['counter']) {
             if (is_numeric($cfg['counter'])) $counter =sprintf( ' (%d)', $cfg['counter'] );
 			else if (!empty($this->data[$_data_id])) $counter =sprintf( ' (%d)', count($this->data[$_data_id]) );
-
-        } else {
-            $counter =false;
-        }
+		}
 
 		$this->verbose_status( !file_write_json( $fname, $this->data[$_data_id] ), "Unable to write file $fname", "OK" .$counter );
 	}
@@ -1128,15 +1140,19 @@ if (false) {
 			
  		foreach ($this->data['programme']['days'] as $day =>$odss) { // ObjDaySessions
 			foreach ($odss as $id =>$os) { // ObjSession
-				if (is_array($os) && !empty($os['poster_session'])) {
+				if (is_array($os) 
+					&& !empty($os['poster_session']) 
+					&& (empty($this->cfg['posters_hidden_sessions']) || !in_array( $os['code'], $this->cfg['posters_hidden_sessions'] ))
+					) {
+
 					$sid =$os['code'];
 					
-					$PP[$day][$sid] =array( 
+					$PP[$day][$sid] =[ 
 						'code' =>$sid,
 						'type' =>$os['type'],
 						'title' =>$os['title'],
 						'location' =>$os['location']
-					    );			
+						];			
 					
 					$digits =false;
 					foreach ($os['papers'] as $pid =>$op) { // ObjPoster					
@@ -1145,12 +1161,12 @@ if (false) {
 						}
 
 						$pn =substr( $pid, -$digits );
-						$PP[$day][$sid]['posters'][$pn] =array(
+						$PP[$day][$sid]['posters'][$pn] =[
 							'code' =>$pid,
 							'title' =>$op['title'],
 							'presenter' =>$op['presenter'],
 							'abstract_id' =>$op['abstract_id']
-							);
+							];
 
 						$poster_count ++;
 					}
@@ -1314,7 +1330,7 @@ if (false) {
 							$pedit['first_revision'] =$rid;
 						}
 
-						if (!empty($revision['files'])) { 
+						if ($_paper['status'] == 'accepted' && !empty($revision['files'])) { 
 							foreach ($revision['files'] as $f) {
 								if ($f['filename'] == $_paper['code'] .".pdf") $_paper['pdf_url'] =$f['external_download_url'];
 							}
@@ -1324,7 +1340,9 @@ if (false) {
 						foreach ($revision['tags'] as $tag) {
 							if (substr( $tag['code'], 0, 2 ) == 'QA') {
 								$_paper['status_qa'] =$tag['title'];
-								if ($_paper['status_qa'] == 'QA Approved') $_paper['qa_ok'] =true;
+								if ($_paper['status_qa'] == 'QA Approved') {
+									$_paper['qa_ok'] =true;
+								}
 
 							} else if (!$tag['system']) {
 								$paper_tags[] =$tag['verbose_title'];	

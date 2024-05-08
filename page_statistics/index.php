@@ -2,6 +2,7 @@
 
 /* by Stefano.Deiuri@Elettra.Eu
 
+2024.05.07 - update
 2023.06.21 - editors QA fail
 2023.04.16 - editors stats
 2023.03.31 - update (auth & new style)
@@ -33,7 +34,6 @@ $T->set([
     'logo' =>$cfg['logo'],
     'conf_name' =>$cfg['conf_name'],
     'user' =>__h( 'small', $user['email'] ),
-//     ." " .__h( 'i', "", [ 'class' =>'fa fa-power-off', 'onClick' =>"document.location =\"$_SERVER[PHP_SELF]?cmd=logout\"" ]),
     'scripts' =>"<script src='../dist/jquery.sparkline.min.js'></script>\n<script src='../dist/chart.min.js'></script>"
     ]);
 
@@ -44,7 +44,6 @@ $vars =[
     'source_type_rfr' =>[ 'label' =>"File Types RfR" ],
     'status_indico' =>[ 'label' =>"Paper Status", 'init' =>"Accepted,Needs Changes,Needs Confirmation,Ready for Review,Assigned to an Editor"  ],
     'status_indico_1st' =>[ 'label' =>"Paper 1st Status", 'init' =>"Accepted,Needs Changes,Needs Confirmation"  ],
-//    'status' =>[ 'label' =>"Paper Status 2", 'init' =>'g,r,y,files,a' ],
     'status_qa' =>[ 'label' =>"Papers Check (QA)", 'init' =>'QA Approved,QA Failed,QA Pending'  ],
     'authors_check' =>[ 'label' =>"Authors Check", 'init' =>"Yes,No"  ],
     'poster_police' =>[ 'label' =>"Posters Check", 'init' =>"OK,Fail" ]
@@ -159,31 +158,17 @@ $content ="<div class='row p-5'>";
 foreach ($vars as $var =>$vcfg) {
     $content .=__h( 'div', chart_pie( $serie[$var], array( 'title' =>$vcfg['label'], 'show%' =>true, 'sliceColors' =>json_encode( $sliceColors ) )), [ 'class' =>'col-md-3 ' ]);
 }
-$content .="</div>\n";
-
-$content .="<div class='row p-5'><div class='col-md-6'>\n<h2>Tags</h2>\n<table class='values'>\n$tags\n</table>\n</div>\n";
-
-$content .="<div class='col-md-1'></div><div class='col-md-5'>\n<h2>Editors</h2>\n$editor_content</div>\n"
+$content .="</div>\n"
+    ."<div class='row p-5'><div class='col-md-6'>\n<h2>Tags</h2>\n<table class='values'>\n$tags\n</table>\n</div>\n"
+    ."<div class='col-md-1'></div><div class='col-md-5'>\n<h2>Editors</h2>\n$editor_content</div>\n"
     ."</div>\n";
 
+$debug =empty($_GET['y75_debug']) ? false : sprintf( "<pre>\n%s</pre>", print_r($Indico->data['editors'],true));
 
-$T->set( 'content', $content
-    .sprintf( "<pre>\n%s</pre>", print_r($Indico->data['editors'],true))
-    );
+$T->set( 'content', $content .$debug );
 $T->set( 'js', $js );
 
 echo $T->get();
-
-/* 
-$page =file_read( $cfg['template'] );
-			
-foreach (array( 'page_title' =>APP_NAME, 'content' =>$content ) as $var =>$value) {
-    $page =str_replace( '{'.$var.'}', $value, $page );
-}
-
-echo $page; */
-
-//print_r( $cfg );
 
 
 //-----------------------------------------------------------------------------
@@ -222,7 +207,6 @@ function chart_pie( $_serie, $_cfg ) {
     $options =false;
     if (!empty($_cfg['sliceColors'])) $options .=", sliceColors: " .$_cfg['sliceColors'];
     
-//    <div class='var'>
     $html ="
 <table class='layout'><tr><td>
     <span class='sparklines' sparkType='pie' sparkWidth='150px' sparkHeight='150px' values='$values'></span>
@@ -235,13 +219,6 @@ function chart_pie( $_serie, $_cfg ) {
 </td></tr>
 </table>
 ";
-//</div>
-
-/* 
-<script type='text/javascript'>
-\$('.sparklines').sparkline( 'html', { enableTagOptions: true $options, offset: -90 });
-</script>
-*/
 
     $js .="\$('.sparklines').sparkline( 'html', { enableTagOptions: true $options, offset: -90 });\n";
 

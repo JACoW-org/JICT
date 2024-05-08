@@ -13,7 +13,7 @@ error_reporting(E_ERROR);
 require( '../config.php' );
 require_lib( 'jict', '1.0' );
 
-define( 'CFG_VERSION', 1 );
+define( 'CFG_VERSION', 2 );
 
 class DOTTING_BOARD extends JICT_OBJ {
     var $ret;
@@ -22,11 +22,11 @@ class DOTTING_BOARD extends JICT_OBJ {
 	function __construct( $_cfg =false ) {
         parent::__construct( $_cfg );
         
-        $this->ret =array(
-            'cfg' =>array(
+        $this->ret =[
+            'cfg' =>[
                 'version' =>CFG_VERSION
-                )
-            );
+                ]
+            ];
     }
         
     //-------------------------------------------------------------------------
@@ -75,8 +75,8 @@ class DOTTING_BOARD extends JICT_OBJ {
     
         if (!APP_BOARD_COLS) {
             if ($n_dots < 500) $cols =7;
-            else if ($n_dots < 1000) $cols =12;
-            else $cols =14;
+            else if ($n_dots < 1000) $cols =11;
+            else $cols =12;
 
             //$cols =($n_dots > 500 ? 12 : 7);
             $rows =min( 20, ceil( $n_dots / $cols ));
@@ -86,7 +86,7 @@ class DOTTING_BOARD extends JICT_OBJ {
             $rows =APP_BOARD_ROWS;
         }
         
-        $this->ret['cfg'] =array(
+        $this->ret['cfg'] =[
             'version' =>CFG_VERSION,
             'conf_name' =>CONF_NAME,
             'change_page_delay' =>APP_CHANGE_PAGE_DELAY,
@@ -99,14 +99,14 @@ class DOTTING_BOARD extends JICT_OBJ {
             'dots' =>$n_dots,
             'pages' =>ceil( $n_dots /($cols * $rows)),
             '_cfg' =>$this->cfg
-            );	
+            ];	
     }
 
     //-------------------------------------------------------------------------
     function reply( $ts_rqst =false ) {
         if (empty($ts_rqst)) $this->init_ret();
     
-        $map_days =array( 'mo' =>1, 'tu' =>2, 'we' =>3, 'th' =>4, 'fr' =>5, 'su' =>0 );
+        $map_days =[ 'mo' =>1, 'tu' =>2, 'we' =>3, 'th' =>4, 'fr' =>5, 'su' =>0 ];
         
         if (!empty($this->cfg['hidden_sessions'])) {
             $papers =false;

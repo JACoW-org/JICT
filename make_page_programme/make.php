@@ -23,20 +23,6 @@ for ($i =1; $i <count($argv); $i ++) {
         }
 }
 
-class IPAC23_Programme extends Programme {
-    function session( &$ps, $sid, &$html ) {
-        $page =false;
-
-/*         if ($ps[0] == 'S20') $ps =array( 'S21', 'S20' );
-        else if ($ps[0] == 'S22') $ps =array( 'S23', 'S22' ); */
-
-        $page =$this->multi_session( $ps, $html );
-
-        return $page;
-    }
-}
-   
-
 $Programme =new Programme;
 
 $Programme->config( $cfg );
@@ -56,7 +42,7 @@ $Programme->prepare();
 $Programme->make();
 $Programme->make_abstracts();
 
-//$Programme->make_rooms_css();
+$Programme->make_rooms_css();
 
 //$Programme->make_ics();
 

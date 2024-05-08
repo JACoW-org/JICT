@@ -2,6 +2,8 @@
 
 /* by Stefano.Deiuri@Elettra.Eu
 
+2024.05.08 - add export
+2024.05.08 - update
 2023.03.20 - Papers charts
 2022.12.02 - 1st version
 
@@ -24,9 +26,13 @@ $Indico->load();
 $user =$Indico->auth();
 if (!$user) exit;
 
-$old_confs =[
-    'ipac23' =>import_data_conf( 'ipac23' )
-    ];
+$old_confs =[];
+
+if (!empty($cfg['import_past_conferences'])) {
+    foreach ($cfg['import_past_conferences'] as $conf_name) {
+        $old_confs[$conf_name] =import_data_conf( $conf_name );
+    }
+}
 
 //echo sprintf( '<pre>%s</pre>', print_r( $old_confs, true )); return;
 
@@ -124,26 +130,9 @@ $vars =[
 
 $charts =[];
 
-
 // PAPERS -------------------------------------------------------------------
-$Indico->data['papers']['by_dates'] =[];
-$Indico->data['papers']['by_days_to_deadline'] =[];
-$last =0;
-$papers_stats =[];
-
-$ts_from =strtotime($dates['papers_submission']['from']);
-$ts_deadline =strtotime($dates['papers_submission']['deadline']);
-
-foreach ($Indico->data['stats']['papers_submission'] as $date =>$x) {
-    $ts =strtotime( $date );
-    if ($ts >= $ts_from) {
-        $papers_stats[$date] =$x;
-
-        $ttd =($ts -$ts_deadline) /86400;
-        $Indico->data['papers']['by_dates'][$date] =$x;
-        $Indico->data['papers']['by_days_to_deadline'][$ttd] =$x;
-    }
-}
+$Indico->data['papers']['by_dates'] =$Indico->data['stats']['papers_submission']['by_dates'];
+$Indico->data['papers']['by_days_to_deadline'] =$Indico->data['stats']['papers_submission']['by_days_to_deadline'];
 
 $group ='papers';
 $id ='by_dates';
@@ -168,8 +157,15 @@ $charts[$chart_id] =[
     'series' =>false
     ];
 
+$dtd_limit =-15;
+$x_upper_limit =10;
+
 $charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME, $Indico->data[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>10 ] );
 $vars[ $group .'_n' ] =number_format( $sum, 0, ',', '.' );
+
+foreach ($old_confs as $cname =>$cdata) {
+    $charts[$chart_id]['series'][$cname] =get_chart_serie( $cname, $cdata[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit  ] );
+}
 
 
 
@@ -266,7 +262,7 @@ $charts[$chart_id] =[
     'title' =>'Registrants progress',
     'type' =>'scatter',
     'y_label' =>'registrants',
-    'x_label' =>'days to deadline',
+    'x_label' =>sprintf( 'days to deadline (%s)', substr( $dates['registration']['deadline'], 0, 10 )),
     'series' =>false
     ];
 
@@ -355,6 +351,44 @@ foreach([ 'papers', 'payments', 'country' ] as $k) {
 $T->set( $vars );
 
 echo $T->get();
+
+
+if (!empty($_GET['export_data'])) {
+    $export =[
+        'conf_name' =>$cws_config['global']['conf_name'],
+    
+        'abstracts' =>[ 
+            'dates' =>$dates['abstracts_submission'],
+            'history' =>$Indico->data['abstracts_stats']['by_dates'],
+            'count' =>array_sum($Indico->data['abstracts_stats']['by_dates']),
+            'withdrawn' =>$Indico->data['abstracts_stats']['withdrawn']
+            ],
+    
+        'registrants' =>[ 
+            'dates' =>$dates['registration'],
+            'history' =>$Indico->data['registrants']['stats']['by_dates'],
+            'count' =>array_sum($Indico->data['registrants']['stats']['by_dates'])
+            ],
+    
+        'papers' =>[ 
+            'dates' =>$dates['papers_submission'],
+            'history' =>$Indico->data['stats']['papers_submission']['by_dates'],
+            'count' =>array_sum($Indico->data['stats']['papers_submission']['by_dates'])
+            ]
+        ];
+    
+    file_write_json( strtolower(str_replace( "'", "", '../exports/' .$cws_config['global']['conf_name'] )) .'.json', $export );    
+}
+
+
+
+
+
+
+
+
+
+
 
 
 //-----------------------------------------------------------------------------
@@ -513,7 +547,7 @@ function import_payments() {
 
 //-----------------------------------------------------------------------------
 function import_data_conf( $_name ) {
-    $data =file_read_json( $_name .'.json', true );
+    $data =file_read_json( sprintf( "../data/%s.json", $_name ), true );
 
     foreach ($data as $grp =>$x) {
         if (!empty($x['dates']['deadline'])) {

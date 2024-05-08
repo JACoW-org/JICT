@@ -17,11 +17,6 @@ $cfg['verbose'] =2;
 $cfg['echo_mode'] =$cws_echo_mode ='console';
 $cfg['in_programme'] ='../data/programme.json';
 
-if (!INDICO) {
-    echo "Scripts available only for Indico!\n\n";
-    exit;
-}
-
 for ($i =1; $i <count($argv); $i ++) {
 	switch ($argv[$i]) {
 		case '-verbose': 

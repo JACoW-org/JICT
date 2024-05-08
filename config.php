@@ -97,10 +97,11 @@ $cws_config =[
 		'cron'					=>'*:00',
 
 		'cache_time'			=>600, // useful for test
-		'skip_sessions'			=>false,
-        'papers_hidden_sessions'=>[],
+
+		'papers_hidden_sessions'=>[],
         'refs_hidden_sessions'  =>[],
-		
+		'posters_hidden_sessions'=>[],
+				
 		'tmp_path'				=>'{tmp_path}/indico',
 		
 		// out
@@ -125,7 +126,7 @@ $cws_config =[
 		'name'				    =>'Indico Statistics Importer',
 		'cron'				    =>'*:05',
 
-		'cache_time'			=>0, // useful for test
+		'cache_time'			=>600, // useful for test
 
         'tmp_path'			    =>'{tmp_path}/indico',
 	
@@ -159,6 +160,8 @@ $cws_config =[
 		'name'				    =>'Dashboard',
 
 		'order'					=>[ 'abstracts', 'registrants', 'country', 'payments', 'papers' ],
+
+		'import_past_conferences' =>[],
 
         'in_abstracts_stats'	=>'{data_path}/abstracts_stats.json',
         'in_registrants'	    =>'{data_path}/registrants.json',
@@ -220,6 +223,8 @@ $cws_config =[
 
 //		'cron'				=>'*:10',
 //		'post_load_f'		=>false,
+
+		'tmp_path'				=>'{tmp_path}/indico',
 
 		// in
 		'in_programme'		=>'{data_path}/programme.json',
@@ -370,12 +375,10 @@ $cws_config =[
 		'allow_roles'		=>[ 'WSA', 'WPP' ],
 
 		'dummy_mode'	=>false,
-		'pp_manager'	=>false, // PosterPolice PersonID
-		'password'		=>false,
 
 		'verbose'		=>false,
 		'echo_mode'		=>'web',
-		
+
 		'data_path'		=>'{data_path}/{app}',
 
 		'default_page'	=>'{app}/index.php',
