@@ -50,6 +50,10 @@ table#talks tr.ok {
     background: #2ECC40;
 }
 
+table#talks tr.ready {
+    background: #fff7a0;
+}
+
 div.status_bar {
     margin-top: 5px;
     background: #2ECC40;
@@ -77,4 +81,20 @@ div.status_bar_empty {
     font-style: italic;
     padding: 2px 0 2px 0;
     _border-radius: 10px;
+}
+
+.tag {
+    padding: 2px 7px 2px 7px;
+    border-radius: 4px;
+    border: 1px solid #888;
+    margin-right: 5px;
+    display: inline;
+}
+
+.publish_yes {
+    background: #abebff !important;
+}
+
+.publish_no {
+    background: #ff7171 !important;
 }

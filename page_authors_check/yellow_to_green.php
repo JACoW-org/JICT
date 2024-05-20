@@ -15,7 +15,7 @@
 */
 
 require( '../config.php' );
-require_lib( 'cws', '1.0' );
+require_lib( 'jict', '1.0' );
 require_lib( 'indico', '1.0' );
 $cfg =config( 'page_authors_check' );
 $cfg['verbose'] =false;

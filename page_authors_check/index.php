@@ -2,6 +2,7 @@
 
 /* by Stefano.Deiuri@Elettra.Eu
 
+2024.05.17 - update
 2023.05.11 - update
 2022.08.25 - filter function
 2022.08.22 - refresh function
@@ -40,7 +41,7 @@ $T->set([
     ]);
 
 
-$show =$_GET['show'];
+$show =$_GET['show'] ?? false;
 
 if (!empty($_GET['action'])) {
     $pcode =strtoupper( $_GET['pcode'] );
@@ -104,14 +105,13 @@ $todo_n =0;
 $undone_n =0;
 $now =time();
 
+$content =false;
+
 foreach ($Indico->data['data'] as $pcode =>$x) {
     $p =$Indico->data['papers'][$pcode];
 
-//    if ($p['status_qa'] == 'QA Approved') {
     if ($p[$cfg['filter']['key']] == $cfg['filter']['value']) {
         $warning =false;
-
-        $e =$Indico->data['edot'][$pcode];
     
         $authors =false;
         foreach ($p['authors_by_inst'] as $inst =>$a) {
@@ -146,7 +146,7 @@ foreach ($Indico->data['data'] as $pcode =>$x) {
                 <button id='refresh_$pcode' class='refresh' onClick='refresh(\"$pcode\")'>Refresh</button>
                 <button id='done_$pcode' class='done' onClick='done(\"$pcode\")'> Done </button>
                 <code><a href='https://indico.jacow.org/event/$cfg[indico_event_id]/contributions/$x[id]' target='paper'>$pcode</a></code>
-                <editor>$e[editor]</editor>
+                <editor>$p[editor]</editor>
                 <div class='title'>$title</div>
                 <authors>$authors</authors>
                 <img src='images/$pcode.jpg?$now' width='700px'/>
@@ -160,7 +160,7 @@ foreach ($Indico->data['data'] as $pcode =>$x) {
                 .($user['admin'] || true ? "<button id='undone_$pcode' class='undone' onClick='undone(\"$pcode\")'> UnDone </button>" : false)
                 ."<doneinfo>" .date('r', $x['done_ts']) ." - $x[done_author]</doneinfo>
                 <code><a href='https://indico.jacow.org/event/$cfg[indico_event_id]/contributions/$x[id]' target='paper'>$pcode</a></code>
-                <editor>$e[editor]</editor>
+                <editor>$p[editor]</editor>
                 <div class='title'>$title</div>
                 <authors>$authors</authors>
                 <img src='images/$pcode.jpg?$now' width='700px'/>
@@ -179,16 +179,7 @@ foreach ($Indico->data['data'] as $pcode =>$x) {
     }
 }
 
-
-/* $info ="<div class='row'><div class='col-12 col-md-12 text-center no-print'>
-<a href='index.php?show=todo'>todo</a> ($todo_n) |
-<a href='index.php?show=done'>done</a> ($done_n) |
-<a href='index.php'>all</a>
-</div></div>"; */
-
-//$content .=print_r( $user, true );
-
-$T->set( 'content', $info .$content );
+$T->set( 'content', $content );
 $T->set( 'todo_n', $todo_n );
 $T->set( 'done_n', $done_n );
 $T->set( 'undone_n', $undone_n );

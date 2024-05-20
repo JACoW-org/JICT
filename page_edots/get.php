@@ -69,8 +69,7 @@ class DOTTING_BOARD extends JICT_OBJ {
         $n_dots =count( $papers );
         
         foreach ($papers as $paper_id =>$p) {
-            if ($p['status'] == 'removed') $n_dots --;
-/*             if ($p['status'] == 'removed' || $p['pc'] != 'Y') $n_dots --; */
+            if ($p['status'] == 'x') $n_dots --;
         }
     
         if (!APP_BOARD_COLS) {
@@ -122,12 +121,14 @@ class DOTTING_BOARD extends JICT_OBJ {
 
         foreach ($papers as $paper_id =>$p) {
             $status =$p['status'];
-            if ($status == 'nofiles') $status ='';
-            $class =($p['qa_ok'] ? 'qaok' : $status);				
-            
-            $day =strtolower(substr($paper_id,0,2));
-            
-            $this->ret['edots'][$map_days[$day].$paper_id] =$class;
+            if ($status != 'x') {
+                if ($status == 'nofiles') $status ='';
+                $class =($p['qa_ok'] ? 'qaok' : $status);				
+                
+                $day =strtolower(substr($paper_id,0,2));
+                
+                $this->ret['edots'][$map_days[$day].$paper_id] =$class;
+            }
         }
         
         ksort( $this->ret['edots'] );

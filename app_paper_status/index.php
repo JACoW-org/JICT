@@ -12,9 +12,11 @@ require_lib( 'jict','1.0' );
 
 $cfg =config( 'app_paper_status' );
 
+//print_r( $cfg );
+
 ini_set( 'display_errors', 0 ) ;
 
-date_default_timezone_set( CWS_TIMEZONE );
+//date_default_timezone_set( CWS_TIMEZONE );
 
 $on_load =false;
 $message =false;
@@ -22,10 +24,8 @@ $page =false;
 
 $primary_color =COLOR_PRIMARY;
 
-$mode =strtolower($cfg['mode']) == 'indico' ? 'indico' : 'spms';
-
 if (!need_file( APP_IN_PAPERS )) {
-	echo_error( "\n\nTry to run ${mode}_stats_importer/make.php!" );
+	echo_error( "\n\nTry to run indico_stats_importer/make.php!" );
 	die;
 }
 
@@ -69,10 +69,10 @@ $pc
 }
 	
 if (!$page) {
-	$title =CONF_NAME ." Paper Status";
+	$title =$cfg['conf_name'] ." Paper Status";
 	$page ="
 <center>
-<h1>".CONF_NAME."</h1>
+<h1>" .$cfg['conf_name'] ."</h1>
 $message
 <form>
 PAPER CODE
@@ -88,10 +88,21 @@ PAPER CODE
 }
 
 
-$tmpl =implode( '', file( APP_IN_TEMPLATE_HTML ));
+$T =new TMPL( $cfg['template'] );
+
+$T->set([
+	'title' =>$title,
+	'content' =>$page,
+	'on_load' =>$on_load,
+	'primary_color' =>$primary_color
+	]);
+
+echo $T->get();
+
+/* $tmpl =implode( '', file( APP_IN_TEMPLATE_HTML ));
 foreach (array( 'title', 'on_load', 'page', 'primary_color' ) as $var) {
 	$tmpl =str_replace( '{'.$var.'}', $$var, $tmpl );
 }
-echo $tmpl;
+echo $tmpl; */
 
 ?>

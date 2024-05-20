@@ -225,6 +225,7 @@ function load_data() {
 					editors_qa[`${pad100(ed.qa)}|${ed.name}`] ={ name: ed.name, qa: ed.qa };
 					
 					if (i < 10) {
+						ed.complete =ed.stats.g +ed.stats.y +ed.stats.r;
 						editors[ed.name] =ed;
 						i ++;
 					}

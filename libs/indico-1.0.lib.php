@@ -20,16 +20,22 @@ https://codimd.web.cern.ch/s/d2XPNF5L9#Editing-states
 
 */
 
+//_changes_acceptance
+
 define( 'FAIL_QA_STRING', 'his revision has failed QA.' );
 
-define( 'MAP_STATUS', [ 'accepted' =>'g', 'acceptance' =>'g', 'needs_submitter_confirmation' =>'y', 'needs_submitter_changes' =>'r', 
-'assigned' =>'a', 'nofiles' =>'nofiles', 'ready_for_review' =>'files', 'rejected' =>'x' ]);
+define( 'QA_FAIL', 'QA Failed' );
+define( 'QA_OK', 'QA Approved' );
+
+define( 'MAP_STATUS', [ 'accepted' =>'g', 'acceptance' =>'g', '__changes_acceptance' =>'g', 'needs_submitter_confirmation' =>'y', 'needs_submitter_changes' =>'r', 
+'assigned' =>'a', 'nofiles' =>'nofiles', 'ready_for_review' =>'files', 'rejected' =>'x', 'rejection' =>'x' ]);
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 class INDICO extends JICT_OBJ {
 	var $source_file_type_id =false;
-	var $editing_tags =false;
+	var $editing_tags =[];
+	var $editors_stats =[];
 
 	//-------------------------------------------------------------------------
 	function __construct( $_cfg =false, $_load =false ) {
@@ -208,6 +214,32 @@ class INDICO extends JICT_OBJ {
 	}
 
 	//-------------------------------------------------------------------------
+	function download_pdf( $_paper ) {
+		//if ($_paper['status'] == 'g') {
+		if (!empty($_paper['pdf_url'])) {
+			$token =$this->cfg['indico_token'];
+			$pdf_fname =sprintf( "%s/papers/%s.pdf", $this->cfg['data_path'], $_paper['code'] );
+			
+			$cmd ="wget -q -O $pdf_fname --header='Authorization: Bearer $token' $_paper[pdf_url]; touch $pdf_fname";
+			echo sprintf( "[ download ~ %s...", $_paper['code'] );
+			system( $cmd );		
+	
+			$pdf_size =filesize($pdf_fname);
+
+			if ($pdf_size == 0) {
+				unlink( $pdf_fname );
+				return false;
+			}
+
+			echo sprintf(" %sMB ]\n", round( $pdf_size /1024 /1024, 0 ));
+	
+			return filemtime( $pdf_fname );
+		}
+		
+		return false;
+	}
+
+	//-------------------------------------------------------------------------
 	function get_pdf_url( $_paper_id ) {
 		$x =$this->request( "/event/{id}/api/contributions/$_paper_id/editing/paper", 'GET', false, [ 'return_data' =>true, 'quiet' =>true ]);
 
@@ -229,13 +261,12 @@ class INDICO extends JICT_OBJ {
 		return $url;
 	}
 
-	function paper_status() {
+/* 	function paper_status() {
 
-	}
+	} */
 
 	//-------------------------------------------------------------------------
 	function import_stats() {
-
 		global $cws_config;
 		/*         
         $now =time();
@@ -269,25 +300,22 @@ class INDICO extends JICT_OBJ {
 		$map_status =MAP_STATUS;
 
 		$nums =[ 'qaok' =>0, 'files' =>0, 'a' =>0, 'g' =>0, 'y' =>0, 'r' =>0, 'nofiles' =>0, 'processed' =>0, 'total' =>0 ];
-		$editor_stats_init =[ 'g' =>0, 'y' =>0, 'r' =>0, 'a' =>0, 'revisions' =>0, 'qa_fail' =>0, 'qa_ok' =>0 ];
+		//$editor_stats_init =[ 'g' =>0, 'y' =>0, 'r' =>0, 'a' =>0, 'revisions' =>0, 'qa_fail' =>0, 'qa_ok' =>0 ];
 		
 		$this->data['stats']['papers_submission'] =[];
 
 		$editors =[];
 		$editor_papers =[];
 		$editor_papers_list =[];
-		$editor_stats =[];
+		//$editor_stats =[];
 		$days =[ 'processed' =>[] ];
 
 		$revisions =$this->data['revisions'];
 
-/* 		$pedit_options =[ 'return_data' =>true, 'quiet' =>false, 'cache_time' =>86400*30 +3600 ];
-		if ($this->cfg['cache_time'] == 0) $pedit_options['cache_time'] =0; */
-
 		foreach ($papers_list as $x) {
 			$pcode =$x['code'];
 
-            if (!empty($pcode) && !empty($this->data['papers'][$pcode])) {
+            if (!empty($pcode) && !empty($this->data['papers'][$pcode]) && !$this->data['papers'][$pcode]['hide']) {
 				$p =$this->data['papers'][$pcode];
 
 				$paper_status =empty($x['editable']) ? 'nofiles' : $x['editable']['state'];
@@ -301,7 +329,7 @@ class INDICO extends JICT_OBJ {
 					$rev_id =$this->get_rev_id( $x['editable'] );
 
 					if (empty($revisions[$pcode]) || $rev_id != $revisions[$pcode]) {
-						echo sprintf( "\nUPDATE %s %s > %s\n", $pcode, (empty($revisions[$pcode]) ? "NEW" : $revisions[$pcode]), $rev_id );
+						echo sprintf( "\nUPDATE %s %s > %s (%s)\n", $pcode, (empty($revisions[$pcode]) ? "NEW" : $revisions[$pcode]), $rev_id, date('r') );
 						$revisions[$pcode] =$rev_id;
 						$cache_time =0;
 
@@ -309,134 +337,85 @@ class INDICO extends JICT_OBJ {
 						$cache_time =3600*8 +rand(0,3600);
 					}
 
-					$pedit =$this->process_paper_revisions( $p, $cache_time );
-					//print_r( $pedit ); exit;
-
-					if (!$cache_time) $this->data['papers'][$pcode] =$p;
-
-					//$pedit =$this->request(sprintf( "/event/{id}/api/contributions/%d/editing/paper", $p['id'] ), 'GET', false, $pedit_options );
-
+					$pedit =$this->process_paper_revisions( $p, $cache_time, true );
+					
+					$this->data['papers'][$pcode] =$p;
+					
+					$ieditor =false; // initial editor
+					$peditor =$pedit['editor']['full_name']; // current paper editor
+					
 					$first_editing_state =false;
 					foreach ($pedit['revisions'] as $rid =>$r) {
 						if ($r['is_editor_revision']) {
-							$reditor =$r['user']['full_name'];
+							$reditor =$r['user']['full_name']; // revision editor
 
-							if (empty($editor_stats[$reditor])) {
-								$editor_stats[$reditor] =$editor_stats_init;
-								$editor_papers_list[$reditor] =[ 'g' =>false, 'y' =>false, 'r' =>false, 'a' =>false ];
-								$editor_papers[$reditor] =0;
+							if (empty($editor_papers_list[$reditor])) $editor_papers_list[$reditor] =[ 'g' =>false, 'y' =>false, 'r' =>false, 'a' =>false ];
+							if (empty($editor_papers[$reditor])) $editor_papers[$reditor] =0;
+
+							if (!empty($r['files'])) $this->editor_stats_inc( $reditor, 'revisions' );
+
+							// salto le revision consecutive quando un editor da un verde ma carica dei nuovi file
+							$skip =false;
+							if ($r['qa'] != QA_FAIL && !empty($pedit['revisions'][$rid +1]) && $pedit['revisions'][$rid +1]['qa'] != QA_FAIL) {
+								$r1 =$pedit['revisions'][$rid +1];
+
+								if ($r1['is_editor_revision']
+									&& $reditor == $r1['user']['full_name']
+									&& (strtotime($r1['created_dt']) -strtotime($r['created_dt'])) < 1) $skip =true;
 							}
-
-							$editor_stats[$reditor]['revisions'] ++;
-
-							if (!$first_editing_state) {
+								
+							if (!$first_editing_state && $skip == false) {
 								$first_editing_state =empty($map_status[ $r['type']['name'] ]) ? $r['type']['name'] : $map_status[ $r['type']['name'] ];
 
-								$editor_stats[$reditor][$first_editing_state] ++;
+								$this->editor_stats_inc( $reditor, $first_editing_state );
 								$editor_papers[$reditor] ++;
-								$editor_papers_list[$reditor][$first_editing_state][] =$p['id'];
-
-								if ($p['qa_ok']) $editor_stats[$reditor]['qa_ok'] ++;
+								$editor_papers_list[$reditor][$first_editing_state][] =$p['id'];						
 
 								$ymd =substr( $r['created_dt'], 0, 10 );
 								$days['processed'][$ymd] =1 +(empty($days['processed'][$ymd]) ? 0 : $days['processed'][$ymd]);
-							}						
-						}
 
-						if ($rid == $pedit['last_revision'] && $r['type']['name'] == 'ready_for_review') {
-							$editor_stats[ $pedit['editor']['full_name'] ]['a'] ++;
-						}
-					}
-
-/* 					if (empty($editor_stats[$editor])) {
-						$editor_stats[$editor] =$editor_stats_init;
-						$editor_papers_list[$editor] =[ 'g' =>false, 'y' =>false, 'r' =>false, 'a' =>false ];
-					} */
-
-/* 					if ($first_editing_state) {
-						$editor_stats[$editor][$first_editing_state] ++;
-						$editor_papers_list[$editor][$first_editing_state][] =$p['id'];
-						$editor_papers[$editor] =1 +(empty($editor_papers[$editor]) ? 0 : $editor_papers[$editor]);
-					}
- */
-if (false) {
- 					$istate =false; // initial state
-					foreach ($pedit['revisions'] as $r_id =>$r) {
-						$state =$r['type']['name'];
-
-						if (!empty($r['editor']) && $r['editor']['full_name'] == $editor) {
-							if ($this->debug) echo sprintf("%s | %s > %s\n", substr( $r['created_dt'], 0, 16 ), $istate, $state);
-	
-							if ($istate == 'ready_for_review' && !in_array( $state, [ 'ready_for_review', 'none', 'undone' ])) {
-								if ($istatus == 'needs_submitter_confirmation' && !empty($pedit['revisions'][$r_id +1])) {
-									$rn =$pedit['revisions'][$r_id +1];
-
-									if ($rn['submitter']['full_name'] == $editor && $rn['type']['name'] == 'accepted') {
-										$r =$rn;
-										//$editor_stats[$editor]['revisions'] --;
-										$istatus =$state;
-										if ($this->debug) echo sprintf("%s | %s > %s\n", substr( $r['created_dt'], 0, 16 ), $istate, $state);
-									}
-								}
-	
-								$ymd =substr( $r['created_dt'], 0, 10 );
-								$days['processed'][$ymd] =1 +(empty($days['processed'][$ymd]) ? 0 : $days['processed'][$ymd]);
-
-								break;
+								$ieditor =$reditor; 
 							}
+							
+/* 							if ($rid == $pedit['last_revision'] && $r['type']['name'] == 'ready_for_review') {
+								$this->editor_stats_inc( $peditor, 'a' );
+							} */
 						}
 
-						$istate =$state;
-					} 
-}
-
-if (false) {					
-					$ceditor =false;
-					foreach ($pedit['revisions'] as $revision) {
-						foreach ($revision['comments'] as $comment) {
-							if (strpos($comment['text'], FAIL_QA_STRING)) {
-/* 								if (empty($editor_stats[$ceditor])) {
-									$editor_stats[$ceditor] =$editor_stats_init;
-									$editor_papers_list[$ceditor] =[ 'g' =>false, 'y' =>false, 'r' =>false, 'a' =>false ];
-								} */
-
-//								$ceditor =$revision['submitter']['full_name'];
-								$editor_stats[$ceditor]['qa_fail'] ++;
-								echo "QA_FAIL: $pcode ($ceditor / $editor)\n";
-							}
+						$editor =$r['is_editor_revision'] ? $reditor : $peditor;
+	
+						if ($r['qa'] == QA_OK) {
+							$this->editor_stats_inc( $editor, 'qa_ok' );
+	
+						} else if ($r['qa'] == QA_FAIL) {
+							$this->editor_stats_inc( $editor, 'qa_fail' );
 						}
-						
-						if (!empty($revision['editor'])) $ceditor =$revision['editor']['full_name'];
+					}					
+
+					if ($paper_status == 'ready_for_review') {
+						$paper_status ='assigned';
+						$this->editor_stats_inc( $peditor, 'a' );
 					}
-}
 
+					$status =isset($map_status[ $paper_status ]) ? $map_status[ $paper_status ] : "_$paper_status";
 
-					if ($paper_status == 'ready_for_review') $paper_status ='assigned';
+					if (in_array( $status, ['a','y','r'])) $this->editor_stats_inc( $peditor, 'pending' );
 
 					if (empty($istatus) || $istatus == 'none') $istatus =$paper_status;
 
 					$istatus =$map_status[$istatus];
 
 					echo sprintf( "%s - %s - %s (%s)\n", $pcode, substr( $r['created_dt'], 0, 10 ), $istatus, $r['type']['name'] );
-
-/* 					if ($istatus != "" && $istatus != 'x') {
-						$editor_stats[$editor][$istatus] =1 +(empty($editor_stats[$editor][$istatus]) ? 0 : $editor_stats[$editor][$istatus]);						
-						$editor_papers_list[$editor][$istatus][] =$p['id'];
-						$editor_papers[$editor] =1 +(empty($editor_papers[$editor]) ? 0 : $editor_papers[$editor]);
-					}
- */
-//					if ($p['qa_fail_count']) $editor_stats[$editor]['qa_fail'] ++;
-				}
-
-				$status =isset($map_status[ $paper_status ]) ? $map_status[ $paper_status ] : "_$paper_status";
 				
-				//if (strlen($status) == 1) echo "$pcode - $paper_status - $status\n";
-
-				$qaok =($p['status_qa'] == 'QA Approved');
+				} else {
+					$status =isset($map_status[ $paper_status ]) ? $map_status[ $paper_status ] : "_$paper_status";
+				}
 
                 if ($status != 'removed') {
                     $nums['total'] ++;
-                    if ($qaok) $nums['qaok'] ++;
+                    if ($p['status_qa'] == QA_OK) {
+						$nums['qaok'] ++;
+					}
                 }
                 
                 if (empty($nums[$status])) $nums[$status] =1;
@@ -460,7 +439,6 @@ if (false) {
 			$this->data['stats']['papers_submission']['by_days_to_deadline'][$ttd] =$x;
 		}
 
-
 		$nums['processed'] =$nums['g'] +$nums['y'] +$nums['r'];
 
 		if (json_encode($nums) != json_encode($this->data['last_nums'])) {
@@ -471,8 +449,6 @@ if (false) {
 		ksort( $days['processed'] );
 		$this->data['stats']['days_processed'] =$days['processed'];
 
-		//print_r( $nums );
-
 		$this->data['last_nums'] =$nums;
 
 		if (!empty($editor_papers)) {
@@ -480,25 +456,25 @@ if (false) {
 	
 			foreach ($editor_papers as $e =>$n) {
 				$eid =str_pad( $n, 3, '0', STR_PAD_LEFT ) .'|' .$e;
-				//$eid =$e;
 	
 				$editors[$eid] =[
 					'name' =>$e,
-					'stats' =>$editor_stats[$e],
+					'stats' =>$this->editors_stats[$e],
 					'papers' =>$editor_papers_list[$e]
 					];
 			}
 		}
 
-/* 		echo "\n\n";
-		print_r( $days );
-		echo "\n\n"; */
-		//print_r( $editors );
-
 		$this->data['editors'] =$editors;
 		$this->data['revisions'] =$revisions;
 	}
 
+	//-------------------------------------------------------------------------
+	function editor_stats_inc( $_editor, $_var ) {
+		if (empty($this->editors_stats[$_editor])) $this->editors_stats[$_editor] =[ 'g' =>0, 'y' =>0, 'r' =>0, 'a' =>0, 'pending' =>0, 'revisions' =>0, 'qa_fail' =>0, 'qa_ok' =>0 ];
+		
+		$this->editors_stats[$_editor][$_var] ++;
+	}
 
     //-------------------------------------------------------------------------
     function import_registrants( $_details =true ) {
@@ -804,10 +780,12 @@ if (false) {
 								"authors_by_inst" =>false,
 								"source_type" =>false,
 								"pdf_url" =>false,
+								"pdf_ts" =>0,
 								"created_ts" =>false,
 //								'prev_status' =>false,
 								"status" =>false,
-                                "status_ts" =>false,
+								"status_history" =>[],
+                                "status_ts" =>0,
 								"status_indico" =>false,
 								"paper_state" =>empty($editing_status[$pcode]) ? false : $editing_status[$pcode]['state'],
 								"revision_count" =>empty($editing_status[$pcode]) ? false : $editing_status[$pcode]['revision_count'],
@@ -815,7 +793,7 @@ if (false) {
 								"tags" =>false,
 								"status_qa" =>false,
 								"qa_ok" =>false,
-//								"qa_fail_count" =>0,
+								"qa_fail_count" =>0,
 								"editor" =>false,
 								"hide" =>in_array( $s['code'], $this->cfg['papers_hidden_sessions'] )
                                 ];		
@@ -883,7 +861,7 @@ if (false) {
 
 							$rqst_cache =$new_revision ? 0 : 3600*8; //3600*24*30;
 
-							$this->process_paper_revisions( $p, $rqst_cache );
+							$this->process_paper_revisions( $p, $rqst_cache, false );
 						}
 
                         $p['class'] =$c['track'];
@@ -1276,7 +1254,7 @@ if (false) {
 		
 		$fn =false;
 		foreach ($fn_p_list as $fn_p) {
-			$fn .=(substr( $fn_p, 0, 1 ) == '-' ? substr( $fn_p, 0, 2 ) : substr( $fn_p, 0, 1 )) .'.';
+			$fn .=(mb_substr( $fn_p, 0, 1 ) == '-' ? mb_substr( $fn_p, 0, 2 ) : mb_substr( $fn_p, 0, 1 )) .'.';
 		}
 		
 		return $fn .' ' .trim($_author['last_name']);  
@@ -1297,7 +1275,124 @@ if (false) {
 	}
 
 	//-------------------------------------------------------------------------
-	function process_paper_revisions( &$_paper, $_cache_time =0 ) {
+	function process_paper_revisions( &$_paper, $_cache_time =0, $_download_pdf =false ) {
+
+		$map_status =MAP_STATUS;
+
+/* 		$pedit =$this->request( "/event/{id}/api/contributions/$_paper[id]/editing/paper", 'GET', false, 
+			[ 'return_data' =>true, 'quiet' =>true, 'cache_time' =>$_cache_time ]); */
+
+		$pedit =$this->get_paper_details( $_paper['id'], $_cache_time, true );
+
+		if (empty($pedit['error'])) {
+			if (!empty($pedit['state'])) {
+				$_paper['status_indico'] =$pedit['state']['title'];
+
+				$paper_status =$pedit['state']['name'];
+				if (!empty($pedit['editor']) && $paper_status == 'ready_for_review') $paper_status ='assigned';										
+				$_paper['status'] =isset($map_status[ $paper_status ]) ? $map_status[ $paper_status ] : "_$paper_status";
+			}
+
+			if (!empty($pedit['editor'])) $_paper['editor'] =$pedit['editor']['full_name'];
+
+			if (!empty($pedit['revisions'])) {
+				$ri =0; // number revisions (excluded undone)
+				$lrid =false;
+				$_paper['status_history'] =[];
+				$_paper['qa_fail_count'] =0;
+
+				foreach ($pedit['revisions'] as $rid =>$revision) {
+					if (empty($revision['is_undone'])) {
+						if ($ri == 0) {
+							$_paper['created_ts'] =strtotime( $revision['created_dt'] );
+
+							foreach ($revision['files'] as $f) {
+								if ($f['file_type'] == $this->source_file_type_id) $_paper['source_type'] =strtolower(pathinfo( $f['filename'], PATHINFO_EXTENSION ));
+							}
+
+							$pedit['first_revision'] =$rid;
+						}
+
+						if ($_paper['status'] == 'g' && !empty($revision['files'])) { 
+							foreach ($revision['files'] as $f) {
+								if ($f['filename'] == $_paper['code'] .".pdf") $_paper['pdf_url'] =$f['external_download_url'];
+							}
+						}
+
+						$paper_tags =[];
+						foreach ($revision['tags'] as $tag) {
+							if (!$tag['system']) {
+								$paper_tags[] =$tag['verbose_title'];	
+							}
+						}
+
+						$_paper['status_qa'] =$revision['qa'];
+
+						if ($_paper['status_qa'] == QA_OK) $_paper['qa_ok'] =true;
+						else if ($_paper['status_qa'] == QA_FAIL) {
+							$_paper['qa_ok'] =false;
+							$_paper['qa_fail_count'] ++;
+						}
+
+/* 						foreach ($revision['tags'] as $tag) {
+							if (substr( $tag['code'], 0, 2 ) == 'QA') {
+								$_paper['status_qa'] =$tag['title'];
+								if ($_paper['status_qa'] == QA_OK) {
+									$_paper['qa_ok'] =true;
+								}
+
+							} else if (!$tag['system']) {
+								$paper_tags[] =$tag['verbose_title'];	
+							}
+						} */
+
+						foreach (array_unique($paper_tags) as $tag) {
+							if (empty($this->editing_tags[$tag])) $this->editing_tags[$tag] =1;
+							else $this->editing_tags[$tag] ++;
+						}
+
+						$ri ++;
+						$lrid =$rid;
+
+						$rs =$revision['type']['name']; // revision status
+						$_paper['status_history'][] =isset($map_status[ $rs ]) ? $map_status[ $rs ] : "_$rs";
+						
+/* 					} else {
+						foreach ($revision['tags'] as $tag) {
+							if ($tag['code'] == 'QA02') {
+								$_paper['status_qa'] =QA_FAIL;
+								$_paper['qa_ok'] =false;
+								$_paper['qa_fail_count'] ++;
+							}
+						}
+
+						unset($pedit['revisions'][$rid]); */
+					}
+				}
+
+				if (!empty($_paper['pdf_url'])) {
+					$pdf_fname =sprintf( "%s/%s.pdf", $this->cfg['pdf_path'], $_paper['code'] );
+
+					if ($_download_pdf && (!$_cache_time || !file_exists( $pdf_fname ))) $_paper['pdf_ts'] =$this->download_pdf( $_paper );
+					else if (file_exists( $pdf_fname )) $_paper['pdf_ts'] =filemtime( $pdf_fname );
+				}
+			
+				$pedit['revisions_count'] =$ri;
+
+				// about last revision
+				$pedit['last_revision'] =$lrid;
+				$revision =$pedit['revisions'][$lrid];
+				
+				$_paper['status_ts'] =strtotime( $revision['created_dt'] );
+			}
+		}
+
+		return $pedit;
+	}
+
+
+	//-------------------------------------------------------------------------
+	function process_paper_revisions_old( &$_paper, $_cache_time =0, $_download_pdf =false ) {
 
 		$map_status =MAP_STATUS;
 
@@ -1318,6 +1413,9 @@ if (false) {
 			if (!empty($pedit['revisions'])) {
 				$ri =0; // number revisions (excluded undone)
 				$lrid =false;
+				$_paper['status_history'] =[];
+				$_paper['qa_fail_count'] =0;
+
 				foreach ($pedit['revisions'] as $rid =>$revision) {
 					if (empty($revision['is_undone'])) {
 						if ($ri == 0) {
@@ -1330,7 +1428,7 @@ if (false) {
 							$pedit['first_revision'] =$rid;
 						}
 
-						if ($_paper['status'] == 'accepted' && !empty($revision['files'])) { 
+						if ($_paper['status'] == 'g' && !empty($revision['files'])) { 
 							foreach ($revision['files'] as $f) {
 								if ($f['filename'] == $_paper['code'] .".pdf") $_paper['pdf_url'] =$f['external_download_url'];
 							}
@@ -1340,7 +1438,7 @@ if (false) {
 						foreach ($revision['tags'] as $tag) {
 							if (substr( $tag['code'], 0, 2 ) == 'QA') {
 								$_paper['status_qa'] =$tag['title'];
-								if ($_paper['status_qa'] == 'QA Approved') {
+								if ($_paper['status_qa'] == QA_OK) {
 									$_paper['qa_ok'] =true;
 								}
 
@@ -1356,12 +1454,30 @@ if (false) {
 
 						$ri ++;
 						$lrid =$rid;
+
+						$rs =$revision['type']['name']; // revision status
+						$_paper['status_history'][] =isset($map_status[ $rs ]) ? $map_status[ $rs ] : "_$rs";
 						
 					} else {
+						foreach ($revision['tags'] as $tag) {
+							if ($tag['code'] == 'QA02') {
+								$_paper['status_qa'] =QA_FAIL;
+								$_paper['qa_ok'] =false;
+								$_paper['qa_fail_count'] ++;
+							}
+						}
+
 						unset($pedit['revisions'][$rid]);
 					}
 				}
-				
+
+				if (!empty($_paper['pdf_url'])) {
+					$pdf_fname =sprintf( "%s/%s.pdf", $this->cfg['pdf_path'], $_paper['code'] );
+
+					if ($_download_pdf && (!$_cache_time || !file_exists( $pdf_fname ))) $_paper['pdf_ts'] =$this->download_pdf( $_paper );
+					else if (file_exists( $pdf_fname )) $_paper['pdf_ts'] =filemtime( $pdf_fname );
+				}
+			
 				$pedit['revisions_count'] =$ri;
 
 				// about last revision
@@ -1369,10 +1485,6 @@ if (false) {
 				$revision =$pedit['revisions'][$lrid];
 				
 				$_paper['status_ts'] =strtotime( $revision['created_dt'] );
-
-/* 				foreach ($revision['comments'] as $comment) {
-					if (strpos( $comment['text'], FAIL_QA_STRING )) $_paper['status_qa'] ='QA Failed';
-				} */
 			}
 		}
 
@@ -1380,6 +1492,68 @@ if (false) {
 	}
 
 
+	//-----------------------------------------------------------------------------
+	function get_paper_details( $_pid, $_cache =0, $_remove_undone =false ) {
+		
+		$pedit =$this->request( "/event/{id}/api/contributions/$_pid/editing/paper", 'GET', false, 
+			[ 'return_data' =>true, 'quiet' =>true, 'cache_time' =>$_cache ]);
+		
+		$revisions =[];
+
+		$i =0;
+		foreach ($pedit['revisions'] as $rid =>$r) {
+			$extra =false;
+
+			$r['qa'] =false;
+
+			foreach ($r['tags'] as $tag) {
+				switch ($tag['code']) {
+					case 'QA02': // pending
+						$r['qa'] =$tag['title'];
+
+						if ($r['is_undone']) {							
+							$r['is_undone'] =false;
+							$revisions[$i -1]['is_undone'] =false;
+							
+							$extra =$r;
+							$extra['type']['name'] ='ready_for_review';
+							$extra['qa'] =QA_FAIL;
+							$extra['tags'] =[[
+								'code' =>'QA03',
+								'color' =>'red',
+								'system' =>true,
+								'title' =>$extra['qa']
+								]];
+						}
+						break;
+
+					case 'QA01': // ok
+						$r['qa'] =$tag['title'];
+						break;
+				}
+
+			}
+			
+			$revisions[$i++] =$r;
+	
+			if ($extra) $revisions[$i++] =$extra;
+		}
+		
+ 		if ($_remove_undone) {
+			$t =[];
+
+			foreach ($revisions as $rid =>$r) {
+				if (empty($r['is_undone'])) $t[] =$r;
+			}
+
+			$pedit['revisions'] =$t;
+
+		} else {
+			$pedit['revisions'] =$revisions;
+		}
+
+		return $pedit;
+	}
 
 } /* END CLASS */
 

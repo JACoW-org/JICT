@@ -115,7 +115,7 @@ $T->set([
     ]);
 
 
-$payments =import_payments();
+$payments =[];
 
 //echo sprintf( '<pre>%s</pre>', print_r( $payments, true )); return;
 
@@ -170,31 +170,32 @@ foreach ($old_confs as $cname =>$cdata) {
 
 
 // PAYMENTS -------------------------------------------------------------------
-
 $group ='payments';
-$id ='by_dates';
-$chart_id ="${group}_${id}";
-$charts[$chart_id] =[
-    'title' =>ucwords($group) .' by day',
-    'type' =>'bar',
-    'y_label' =>$group,
-    'series' =>false
-    ];
-
-$charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME, $payments[$id]['count'], [ 'by_dates_show_zero' =>true, 'x_type' =>'date' ] );
+if (!empty($Indico->data[$group])) {
+    $id ='by_dates';
+    $chart_id ="${group}_${id}";
+    $charts[$chart_id] =[
+        'title' =>ucwords($group) .' by day',
+        'type' =>'bar',
+        'y_label' =>$group,
+        'series' =>false
+        ];
     
-$id ='by_days_to_deadline';
-$chart_id ="${group}_${id}";
-$charts[$chart_id] =[
-    'title' =>ucwords($group) .' progress',
-    'type' =>'scatter',
-    'x_label' =>'days to deadline',
-    'y_label' =>$group,
-    'series' =>false
-    ];
-
-$charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME,  $payments[$id]['count'], [ 'sum' =>true ] );
-$vars['payments_n'] =number_format( $sum, 0, ',', '.' );
+    $charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME, $payments[$id]['count'], [ 'by_dates_show_zero' =>true, 'x_type' =>'date' ] );
+        
+    $id ='by_days_to_deadline';
+    $chart_id ="${group}_${id}";
+    $charts[$chart_id] =[
+        'title' =>ucwords($group) .' progress',
+        'type' =>'scatter',
+        'x_label' =>'days to deadline',
+        'y_label' =>$group,
+        'series' =>false
+        ];
+    
+    $charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME,  $payments[$id]['count'], [ 'sum' =>true ] );
+    $vars['payments_n'] =number_format( $sum, 0, ',', '.' );
+}
 
 
 
@@ -486,7 +487,7 @@ var _cfg ={
         ]
     };
 
-Chart.defaults.font.family =\"Open Sans\";
+Chart.defaults.font.family =\"Segoe UI\";
 Chart.defaults.animation = false;
 
 function draw() {

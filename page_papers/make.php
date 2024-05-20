@@ -33,7 +33,7 @@ for ($i =1; $i <count($argv); $i ++) {
 				."\t-verbose n: set verbose level to n\n"
 				."\n";
 			break;
-		}
+    }
 }
 
 
@@ -41,12 +41,29 @@ for ($i =1; $i <count($argv); $i ++) {
 $Indico =new INDICO( $cfg );
 $Indico->load();
 
-$errors =false;
+if (!empty($Indico->data['pdf_problems'])) {
+    foreach ($Indico->data['pdf_problems'] as $pcode =>$e) {
+        $p =$Indico->data['papers'][$pcode];
+
+        $pdf_fname ="$cfg[data_path]/papers/$pcode.pdf";
+
+        if (time() -filemtime($pdf_fname ) > 3600) {
+            //echo "Download $pdf_name\n";
+            unlink( $pdf_fname );
+            $Indico->download_pdf( $p );
+        }
+    }
+}
+
+$errors =[];
+//$ok_obj ='OK';
 
 foreach ($Indico->data['papers'] as $pcode =>$p) {
     $pdf_fname ="$cfg[data_path]/papers/$pcode.pdf";
+//    $check_fname ="$cfg[data_path]/papers/$pcode.check";
 
-    if ($p['status'] == 'g' && file_exists($pdf_fname)) {
+//    if ($p['status'] == 'g' && file_exists($pdf_fname) && !$p['qa_ok'] && filemtime( $check_fname ) < $p['pdf_ts']) {
+    if ($p['status'] == 'g' && file_exists($pdf_fname) && $p['qa_ok'] == false) {
         $Indico->verbose( "$pcode..", 1, false );
 
         $cmd ="pdffonts $pdf_fname";
@@ -118,14 +135,13 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
 
         if (!$fail) $Indico->verbose_next( '.', false );
 
+/*         if (empty($errors[$pcode])) file_write_json( $check_fname, $errors[$pcode] );
+        else file_write_json( $check_fname, $ok_obj ); */
+
         $Indico->verbose();
     }
 }
 
-if ($errors) {
-    file_write_json( "$cfg[data_path]/papers-problems.json", $errors );
-
-    print_r( $errors );
-}
+file_write_json( $cfg['in_pdf_problems'], $errors );
 
 ?>

@@ -115,3 +115,9 @@ table.values td {
 table.values th {
   text-align: left;
 }
+
+table.editors td:nth-child(2),
+table.editors td:nth-child(5),
+table.editors td:nth-child(7) {
+  border-right: 1px dotted black !important;
+}

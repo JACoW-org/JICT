@@ -48,7 +48,7 @@ class PosterPolice extends JICT_OBJ {
  public function config( $_var =false, $_val =false ) {
 	parent::config( $_var, $_val );
 
-	if ($_cfg && $this->cfg['dummy_mode']) $this->cfg['sync_url'] ='http://' .$_SERVER['SERVER_NAME'] .str_replace( 'index.php', 'dummy_sync.php', $_SERVER['PHP_SELF'] );
+	if ($this->cfg['dummy_mode']) $this->cfg['sync_url'] ='http://' .$_SERVER['SERVER_NAME'] .str_replace( 'index.php', 'dummy_sync.php', $_SERVER['PHP_SELF'] );
 //	if ($_cfg && $this->cfg['dummy_mode']) $this->cfg['sync_url'] ='dummy_sync.php';
  }
  
@@ -301,7 +301,7 @@ class PosterPolice extends JICT_OBJ {
 
 	foreach ($this->PP[$this->day] as $code =>$co) {
 		if (empty($this->cfg['hide_sessions']) || !in_array( $code, $this->cfg['hide_sessions'] )) {
-			list( $tp, $tpc, $percent, $last_sync, $sync_pending ) =$this->session_stats( $code );
+			@list( $tp, $tpc, $percent, $last_sync, $sync_pending ) =$this->session_stats( $code );
 			
             $style ="background-image: url(1px.png); background-repeat: no-repeat; background-size: $percent% 100%;";
 

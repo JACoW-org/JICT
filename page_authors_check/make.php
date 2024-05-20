@@ -72,110 +72,87 @@ if (!file_exists( './images')) {
     echo "OK\n";
 }
 
-$content =false;
-
 $app_data =$Indico->data['data'];
 
-$token =$Indico->cfg['indico_token'];
-
 $n =0;
+$nn =0; // new numbers
 $pdf_n =0;
 $pdf_size =0;
 
 $now =time();
 
-$Indico->verbose( "\nDownload PDF:", 1, false );
-
-$yellow_to_green =[];
+$Indico->verbose( "\nProcess PDF:", 1, false );
 
 foreach ($Indico->data['papers'] as $pcode =>$p) {
     if ($p['status'] == 'g') {	
         $n ++;
         
         $pdf_fname ="$cfg[out_path]/$pcode.pdf";
+        $img_fname ="images/$pcode.jpg";
 
-        if (!file_exists( $pdf_fname ) || !empty($cfg['force']) || $p['status_ts'] > filemtime( $pdf_fname )) { 
+        if (file_exists( $pdf_fname )
+            && (!file_exists( $img_fname ) || !empty($cfg['force']) || $p['pdf_ts'] > filemtime( $img_fname ))) { 
+//            && (!file_exists( $img_fname ) || !empty($cfg['force']) || $p['status_ts'] > filemtime( $img_fname ))) { 
+
+            $nn ++;
+
             $Indico->verbose_next( " $pcode ($p[id])", false );
 
-			$pdf_url =$Indico->get_pdf_url( $p['id'] );
+            $Indico->verbose_next( ".", false );
+            $cmd ="pdftotext $pdf_fname";
+            system( $cmd );
+            
+            
+            $nl =0;
+            $tl =0;
+            $pdf_title =false;
+            $title_block =true;
+            $head =false;
+            
+            foreach (explode( "\n", file_read( "$cfg[out_path]/$pcode.txt" ) ) as $line_nt) {
+//					$line =trim($line_nt);
+                $line =preg_replace( '/[^[:print:]]/', "", trim($line_nt));
 
-			if (empty($pdf_url)) {
-            	$Indico->verbose_next( "!", false );
-                //print_r( $Indico->api ); exit;
+                if (empty($line)) {
+                    // skip first blank lines
 
-			} else {
-                $Indico->verbose_next( ".", false );
-                
-                $cmd ="wget -q -O $pdf_fname --header='Authorization: Bearer $token' $pdf_url; touch $pdf_fname";
-                system( $cmd );
+                } else if (uppercase_rate( $line ) > 50 && $title_block) {
+//					if (!strpos($line,'.') && !strpos($line,',') && trim($line) != "" && $title_block) {
+                    $pdf_title .=($pdf_title ? " " : false) .trim($line);
+                    $tl ++;
 
-    //			echo "$cmd\n";
-
-                $Indico->verbose_next( ".", false );
-                $pdf_n ++;
-
-                $pdf_size +=filesize( $pdf_fname );
-
-                $cmd ="pdftotext $pdf_fname";
-                system( $cmd );
-                
-                
-                $nl =0;
-                $tl =0;
-                $pdf_title =false;
-                $title_block =true;
-                $head =false;
-                
-                foreach (explode( "\n", file_read( "$cfg[out_path]/$pcode.txt" ) ) as $line_nt) {
-    //					$line =trim($line_nt);
-                    $line =preg_replace( '/[^[:print:]]/', "", trim($line_nt));
-
-                    if (empty($line)) {
-                        // skip first blank lines
-
-                    } else if (uppercase_rate( $line ) > 50 && $title_block) {
-    //					if (!strpos($line,'.') && !strpos($line,',') && trim($line) != "" && $title_block) {
-                        $pdf_title .=($pdf_title ? " " : false) .trim($line);
-                        $tl ++;
-
-                    } else {
-                        $title_block =false;
-                    }
-
-                    if (strtolower(trim($line)) == 'abstract') break;
-
-                    $head[] =$line;
-                    $nl ++;
+                } else {
+                    $title_block =false;
                 }
 
-                $inst_n =count($p['authors_by_inst']);
-                $authors_n =count(explode( ',', $p['authors']));
-                $h =min( 250 +$nl *($authors_n > 20 ? 40 : 20), 800 );
-                if (!$h) $h =800;
-                $Indico->verbose_next( ".", false );
-                
-                $cmd ="pdftoppm -f 1 -l 1 -scale-to 1600 -y 100 -H $h -gray -jpeg $cfg[out_path]/$pcode.pdf >./images/$pcode.jpg";
-                system( $cmd );
-                $Indico->verbose_next( ".", false );
+                if (strtolower(trim($line)) == 'abstract') break;
 
-                $app_data[$pcode]['id'] =$p['id'];
-                $app_data[$pcode]['pdf_title'] =$pdf_title;
-                $app_data[$pcode]['pdf_ts'] =$now;
-                $app_data[$pcode]['title_lines'] =$tl;
-                $app_data[$pcode]['head'] =$head;
-			}
+                $head[] =$line;
+                $nl ++;
+            }
+
+            $inst_n =count($p['authors_by_inst']);
+            $authors_n =count(explode( ',', $p['authors']));
+            $h =min( 250 +$nl *($authors_n > 20 ? 40 : 20), 800 );
+            if (!$h) $h =800;
+            $Indico->verbose_next( ".", false );
+            
+            $cmd ="pdftoppm -f 1 -l 1 -scale-to 1600 -y 100 -H $h -gray -jpeg $cfg[out_path]/$pcode.pdf >./images/$pcode.jpg";
+            system( $cmd );
+            $Indico->verbose_next( ".", false );
+
+            $app_data[$pcode]['id'] =$p['id'];
+            $app_data[$pcode]['pdf_title'] =$pdf_title;
+            $app_data[$pcode]['pdf_ts'] =$now;
+            $app_data[$pcode]['title_lines'] =$tl;
+            $app_data[$pcode]['head'] =$head;
 		}
-
-        if ($p['revision_count'] > 1 && !empty($p['prev_status']) && $p['prev_status'] == 'y') {
-            $yellow_to_green[$pcode] =$p['status_ts'];
-        }
     }
 }
 
-$pdf_mb =round( $pdf_size /1024 /1024, 0 );
-$Indico->verbose_next( " OK ($pdf_n files download / $pdf_mb MB)\n" );
 
-$content .="<br /><small>$n papers</small>\n";
+if ($nn) $Indico->verbose_next( " OK ~ ($nn)\n" );
+else $Indico->verbose_next( " NONE!\n" );
 
 $Indico->data['data'] =$app_data;
 $Indico->save_file( 'data', 'out_data', 'DATA', array( 'save_empty' =>true ));

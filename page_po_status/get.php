@@ -53,12 +53,14 @@ class PO_STATUS extends JICT_OBJ {
         }
 
         foreach ($papers as $pcode =>$p) {
-            //$cws_config['page_edots']['hidden_sessions']
             $status =$p['status'];
-            if (empty($status) || $status == 'nofiles') $status ='';
-            
-            $class =($p['qa_ok'] ? 'qaok' : $status);				
-            $this->ret['edots'][$pcode] =$class;
+
+            if ($status != 'x') {
+                if (empty($status) || $status == 'nofiles') $status ='';
+                
+                $class =($p['qa_ok'] ? 'qaok' : $status);				
+                $this->ret['edots'][$pcode] =$class;
+            }
         }
         
         $this->ret['history'] =[];

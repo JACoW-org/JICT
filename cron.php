@@ -43,6 +43,10 @@ if (!$cfg['enabled'] && $force == false) {
 $run_h =date('H');
 $run_m =date('i');
 
+$rs =0;
+
+$cron_log =$cfg['logs_path'] ."/cron.log";
+
 foreach ($cws_config as $app =>$config) {
 	$run =$cfg['force'];
 	
@@ -56,23 +60,34 @@ foreach ($cws_config as $app =>$config) {
 		else if ($h == $run_h && $m == $run_m) $run =true; // H:i
 
 		if ($run) {
+			$rs ++;
+
 			echo "\n" .date('r') ." ------------------------------------------------------------------------------\n";
 
+			//$app_log =sprintf( "%s/logs/%s.log", ROOT_PATH, $app );
+			$app_log =sprintf( "%s/%s.log", $cfg['logs_path'], $app );
+
 			$t0 =time();
-			$cmd ="cd " .ROOT_PATH ."/$app; ./make.php" .(empty($config['cron_options']) ? false : ' ' .$config['cron_options']);
-			echo "Run $cmd at $h:$m\n";
+			$cmd ="cd " .ROOT_PATH ."/$app; ./make.php" 
+				.(empty($config['cron_options']) ? false : ' ' .$config['cron_options'])
+				." >$app_log 2>&1; cat $app_log";
+
+			echo "Run $app at $h:$m\n";
 			system( $cmd );
 
 			$exec_sec =time()-$t0;
 
 			echo "\nexecution time: $exec_sec sec\n\n";
 
-			file_write( ROOT_PATH ."/logs/cron.log", date('r') ." - $app - $exec_sec sec\n", 'a' );
+			file_write( $cron_log, date('r') ." - $rs - $app - $exec_sec sec\n", 'a' );
 
 		} else {
 			if ($cfg['verbose'] > 2) echo "$app schedulet at $h:$m\n";
 		} 
 	}
 }
+
+//if ($rs) file_write( ROOT_PATH ."/logs/cron.log", "\n", 'a' );
+if ($rs) file_write( $cron_log, "\n", 'a' );
 
 ?>

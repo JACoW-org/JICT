@@ -37,14 +37,14 @@ $T->set([
     'js' =>false
     ]);
 
-if ($cfg['post_load_f']) {
+/* if ($cfg['post_load_f']) {
     $f =$cfg['post_load_f'];
     $f();
-}
+} */
 
 $contribution_url ="$cfg[indico_server_url]/event/$cfg[indico_event_id]/contributions";
 
-$show =$_GET['show'];
+$show =$_GET['show'] ?? false;
 
 $rows =false;
 $papers =false;
@@ -61,14 +61,10 @@ if ($show == 'affiliations') {
 
             } else {
                 $affiliations[$affiliation]['n_authors'] ++;
-            }
-
-/*             $affiliations[$affiliation]['name'] =$affiliation;
-            $affiliations[$affiliation]['n_authors'] =empty($affiliations[$affiliation]['n_authors']) ? 1 : $affiliations[$affiliation]['n_authors'] +1;
- */            
+            }     
 
             foreach ($a['papers'] as $pcode =>$p) {
-                if ($_GET['filter'] == 'green_only' && $p['status'] != 'g') {
+                if (!empty($_GET['filter']) && $_GET['filter'] == 'green_only' && $p['status'] != 'g') {
                     // skip
 
                 } else if (empty($affiliations[$affiliation]['papers'][$pcode]['primary'])) {
@@ -84,17 +80,14 @@ if ($show == 'affiliations') {
 
     foreach ($affiliations as $affiliation =>$a) {
         $papers =false;
-//        $papers_as_primary =0;
         foreach ($a['papers'] as $pcode =>$p) {
             if (!empty($Indico->data['authors_check'][$pcode]['done'])) $p['status'] ='final';
             $papers .="<div class='paper_code b_$p[status]" .($p['primary'] ? ' primary' : false) ."' pid='$p[id]'>$pcode</div> ";
-//            if ($p['primary']) $papers_as_primary ++;
         }
 
         $rows[] =[
             'Affiliation' =>$affiliation,
             'N_Authors' =>$a['n_authors'],
-//            'N_Papers_Primary' =>$papers_as_primary,
             'N_Papers_Primary' =>$a['n_primary'],
             'N_Papers' =>count($a['papers']),
             'Papers' =>$papers
@@ -127,16 +120,22 @@ if ($show == 'affiliations') {
     }
 }
 
-if ($rows) $thead .="<tr><th>" .str_replace( '_', '&nbsp;', implode( "</th><th>", array_keys(reset($rows)))) ."</th></tr>\n";
+if ($rows) {
+    $thead ="<tr><th>" .str_replace( '_', '&nbsp;', implode( "</th><th>", array_keys(reset($rows)))) ."</th></tr>\n";
 
-$content ="
-<p>Switch to " .($show == 'affiliations' ?  "<a href='index.php'>Authors</a>" : "<a href='index.php?show=affiliations'>Affiliations</a>") ."</h1>
-<table id='authors' class='cell-border " .($show == 'affiliations' ? ' affiliations_view' : false) ."'>
-<thead>
-$thead
-<thead>
-<tbody>
-";
+    $content ="
+    <p>Switch to " .($show == 'affiliations' ?  "<a href='index.php'>Authors</a>" : "<a href='index.php?show=affiliations'>Affiliations</a>") ."</h1>
+    <table id='authors' class='cell-border " .($show == 'affiliations' ? ' affiliations_view' : false) ."'>
+    <thead>
+    $thead
+    <thead>
+    <tbody>
+    ";
+
+} else {
+    $thead =false;
+    $content =false;
+}
 
 $lname =false;
 foreach ($rows as $r) {
@@ -161,9 +160,10 @@ foreach ($rows as $r) {
             <td>$r[Papers]</td>
             </tr>
             ";
+            
+        $lname =$r['Name'];
     }
 
-    $lname =$r['Name'];
 }
 $content .="</table>";
 

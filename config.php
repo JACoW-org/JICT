@@ -25,6 +25,8 @@ $cws_config =[
 		'logs_path'			=>'{root_path}/logs',
 		'tmp_path'			=>'{root_path}/tmp',
 
+		'admin'				=>false,
+
 		'location'			=>'', // Malmö, Sweden
 //		'date_start'		=>'', // 2099-05-19
 //		'date_end'			=>'', // 2099-05-23
@@ -77,12 +79,12 @@ $cws_config =[
 			'nofiles' 	=>'No valid files uploaded yet'	
 			],
 
-		'label_files'		=>'Ready for processing',
+/* 		'label_files'		=>'Ready for processing',
 		'label_a'			=>'Assigned to an Editor',
 		'label_g'			=>'Paper successfully processed',
 		'label_y'			=>'Please check your e-mail',
 		'label_r'			=>'Please check your e-mail',
-		'label_nofiles' 	=>'No valid files uploaded yet'
+		'label_nofiles' 	=>'No valid files uploaded yet' */
 		],
 	
 	//-------------------------------------------------------------------------------------------------
@@ -103,7 +105,8 @@ $cws_config =[
 		'posters_hidden_sessions'=>[],
 				
 		'tmp_path'				=>'{tmp_path}/indico',
-		
+		'pdf_path'				=>'{data_path}/papers',
+				
 		// out
 		'in_papers'				=>'{app_data_path}/papers.json',
 
@@ -129,6 +132,7 @@ $cws_config =[
 		'cache_time'			=>600, // useful for test
 
         'tmp_path'			    =>'{tmp_path}/indico',
+		'pdf_path'				=>'{data_path}/papers',
 	
 		// in
 //		'in_po'				    =>'{data_path}/po.json',
@@ -219,12 +223,12 @@ $cws_config =[
 	//-------------------------------------------------------------------------------------------------
 	'page_slides' =>[
 		'name'				=>'Slides',
-		'allow_roles'		=>[ 'WSA', 'WSP' ],		
+		'allow_roles'		=>[ 'WSA', 'JPM' ],		
 
 //		'cron'				=>'*:10',
 //		'post_load_f'		=>false,
 
-		'tmp_path'				=>'{tmp_path}/indico',
+		'tmp_path'				=>'{tmp_path}/slides',
 
 		// in
 		'in_programme'		=>'{data_path}/programme.json',
@@ -239,36 +243,12 @@ $cws_config =[
 		], 
 
 	//-------------------------------------------------------------------------------------------------
-	'page_papers' =>[
-		'name'				=>'Papers',
-
-		'allow_roles'		=>[ '*' ],
-
-		'cron'				=>'*:10',
-
-		'post_load_f'		=>false,
-
-		// in
-		'in_papers'			=>'{data_path}/papers.json',
-		'in_authors'		=>'{data_path}/authors.json',
-		'in_registrants'	=>'{data_path}/registrants.json',
-		'in_authors_check'	=>'{data_path}/author_reception.json',
-        'in_posters_status' =>'{data_path}/posters-status.json',
-        'in_pdf_problems'   =>'{data_path}/papers-problems.json',
-
-		'template'			=>'template.html',
-
-		// out
-		'default_page'		=>'{app}/index.php'
-		], 
-
-	//-------------------------------------------------------------------------------------------------
 	'page_authors_check' =>[
 		'name'			=>'Authors Check',
 		'cron'			=>'*:05',
 //		'cron_options'	=>'-f',
 
-		'allow_roles'	=>[ 'WSA', 'WAR' ],
+		'allow_roles'	=>[ 'WSA', 'JAR' ],
 
 		'filter'		=>[ 'key' =>'status_qa', 'value' =>'QA Approved' ],
 	
@@ -282,6 +262,32 @@ $cws_config =[
 		'default_page'	=>'{app}/index.php',
 		'out_data'		=>'{data_path}/author_reception.json',
 		'out_path'		=>'{data_path}/papers'
+		], 
+		
+	//-------------------------------------------------------------------------------------------------
+	'page_papers' =>[
+		'name'				=>'Papers',
+
+		'allow_roles'		=>[ '*' ],
+
+		'cron'				=>'*:10',
+
+//		'post_load_f'		=>false,
+
+        'tmp_path'			=>'{tmp_path}/indico',
+
+		// in
+		'in_papers'			=>'{data_path}/papers.json',
+		'in_authors'		=>'{data_path}/authors.json',
+		'in_registrants'	=>'{data_path}/registrants.json',
+		'in_authors_check'	=>'{data_path}/author_reception.json',
+        'in_posters_status' =>'{data_path}/posters-status.json',
+        'in_pdf_problems'   =>'{data_path}/papers-problems.json',
+
+		'template'			=>'template.html',
+
+		// out
+		'default_page'		=>'{app}/index.php'
 		], 
 
 	//-------------------------------------------------------------------------------------------------
@@ -362,7 +368,7 @@ $cws_config =[
 		// in
 		'in_papers'		=>'{data_path}/papers.json',
 
-		'in_template_html'	=>'template.html',
+		'template'		=>'template.html',
 
 		// out
 		'log'			=>'{app_data_path}/usage.log'

@@ -15,7 +15,7 @@ require( '../config.php' );
 require_lib( 'jict', '1.0' );
 require_lib( 'indico', '1.0' );
 
-session_start();
+//session_start();
 
 $cfg =config( 'page_statistics', false, false );
 $cfg['verbose'] =0;
@@ -29,12 +29,17 @@ if (!$user) exit;
 $T =new TMPL( '../template.html' );
 $T->set([
     'path' =>'../',
-    'style' =>'main { font-size: 22px; } table.editors td { text-align: center !important; } table.editors tbody tr:hover td, table.editors tbody tr:hover th { background: #aaff00; }',
+    'style' =>'
+        main { font-size: 22px; } 
+        table.editors td { text-align: center !important; } 
+        table.editors tbody tr:hover td, table.editors tbody tr:hover th { background: #aaff00; }
+        .jqstooltip { box-sizing: content-box; }
+        ',
     'title' =>$cfg['name'],
     'logo' =>$cfg['logo'],
     'conf_name' =>$cfg['conf_name'],
     'user' =>__h( 'small', $user['email'] ),
-    'scripts' =>"<script src='../dist/jquery.sparkline.min.js'></script>\n<script src='../dist/chart.min.js'></script>"
+    'scripts' =>"<script src='../dist/jquery.sparkline.min.js'></script>\n"
     ]);
 
 $vars =[
@@ -65,7 +70,7 @@ $posters =false;
 
 foreach ($Indico->data['papers'] as $pcode =>$p) {
     if (empty($p['hide'])) {     
-        if ($p['poster']) $p['poster_police'] =$Indico->data['posters_status'][$pcode]['status'];
+        if ($p['poster'] && !empty($Indico->data['posters_status'][$pcode])) $p['poster_police'] =$Indico->data['posters_status'][$pcode]['status'];
 
         $p['available'] =empty($p['source_type']) ? 'No' : 'Yes';
         //if (($p['status_qa'] == 'QA Approved')) 
@@ -111,26 +116,33 @@ if (!empty($Indico->data['editing_tags'])) {
 	$tags ="<i>No data available!</i>";
 }
 
+$editors =false;
 $editor_content =false;
 if (!empty($Indico->data['editors'])) {
     foreach ($Indico->data['editors'] as $x) {
+        $sum =$x['stats']['g'] +$x['stats']['r'] +$x['stats']['y'];
+
         $serie['status_indico_1st']['Accepted'] +=$x['stats']['g'];
         $serie['status_indico_1st']['Needs Confirmation'] +=$x['stats']['y'];
         $serie['status_indico_1st']['Needs Changes'] +=$x['stats']['r'];
 
         $pie_values =$x['stats']['g'] .',' .$x['stats']['r'] .',' .$x['stats']['y'];
-
-        $sum =$x['stats']['g'] +$x['stats']['r'] +$x['stats']['y'];
-
+        
         $row =[
             'Revisions' =>$x['stats']['revisions'],
-            'Under processing' =>$x['stats']['a'], 
+
+            'Started' =>$sum,
+            'Running' =>$x['stats']['a'], 
+            'Pending' =>$x['stats']['pending'], 
+
             'QA Approved' =>$x['stats']['qa_ok'], 
-            'QA Failed' =>__h( 'span', round($x['stats']['qa_fail']*100/$sum,0) .'%', [ 'title' =>$x['stats']['qa_fail'] ]),
-            'Green' =>round($x['stats']['g']*100/$sum,0) .'%',
-            'Yellow' =>round($x['stats']['y']*100/$sum,0) .'%',
-            'Red' =>round($x['stats']['r']*100/$sum,0) .'%',
-            'Chart' =>"<span class='sparklines_editor' sparkType='pie' sparkWidth='30px' sparkHeight='30px' values='$pie_values'></span>"
+            'QA Failed' =>$x['stats']['qa_fail'],
+
+            'Green*' =>$x['stats']['g'],
+            'Yellow*' =>$x['stats']['y'],
+            'Red*' =>$x['stats']['r'],
+
+            '*1<sup>st</sup> status' =>"<span class='sparklines_editor' sparkType='pie' sparkWidth='30px' sparkHeight='30px' values='$pie_values'></span>"
             ];
 
         $editors .="<tr>\n\t<th>$x[name]</th>\n\t<td>" .implode( "</td>\n\t<td>", array_values( $row )) ."</td>\n\t</tr>\n";
@@ -189,6 +201,7 @@ function chart_pie( $_serie, $_cfg ) {
         $colors =false;
     }
 
+    $tab =false;
     $i =0;
     foreach ($_serie as $label =>$value) {
         $dot =$colors ? "<i class='fa-solid fa-circle' style='color:" .$colors[$i] ."'></i> " : false;

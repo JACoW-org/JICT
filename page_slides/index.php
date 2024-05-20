@@ -2,6 +2,7 @@
 
 /* by Stefano.Deiuri@Elettra.Eu
 
+2024.05.19 - publishing status
 2023.04.05 - update (bottom navbar)
 2023.04.03 - update (auth & template)
 2023.03.03 - 1st version
@@ -22,8 +23,7 @@ if (!$user) exit;
 
 $Indico->load();
 
-
-if ($_GET['download']) {
+if (!empty($_GET['download'])) {
     $source_file_type_id =false;
     $pdf_file_type_id =false;
     $types =$Indico->request( '/event/{id}/editing/api/slides/file-types', 'GET', false, 
@@ -40,16 +40,15 @@ if ($_GET['download']) {
 
     foreach ([ $source_file_type_id, $pdf_file_type_id ] as $file_type) {
         foreach ($revision['files'] as $f) {
-    //        if (strpos( $f['filename'], '_talk' )) {
             if ($f['file_type'] == $file_type) {
-                $ext =end(explode( '.', $f['filename'] ));
-
+                $ext =pathinfo( $f['filename'], PATHINFO_EXTENSION );
                 $fname ="$_GET[download].$ext";
 
-                $cmd =sprintf( "wget -q -O tmp/%s --header='Authorization: Bearer %s' %s", $fname, $Indico->cfg['indico_token'], $f['external_download_url'] );
+                $cmd =sprintf( "wget -q -O %s/%s --header='Authorization: Bearer %s' %s", $cfg['tmp_path'], $fname, $Indico->cfg['indico_token'], $f['external_download_url'] );
+                                
                 system( $cmd );
-                download_file( "tmp/$fname", $fname, false );
-                unlink( "tmp/$fname" );
+                download_file( $cfg['tmp_path'] ."/$fname", $fname, false );
+                unlink(  $cfg['tmp_path'] ."/$fname" );
                 return;
             }
         }
@@ -70,45 +69,45 @@ $T->set([
     'path' =>'../',
     'head' =>"<link rel='stylesheet' type='text/css' href='../dist/datatables/datatables.min.css' />
     <link rel='stylesheet' type='text/css' href='../page_edots/colors.css' />
-    <link rel='stylesheet' type='text/css' href='style.css?20230508' />",
+    <link rel='stylesheet' type='text/css' href='style.css?20240520' />",
     'scripts' =>"<script src='../dist/datatables/datatables.min.js'></script>",
     'js' =>false
     ]);
 
 
 $status =&$Indico->data['status'];
-//print_r( $status );
-
-
-// https://indico.jacow.org/event/41/editing/api/slides/list
-
 
 $status_key =$Indico->request( '/event/{id}/editing/api/slides/list' );
-//print_r( $Indico->data[$status_key] );
 
-/* 
-$status =[];
+$status_slide =[];
 foreach ($Indico->data[$status_key] as $x) {
-    $status[$x['code']] =empty($x['editable']) ? false : $x['editable']['state'];
+    $status_slide[$x['code']] =empty($x['editable']) ? false : $x['editable']['state'];
 }
- */
-
-$conf_day =$_GET['day'];
 
 
-if ($_GET['ok']) {
+$conf_day =$_GET['day'] ?? false;
+
+
+if (!empty($_GET['ok'])) {
     $pcode =$_GET['ok'];
     
     $status[$pcode] =[
-        'ts' =>time()
-    ];
+        'ts' =>time(),
+        'allow_publication' =>false,
+        'author' =>$user['email']
+        ];
     
     $Indico->save_file( 'status', 'out_status', 'STATUS', [ 'save_empty' =>true ]);
     header( "location: $_SERVER[PHP_SELF]?day=$conf_day" );
     return;
-}
 
-//$content ="<table class='days'>\n<tr>\n";
+} else if (!empty($_GET["allow_publication"])) {
+    $pcode =$_GET['code'];
+
+    $status[$pcode]['allow_publication'] =$_GET["allow_publication"];
+    
+    $Indico->save_file( 'status', 'out_status', 'STATUS', [ 'save_empty' =>true ]);
+}
 
 if (empty($conf_day)) {
     $day =date( 'Y-m-d' );
@@ -117,8 +116,6 @@ if (empty($conf_day)) {
         return;
     }
 }
-
-//print_r( $Indico->data['programme'] ); return;
 
 $stats =false;
 $day_id =1;
@@ -149,8 +146,6 @@ foreach ($Indico->data['programme']['days'] as $day =>$x) {
         $T->set( "day$day_id", sprintf( "<a href='%s?day=%s'>%s, %s</a>%s", $_SERVER['PHP_SELF'], $day, $day, $wday, $status_bar ));
 
         $day_id ++;
-//    } else {
-//        $T->set( "day$day_id", sprintf( "<a>%s, %s</a><div class='status_bar_empty'>no presentations!</div>", $day, $wday ));
     }
 
 }
@@ -160,8 +155,6 @@ if ($day_id <= 5) {
         $T->set( "day$day_id", "" );
     }
 }
-
-//$content .="</tr>\n</table>\n\n";
 
 $content =false;
 
@@ -177,6 +170,7 @@ $papers_id =[];
 $day_ok =0;
 $i =1;
 
+$thead =false;
 $rows =false;
 foreach ($Indico->data['programme']['days'][$conf_day] as $sid =>$s) {
     if (empty($s['poster_session']) && !empty($s['papers'])) {
@@ -188,16 +182,15 @@ foreach ($Indico->data['programme']['days'][$conf_day] as $sid =>$s) {
             $fname =strtr(sprintf( '%02d-%s-%s', $i, $pcode, $presenter ), ' ', '_' );
 
             $rows[$i] =[
-                'Order' =>empty($status[$pcode]) ? sprintf( "<a href='%s?pid=%d&download=%s'>%02d</a>", $_SERVER['PHP_SELF'], $p['id'], $fname, $i ) : sprintf( '%02d', $i ),
+                'Order' =>empty($status[$pcode]) && !empty($status_slide[$pcode]) ? sprintf( "<a href='%s?pid=%d&download=%s'>%02d</a>", $_SERVER['PHP_SELF'], $p['id'], $fname, $i ) : sprintf( '%02d', $i ),
                 'Time' =>$p['time_from'],
                 'Code' =>$pcode,
                 'Room' =>$s['room'],
                 'Type' =>$s['type'],
                 'Title' =>$p['title'],
-                'Presenter' =>$p['presenter']
+                'Presenter' =>$p['presenter'],
+                'Publishable' =>""
                 ];
-
-//            if ($_GET['dev'] && empty($status[$pcode])) $rows[$i]['Order'] =sprintf( "<a href='%s?pid=%d&download=%s'>%02d</a>", $_SERVER['PHP_SELF'], $p['id'], $fname, $i );
 
             $i ++;
 
@@ -208,32 +201,54 @@ foreach ($Indico->data['programme']['days'][$conf_day] as $sid =>$s) {
 
 $day_status =$day_ok ? ceil( count($rows)*100/$day_ok ) : 0;
 
-$thead .="<tr><th>" .strtr( implode( "</th><th>", array_keys( $rows[1] )), '_', ' ' ) ."</th></tr>\n";
-
-$content .="<div style='margin-bottom: 1em;'></div>
-<table id='talks' class='cell-border'>
-<thead>
-$thead
-<thead>
-<tbody>
-";
+if (!empty($rows[1])) {
+    $thead .="<tr><th>" .strtr( implode( "</th><th>", array_keys( $rows[1] )), '_', ' ' ) ."</th></tr>\n";
+    
+    $content .="<div style='margin-bottom: 1em;'></div>
+    <table id='talks' class='cell-border'>
+    <thead>
+    $thead
+    <thead>
+    <tbody>
+    ";
+}
 
 foreach ($rows as $r) {
-    $pid =$papers_id[ $r['Code'] ];
+    $pcode =$r['Code'];
+    $pid =$papers_id[ $pcode ];
 
     $contribution_url ="https://indico.jacow.org/event/$cfg[indico_event_id]/contributions/$pid";
     $paper_url ="https://indico.jacow.org/event/$cfg[indico_event_id]/contributions/$pid/editing/slides";
     $ok_url ="$_SERVER[PHP_SELF]?day=$conf_day&ok=$r[Code]";
 
-    if (empty($status[$r['Code']])) {
-        $r['Presenter'] =sprintf( "%s [ <a href='%s'>OK</a> ]", $r['Presenter'], $ok_url );
-        $cls =false;
+    if (empty($status[$pcode])) {
+        if (!empty($status_slide[$pcode])) {
+            $r['Presenter'] =sprintf( "%s [ <a href='%s'>OK</a> ]", $r['Presenter'], $ok_url );
+            $cls ='ready';
+        
+        } else {
+            $cls =false;
+        }
 
     } else {
-        $cls ='ok';
+        switch ($status[$pcode]['allow_publication']) {
+            case 'yes':
+                $r['Publishable'] ="<span class='tag publish_yes'>ALLOWED</span>";
+                break;
+
+            case 'no':
+                $r['Publishable'] ="<span class='tag publish_no'>NOT ALLOWED</span>";
+                break;
+
+            default:
+                $url ="$_SERVER[PHP_SELF]?day=$conf_day&code=$r[Code]&allow_publication=";
+                $r['Publishable'] =sprintf( "Allow publication <a href='%syes' class='tag publish_yes'>YES</a>  <a href='%sno' class='tag publish_no'>NO</a>", $url, $url );
+                break;
+            }
+            $cls ='ok';
     }
 
-    $r['Code'] =sprintf( "<a href='%s' target='_blank'>%s</a>", $paper_url, $r['Code'] );
+    if (!empty($status_slide[$pcode])) $r['Code'] =sprintf( "<a href='%s' target='_blank'>%s</a>", $paper_url, $pcode );
 
     $r['Title'] =sprintf( "<a href='%s' target='_blank'>%s</a>", $contribution_url, $r['Title'] );
     

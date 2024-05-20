@@ -8,6 +8,6 @@ tmp/*
 *.json
 *.tmp
 logo_*.png
-page_author_check/images/*
+page_authors_check/images/*
 exports/*.csv
 conference-config.php

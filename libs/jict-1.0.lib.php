@@ -209,7 +209,7 @@ function config( $_app =false, $_check_in_file_exit =false, $_check_in_file =tru
   
  $cfg =$cws_config[$_app];
 
- foreach ([ 'data_path', 'tmp_path', 'out_path' ] as $path_name) {
+ foreach ([ 'data_path', 'tmp_path', 'out_path', 'logs_path' ] as $path_name) {
 	if (!isset($cfg[$path_name])) {
         $$path_name =$cfg[$path_name] =$cws_config['global'][$path_name];
 

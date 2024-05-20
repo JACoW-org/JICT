@@ -2,20 +2,20 @@
 
 /* by Stefano.Deiuri@Elettra.Eu
 
+2024.05.16 - update
 2024.05.02 - update for indico 3.3.2
 2022.08.22 - 1st version
 
 */
 
+//date_default_timezone_set( 'US/Central' );
+
 require( '../config.php' );
 require_lib( 'jict', '1.0' );
 require_lib( 'indico', '1.0' );
 
-define( 'FAIL_QA_STRING', 'his revision has failed QA.' );
 
-session_start();
-
-$cfg =config( 'page_statistics', false, false );
+$cfg =config( 'page_papers', false, false );
 $cfg['verbose'] =0;
 
 $Indico =new INDICO( $cfg );
@@ -23,6 +23,7 @@ $Indico->load();
 
 $user =$Indico->auth();
 if (!$user) exit;
+
 
 $T =new TMPL( '../template.html' );
 $T->set([
@@ -41,11 +42,10 @@ $T->set([
     
     ',
 
-    'title' =>$cfg['name'],
+    'title' =>'Revisions',
     'logo' =>$cfg['logo'],
     'conf_name' =>$cfg['conf_name'],
     'user' =>__h( 'small', $user['email'] ),
-//     ." " .__h( 'i', "", [ 'class' =>'fa fa-power-off', 'onClick' =>"document.location =\"$_SERVER[PHP_SELF]?cmd=logout\"" ]),
     'scripts' =>"<script src='../html/jquery.sparkline.min.js'></script>\n<script src='../html/chart.min.js'></script>"
     ]);
 
@@ -56,19 +56,25 @@ $T->set( 'content', $content );
 echo $T->get();
 return;
 
+
+
 //-----------------------------------------------------------------------------
 function get_paper_revisions( $_pid ) {
     global $Indico;
 
-    $pedit =$Indico->request( "/event/{id}/api/contributions/$_pid/editing/paper", 'GET', false, 
+/*     $pedit =$Indico->request( "/event/{id}/api/contributions/$_pid/editing/paper", 'GET', false, 
         [ 'return_data' =>true, 'quiet' =>true, 'cache_time' =>0 ]);
+
+    $pedit['revisions'] =fix_revisions( $pedit['revisions'] ); */
+
+    $pedit =$Indico->get_paper_details( $_pid, 0, true );
 
     $editor =$pedit['editor']['full_name'];
 
     $tab =false;
     foreach ($pedit['revisions'] as $r_id =>$r) {
             
-        $keys =[ 'id', 'created_dt', 'comment_html', 'tags', '#count.files', '#count.tags', 'user.full_name', 'type.name' ];
+        $keys =[ 'id', 'created_dt', 'comment_html', 'tags', 'qa', '#count.files', '#count.tags', 'user.full_name', 'type.name' ];
         
         $row =[];
         $class =false;
@@ -78,7 +84,7 @@ function get_paper_revisions( $_pid ) {
 
             if (empty($k2)) {
                 if ($k == 'id') {
-                    $row[$k] =$r_id .($r['is_undone'] ? ' (undone)' : false);
+                    $row[$k] ="<a href='#r$r_id' style='font-size: 2em'>$r_id</a>" .($r['is_undone'] ? ' (undone)' : false);
 
                 } else if ($k == 'tags') {
                     $tags =false;
@@ -87,16 +93,11 @@ function get_paper_revisions( $_pid ) {
                     }
                     $row[$k] =$tags;
 
-                } else if ($k == 'comments') {
-                    $v =false;
-                    foreach ($r[$k] as $t) {
-                        if (strpos( $t['text'], FAIL_QA_STRING )) $v .="<p style='font-weight: bold; color: red'>$t[text]</p>";
-                        else $v .="<p>$t[text]</p>";
-                    }
-                    $row[$k] =$v;
+                } else if (substr( $k, -3 ) == '_dt') {
+                    $t =strtotime($r[$k]);
+                    $row[$k] =date( 'd/m',$t) .'<br />' .date( 'H:i:s',$t);
 
-                } else if (substr( $k, -3 ) == '_dt') $row[$k] =str_replace( "T", "<br />", substr( $r[$k], 5, 14 ));
-                else $row[$k] =$r[$k];
+                } else $row[$k] =$r[$k];
 
             } else if ($k1 == '#count') {
                 $row[$k] =count($r[$k2]);
@@ -125,7 +126,27 @@ function get_paper_revisions( $_pid ) {
     $cdt =str_replace( "T", "<br />", substr( $r['created_dt'], 5, 14 ));
     $tab =str_replace( $cdt, "<b style='color:red'>$cdt</b>", $tab );
 
-    return "<br /><h1>" .$pedit['contribution']['code'] ." #$_pid</h1>\n<table>$tab</table><pre>\n\n" .print_r($pedit, true);
+    $pcode =$pedit['contribution']['code'];
+    
+
+    $revisions_data =false;
+    foreach ($pedit['revisions'] as $rid =>$r) {
+        $revisions_data .="<a name='r$rid'><hr /><h4>Revision $rid</h4>" .substr(print_r( $r, true ), 8, -3 );
+    }
+
+    unset($pedit['revisions']);
+
+    $paper =$Indico->data['papers'][$pcode];
+    foreach ($paper as $var =>$val) {
+        if (substr( $var, -3 ) == '_ts') $paper[$var.'-time'] =sprintf( "%d (%s)",  $val, date( 'r',  $val  ));
+    }
+
+    return "<br /><h1>$pcode #$_pid</h1>\n"
+        ."<a href='#revisions_data'>revisions</a> | <a href='#paper_obj'>paper</a>"
+        ."<br /><table>$tab</table><pre>\n\n" 
+        ."<a name='revisions_data'><hr /></a><h1>Revisions data</h1>" .print_r($pedit, true)
+        .$revisions_data
+        ."<a name='paper_obj'><hr /></a><h1>Paper obj</h1>" .print_r($paper, true);
 }
 
 ?>
