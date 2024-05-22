@@ -90,7 +90,7 @@ if ($show == 'affiliations') {
             'N_Authors' =>$a['n_authors'],
             'N_Papers_Primary' =>$a['n_primary'],
             'N_Papers' =>count($a['papers']),
-            'Papers' =>$papers
+            'Papers_Code' =>$papers
             ];
     }
 
@@ -114,14 +114,19 @@ if ($show == 'affiliations') {
                 'Affiliation' =>$a['affiliation'],
                 'N_Papers_Primary' =>$papers_as_primary,
                 'N_Papers' =>count($a['papers']),
-                'Papers' =>$papers
+                'Papers_Code' =>$papers
                 ];
+
+            
         }
     }
 }
 
 if ($rows) {
-    $thead ="<tr><th>" .str_replace( '_', '&nbsp;', implode( "</th><th>", array_keys(reset($rows)))) ."</th></tr>\n";
+    $headers =array_keys(reset($rows));
+    print_r( $headers );
+    if (!empty($_GET['nopaperscode'])) unset($headers[4]);
+    $thead ="<tr><th>" .str_replace( '_', '&nbsp;', implode( "</th><th>", $headers)) ."</th></tr>\n";
 
     $content ="
     <p>Switch to " .($show == 'affiliations' ?  "<a href='index.php'>Authors</a>" : "<a href='index.php?show=affiliations'>Affiliations</a>") ."</h1>
@@ -144,9 +149,9 @@ foreach ($rows as $r) {
             <td>$r[Affiliation]</td>
             <td>$r[N_Authors]</td>
             <td>$r[N_Papers_Primary]</td>
-            <td>$r[N_Papers]</td>
-            <td class='affiliations_view'>$r[Papers]</td>
-            </tr>
+            <td>$r[N_Papers]</td>"
+            .(!empty($_GET['nopaperscode']) ? false : "<td class='affiliations_view'>$r[Papers_Code]</td>")
+            ."</tr>
             ";
     } else {
         $aff_class =empty($r['Affiliation']) ? 'b_r' : false;
@@ -156,9 +161,9 @@ foreach ($rows as $r) {
             <td class='$name_class'>$r[Name]</td>
             <td class='$aff_class'>$r[Affiliation]</td>
             <td>$r[N_Papers_Primary]</td>
-            <td>$r[N_Papers]</td>
-            <td>$r[Papers]</td>
-            </tr>
+            <td>$r[N_Papers]</td>"
+            .(!empty($_GET['nopaperscode']) ? false : "<td>$r[Papers_Code]</td>")
+            ."</tr>
             ";
             
         $lname =$r['Name'];

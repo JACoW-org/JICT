@@ -110,10 +110,6 @@ class INDICO extends JICT_OBJ {
 
 		switch ($_request) {
 			case 'token':
-	//            use_class( 'api_request', '1.1' );
-//				$indico_api =new API_REQUEST( 'https://indico.jacow.org' );
-//				$indico_api->configs([ 'ignore_errors' =>'true' ]);
-
 				$rqst_data =[
 					'client_id'		=>$oauth_cfg['client_id'],
 					'client_secret'	=>$oauth_cfg['client_secret'],
@@ -130,6 +126,8 @@ class INDICO extends JICT_OBJ {
 				$this->api->config( 'authorization_header', 'Bearer ' .$user_token['access_token'] );
 
 				$user =$this->request( '/api/user', 'GET', false, [ 'disable_cache' =>true, 'return_data' =>true ]);
+				//print_r( $user );
+				//file_write( '/web/httpd/vhost-jacow.org/jict_ipac24/tmp/debug-user.json', $user  );
 				$user['full_name'] ="$user[first_name] $user[last_name]";
 				$_SESSION['indico_oauth']['user'] =$user;
 
@@ -142,7 +140,7 @@ class INDICO extends JICT_OBJ {
 					foreach ($role['members'] as $member) {
 						if ($member['id'] == $user['id']) {
 							$user_roles[] =$role['code'];
-							if ($role['code'] == 'WSA') $_SESSION['indico_oauth']['user']['admin'] =true;
+							if ($role['name'] == 'JICT Admin') $_SESSION['indico_oauth']['user']['admin'] =true;
 						}
 					}
 				}
@@ -231,7 +229,7 @@ class INDICO extends JICT_OBJ {
 				return false;
 			}
 
-			echo sprintf(" %sMB ]\n", round( $pdf_size /1024 /1024, 0 ));
+			echo sprintf(" %sMB ]\n", round( $pdf_size /1024 /1024, 1 ));
 	
 			return filemtime( $pdf_fname );
 		}
@@ -310,7 +308,7 @@ class INDICO extends JICT_OBJ {
 		//$editor_stats =[];
 		$days =[ 'processed' =>[] ];
 
-		$revisions =$this->data['revisions'];
+		//$revisions =$this->data['revisions'];
 
 		foreach ($papers_list as $x) {
 			$pcode =$x['code'];
@@ -328,7 +326,16 @@ class INDICO extends JICT_OBJ {
 				if (!empty($x['editable']['editor'])) {
 					$rev_id =$this->get_rev_id( $x['editable'] );
 
-					if (empty($revisions[$pcode]) || $rev_id != $revisions[$pcode]) {
+					if (empty($p['rev_id']) || $rev_id != $p['rev_id']) { //  || $pcode == 'TUPS54'
+						echo sprintf( "\nUPDATE %s %s > %s (%s)\n", $pcode, (empty($p['rev_id']) ? "NEW" : $p['rev_id']), $rev_id, date('r') );
+						$p['rev_id'] =$rev_id;
+						$cache_time =0;
+
+					} else {
+						$cache_time =3600*8 +rand(0,3600);
+					}
+
+/* 					if (empty($revisions[$pcode]) || $rev_id != $revisions[$pcode]) {
 						echo sprintf( "\nUPDATE %s %s > %s (%s)\n", $pcode, (empty($revisions[$pcode]) ? "NEW" : $revisions[$pcode]), $rev_id, date('r') );
 						$revisions[$pcode] =$rev_id;
 						$cache_time =0;
@@ -336,13 +343,17 @@ class INDICO extends JICT_OBJ {
 					} else {
 						$cache_time =3600*8 +rand(0,3600);
 					}
-
+ */
 					$pedit =$this->process_paper_revisions( $p, $cache_time, true );
 					
 					$this->data['papers'][$pcode] =$p;
 					
 					$ieditor =false; // initial editor
 					$peditor =$pedit['editor']['full_name']; // current paper editor
+					if (empty($pedit['editor'])) {
+						echo "WARN: $pcode no editor\n";
+						//print_r( $pedit );
+					}
 					
 					$first_editing_state =false;
 					foreach ($pedit['revisions'] as $rid =>$r) {
@@ -399,13 +410,13 @@ class INDICO extends JICT_OBJ {
 
 					$status =isset($map_status[ $paper_status ]) ? $map_status[ $paper_status ] : "_$paper_status";
 
-					if (in_array( $status, ['a','y','r'])) $this->editor_stats_inc( $peditor, 'pending' );
+					if (in_array( $status, ['y','r'])) $this->editor_stats_inc( $peditor, 'waiting' );
 
-					if (empty($istatus) || $istatus == 'none') $istatus =$paper_status;
+/* 					if (empty($istatus) || $istatus == 'none') $istatus =$paper_status;
 
 					$istatus =$map_status[$istatus];
 
-					echo sprintf( "%s - %s - %s (%s)\n", $pcode, substr( $r['created_dt'], 0, 10 ), $istatus, $r['type']['name'] );
+					echo sprintf( "%s - %s - %s (%s)\n", $pcode, substr( $r['created_dt'], 0, 10 ), $istatus, $r['type']['name'] ); */
 				
 				} else {
 					$status =isset($map_status[ $paper_status ]) ? $map_status[ $paper_status ] : "_$paper_status";
@@ -466,12 +477,12 @@ class INDICO extends JICT_OBJ {
 		}
 
 		$this->data['editors'] =$editors;
-		$this->data['revisions'] =$revisions;
+		//$this->data['revisions'] =$revisions;
 	}
 
 	//-------------------------------------------------------------------------
 	function editor_stats_inc( $_editor, $_var ) {
-		if (empty($this->editors_stats[$_editor])) $this->editors_stats[$_editor] =[ 'g' =>0, 'y' =>0, 'r' =>0, 'a' =>0, 'pending' =>0, 'revisions' =>0, 'qa_fail' =>0, 'qa_ok' =>0 ];
+		if (empty($this->editors_stats[$_editor])) $this->editors_stats[$_editor] =[ 'g' =>0, 'y' =>0, 'r' =>0, 'a' =>0, 'pending' =>0, 'waiting' =>0, 'revisions' =>0, 'qa_fail' =>0, 'qa_ok' =>0 ];
 		
 		$this->editors_stats[$_editor][$_var] ++;
 	}

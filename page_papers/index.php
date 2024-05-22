@@ -2,6 +2,7 @@
 
 /* by Stefano.Deiuri@Elettra.Eu
 
+2024.05.22 - new filter [y]
 2024.05.18 - filters
 2024.05.16 - show yellow to green
 2023.04.05 - update (auth & template)
@@ -62,6 +63,7 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
 
         $show =true;
         if (!empty($_GET['qa']) && $_GET['qa'] == 'pending' && $p['status_qa'] != 'QA Pending') $show =false;
+        else if (!empty($_GET['filter']) && $_GET['filter'] == 'y' && $p['status'] != 'y') $show =false;
         else if (!empty($_GET['filter']) && $_GET['filter'] == 'qa_pending' && $p['status_qa'] != 'QA Pending') $show =false;
         else if (!empty($_GET['filter']) && $_GET['filter'] == 'pdf_warnings' && empty($Indico->data['pdf_problems'][$pcode])) $show =false;
         else if (!empty($_GET['pcode']) && strtolower($pcode) != strtolower($_GET['pcode'])) $show =false;
@@ -121,6 +123,7 @@ $content ="
 
 <a href='index.php'>All</a> | 
 <a href='index.php?filter=qa_pending'>QA Pending</a> | 
+<a href='index.php?filter=y'>Needs Confirmation</a> | 
 <a href='index.php?filter=pdf_warnings'>PDF warnings</a> |
 <a href='index.php?pcode='>pcode</a> | 
 ";
@@ -136,7 +139,7 @@ $thead
 ";
 }
 
-$is_admin =(!empty($cfg['admin']) && $user['email'] == $cfg['admin']);
+$is_admin =!empty($user['admin']);
 
 foreach ($rows as $r) {
     $pcode =$r['Program_Code'];
@@ -164,7 +167,10 @@ foreach ($rows as $r) {
 
     $revisions =$is_admin ? sprintf( "<br /><small><a href='./revisions.php?pid=%d' target='_blank'>revisions</a></small>", $p['id'] ) : false;
 
-    $status_ts =$r['PDF'] != 'OK' ? sprintf( "<br /><br /><small>%s</small>", date( 'd/m H:i', $p['status_ts'] )) : false;
+    $pre_status =false;
+    $post_status =false;
+    if (!empty($_GET['filter']) && $_GET['filter'] == 'y' && $p['status'] == 'y') $pre_status =sprintf( "<small>updated %s days ago</small><br /><br />", round((time() -$p['status_ts'])/86400,0 ));
+    if ($r['PDF'] != 'OK' && $r['PDF'] != 'NO PDF') $post_status =sprintf( "<br /><br /><small>%s</small>", date( 'd/m H:i', $p['status_ts'] ));
 
     $content .="<tr>
     <td><a href='$contribution_url' target='_blank'>$r[Abstract_ID]</a></td>
@@ -174,7 +180,7 @@ foreach ($rows as $r) {
 <td>$r[PAuthor]</td>
 <td>$r[Source]</td>
 <td>$r[Editor]</td>
-<td class='b_$p[status]'>$r[Status] $status_ts</td>
+<td class='b_$p[status]'>$pre_status $r[Status] $post_status</td>
 <td class='$qa_class'>$r[QA]</td>
 <td class='$pdf_class'>$r[PDF]</td>
 <td class='$pp_class'>$r[Poster_Police]</td>

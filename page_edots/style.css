@@ -39,7 +39,7 @@ body, td, th {
 #timer {
 	z-index: 10;
 	position: absolute;
-	top: 0px;
+	top: 49px;
 	left: 0px;
 	height: 5px;
 	width: 100%;

@@ -625,13 +625,15 @@ function update_rates_today( obj ) {
 	
 	for (tm in obj) {
 		d =new Date(tm.slice(0, 10));
+		//console.log(tm);
+		//console.dir(d);
 		day =tm.substr( 5, 5 ) +'&nbsp;' +dayOfWeekAsString(d.getDay());
 		//console.log(`${tm} ${d} ${day}`);
 		days_rates[day] =obj[tm].processed; 
 		days_rates_qaok[day] =obj[tm].qaok; 
 	}
 	
-	//console.dir( days_rates );
+	console.dir( days_rates );
 
 	var days =Object.keys( days_rates );
 	
@@ -646,6 +648,8 @@ function update_rates_today( obj ) {
 		serie[ day2 ] =days_rates[day2] -days_rates[day1];
 	}
 	
+	console.dir( serie );
+
 	$('#rates_days').html( rates_chart( 'rates_days', 'Papers Daily Rates', serie, 900 ));
 	
 	
@@ -661,8 +665,9 @@ function update_rates_today( obj ) {
 
 
 function dayOfWeekAsString(dayIndex) {
-	return [ "SU", "MO", "TU", "WE", "TH", "FR", "SA" ][dayIndex] || '';
-	return ["Sunday", "Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][dayIndex] || '';
+	dow =[ "SU", "MO", "TU", "WE", "TH", "FR", "SA", "SU" ][dayIndex+1] || '';
+//	console.log( `dayOfWeekAsString: ${dayIndex} -> ${dow}` );
+	return dow;
   }
 
 //---------------------------------------------------------------------------------------------

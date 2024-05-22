@@ -11,3 +11,4 @@ logo_*.png
 page_authors_check/images/*
 exports/*.csv
 conference-config.php
+libs/phpqrcode/cache/*

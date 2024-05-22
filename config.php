@@ -139,7 +139,7 @@ $cws_config =[
 		'in_papers'			    =>'{data_path}/papers.json',
 		'in_stats'				=>'{data_path}/stats.json',
 		'in_last_nums'			=>'{data_path}/last_nums.json',
-		'in_revisions'			=>'{data_path}/papers-revisions.json',
+//		'in_revisions'			=>'{data_path}/papers-revisions.json',
 
 		// out
 		'out_editors'			=>'{data_path}/editors.json',
@@ -148,7 +148,7 @@ $cws_config =[
 		'out_abstracts_stats'	=>'{data_path}/abstracts_stats.json',
         'out_registrants'	    =>'{data_path}/registrants.json',
 		'out_last_nums'			=>'{data_path}/last_nums.json',
-		'out_revisions'			=>'{data_path}/papers-revisions.json',
+//		'out_revisions'			=>'{data_path}/papers-revisions.json',
 		],
 
 	//-------------------------------------------------------------------------------------------------
@@ -223,12 +223,12 @@ $cws_config =[
 	//-------------------------------------------------------------------------------------------------
 	'page_slides' =>[
 		'name'				=>'Slides',
-		'allow_roles'		=>[ 'WSA', 'JPM' ],		
+		'allow_roles'		=>[ 'WSA', 'JSA', 'JPM' ],		
 
 //		'cron'				=>'*:10',
 //		'post_load_f'		=>false,
 
-		'tmp_path'				=>'{tmp_path}/slides',
+		'tmp_path'			=>'{tmp_path}/slides',
 
 		// in
 		'in_programme'		=>'{data_path}/programme.json',
@@ -248,10 +248,12 @@ $cws_config =[
 		'cron'			=>'*:05',
 //		'cron_options'	=>'-f',
 
-		'allow_roles'	=>[ 'WSA', 'JAR' ],
+		'allow_roles'	=>[ 'WSA', 'JSA', 'JAR' ],
 
 		'filter'		=>[ 'key' =>'status_qa', 'value' =>'QA Approved' ],
 	
+		'tmp_path'		=>'{tmp_path}/indico',
+
 		// in
 		'in_papers'		=>'{data_path}/papers.json',
 		'in_data'		=>'{data_path}/author_reception.json',
@@ -334,7 +336,7 @@ $cws_config =[
         'sessions_details' =>true,
 		'special_sessions_class' =>false,
 
-		'session_func' =>false,
+		'session_func'	 =>false,
 		
         'coffee_break_time_end' =>[ '11:00' ],
         'lunch_break_time_end' =>[ '14:30' ],
@@ -378,7 +380,7 @@ $cws_config =[
 	'app_poster_police' =>[
 		'name'			=>'App Poster Police',
 
-		'allow_roles'		=>[ 'WSA', 'WPP' ],
+		'allow_roles'	=>[ 'WSA', 'JSA', 'JPP' ],
 
 		'dummy_mode'	=>false,
 
@@ -401,19 +403,19 @@ $cws_config =[
 	//-------------------------------------------------------------------------------------------------
 	'cis' =>[
 		'name'				=>'Conference Information System (CIS Admin)',
-		'allow_roles'		=>[ 'WSA', 'WCM' ],
+		'allow_roles'		=>[ 'WSA', 'JSA', 'WCM' ],
 
 		'echo_mode'			=>'web',
 		
 		'default_page'		=>'{app}/admin.php',
 
 		// in
-		'in_clients'			=>'{data_path}/cis-clients.json',
-		'in_contents'			=>'{data_path}/cis-contents.json',
+		'in_clients'		=>'{data_path}/cis-clients.json',
+		'in_contents'		=>'{data_path}/cis-contents.json',
 
 		// out
-		'out_clients'			=>'{data_path}/cis-clients.json',
-		'out_contents'			=>'{data_path}/cis-contents.json'
+		'out_clients'		=>'{data_path}/cis-clients.json',
+		'out_contents'		=>'{data_path}/cis-contents.json'
 		],	
 
 

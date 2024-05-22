@@ -69,7 +69,7 @@ $T->set([
     'path' =>'../',
     'head' =>"<link rel='stylesheet' type='text/css' href='../dist/datatables/datatables.min.css' />
     <link rel='stylesheet' type='text/css' href='../page_edots/colors.css' />
-    <link rel='stylesheet' type='text/css' href='style.css?20240520' />",
+    <link rel='stylesheet' type='text/css' href='style.css?20240520_1150' />",
     'scripts' =>"<script src='../dist/datatables/datatables.min.js'></script>",
     'js' =>false
     ]);
@@ -189,7 +189,7 @@ foreach ($Indico->data['programme']['days'][$conf_day] as $sid =>$s) {
                 'Type' =>$s['type'],
                 'Title' =>$p['title'],
                 'Presenter' =>$p['presenter'],
-                'Publishable' =>""
+                'Publish' =>""
                 ];
 
             $i ++;
@@ -223,7 +223,7 @@ foreach ($rows as $r) {
 
     if (empty($status[$pcode])) {
         if (!empty($status_slide[$pcode])) {
-            $r['Presenter'] =sprintf( "%s [ <a href='%s'>OK</a> ]", $r['Presenter'], $ok_url );
+            $r['Presenter'] =sprintf( "%s <a href='%s' class='tag ok'>OK</a>", $r['Presenter'], $ok_url );
             $cls ='ready';
         
         } else {
@@ -233,16 +233,16 @@ foreach ($rows as $r) {
     } else {
         switch ($status[$pcode]['allow_publication']) {
             case 'yes':
-                $r['Publishable'] ="<span class='tag publish_yes'>ALLOWED</span>";
+                $r['Publish'] ="<span class='tag publish_yes'>ALLOWED</span>";
                 break;
 
             case 'no':
-                $r['Publishable'] ="<span class='tag publish_no'>NOT ALLOWED</span>";
+                $r['Publish'] ="<span class='tag publish_no'>NOT ALLOWED</span>";
                 break;
 
             default:
                 $url ="$_SERVER[PHP_SELF]?day=$conf_day&code=$r[Code]&allow_publication=";
-                $r['Publishable'] =sprintf( "Allow publication <a href='%syes' class='tag publish_yes'>YES</a>  <a href='%sno' class='tag publish_no'>NO</a>", $url, $url );
+                $r['Publish'] =sprintf( "Allow publication <a href='%syes' class='tag publish_yes'>YES</a>  <a href='%sno' class='tag publish_no'>NO</a>", $url, $url );
                 break;
             }
             $cls ='ok';

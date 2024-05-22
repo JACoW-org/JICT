@@ -242,6 +242,8 @@ foreach ($old_confs as $cname =>$cdata) {
     $charts[$chart_id]['series'][$cname] =get_chart_serie( $cname, $cdata[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit  ] );
 }
 
+
+
 // REGISTRANTS -------------------------------------------------------------------
 
 $group ='registrants';
@@ -268,7 +270,7 @@ $charts[$chart_id] =[
     ];
 
 $dtd_limit =-200;
-$x_upper_limit =0;
+$x_upper_limit =7;
 $charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME, $Indico->data[$group]['stats'][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit ] );
 $vars['registrants_n'] =number_format( $sum, 0, ',', '.' );
 

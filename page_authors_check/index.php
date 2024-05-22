@@ -47,7 +47,7 @@ if (!empty($_GET['action'])) {
     $pcode =strtoupper( $_GET['pcode'] );
 
     if (!empty($Indico->data['data'][$pcode])) {
-        file_write( 'app.log', date('r') ." | $user[full_name] | $_GET[action] | $pcode\n", 'a' );
+        file_write( $cfg['logs_path'] .'/authors_check-activity.log', date('r') ." | $user[full_name] | $_GET[action] | $pcode\n", 'a' );
 
         switch ($_GET['action']) {
             case 'refresh':

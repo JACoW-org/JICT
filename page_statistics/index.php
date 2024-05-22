@@ -118,6 +118,7 @@ if (!empty($Indico->data['editing_tags'])) {
 
 $editors =false;
 $editor_content =false;
+$n =1;
 if (!empty($Indico->data['editors'])) {
     foreach ($Indico->data['editors'] as $x) {
         $sum =$x['stats']['g'] +$x['stats']['r'] +$x['stats']['y'];
@@ -133,7 +134,7 @@ if (!empty($Indico->data['editors'])) {
 
             'Started' =>$sum,
             'Running' =>$x['stats']['a'], 
-            'Pending' =>$x['stats']['pending'], 
+            'Waiting' =>$x['stats']['waiting'], 
 
             'QA Approved' =>$x['stats']['qa_ok'], 
             'QA Failed' =>$x['stats']['qa_fail'],
@@ -145,7 +146,9 @@ if (!empty($Indico->data['editors'])) {
             '*1<sup>st</sup> status' =>"<span class='sparklines_editor' sparkType='pie' sparkWidth='30px' sparkHeight='30px' values='$pie_values'></span>"
             ];
 
-        $editors .="<tr>\n\t<th>$x[name]</th>\n\t<td>" .implode( "</td>\n\t<td>", array_values( $row )) ."</td>\n\t</tr>\n";
+        $editors .="<tr>\n\t<th>$n - $x[name]</th>\n\t<td>" .implode( "</td>\n\t<td>", array_values( $row )) ."</td>\n\t</tr>\n";
+
+        $n ++;
     }
 
     $options =false;
@@ -168,7 +171,8 @@ if (!empty($Indico->data['editors'])) {
 
 $content ="<div class='row p-5'>";
 foreach ($vars as $var =>$vcfg) {
-    $content .=__h( 'div', chart_pie( $serie[$var], array( 'title' =>$vcfg['label'], 'show%' =>true, 'sliceColors' =>json_encode( $sliceColors ) )), [ 'class' =>'col-md-3 ' ]);
+    if (!empty($serie[$var])) $content .=__h( 'div', chart_pie( $serie[$var], array( 'title' =>$vcfg['label'], 'show%' =>true, 'sliceColors' =>json_encode( $sliceColors ) )), [ 'class' =>'col-md-3 ' ]);
+    else $content .=__h( 'div', " ", [ 'class' =>'col-md-3 ' ]);
 }
 $content .="</div>\n"
     ."<div class='row p-5'><div class='col-md-6'>\n<h2>Tags</h2>\n<table class='values'>\n$tags\n</table>\n</div>\n"

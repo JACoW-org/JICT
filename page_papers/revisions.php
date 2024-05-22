@@ -50,7 +50,7 @@ $T->set([
     ]);
 
 
-$content .=get_paper_revisions( $_GET['pid'] );
+$content =get_paper_revisions( $_GET['pid'] );
 
 $T->set( 'content', $content );
 echo $T->get();
@@ -80,7 +80,11 @@ function get_paper_revisions( $_pid ) {
         $class =false;
         foreach ($keys as $k) {
 
-            list( $k1, $k2 ) =explode( '.', $k );
+            if (strpos( $k, '.' )) list( $k1, $k2 ) =explode( '.', $k );
+            else {
+                $k1 = $k;
+                $k2 =false;
+            }
 
             if (empty($k2)) {
                 if ($k == 'id') {
@@ -138,7 +142,7 @@ function get_paper_revisions( $_pid ) {
 
     $paper =$Indico->data['papers'][$pcode];
     foreach ($paper as $var =>$val) {
-        if (substr( $var, -3 ) == '_ts') $paper[$var.'-time'] =sprintf( "%d (%s)",  $val, date( 'r',  $val  ));
+        if ($val && substr( $var, -3 ) == '_ts') $paper[$var.'-time'] =sprintf( "%d (%s)",  $val, date( 'r',  $val  ));
     }
 
     return "<br /><h1>$pcode #$_pid</h1>\n"

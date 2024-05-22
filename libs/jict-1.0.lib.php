@@ -323,22 +323,62 @@ function cws_define( $_name, $_value, $_app =false ) {
 }
 
 
+
+function debug_calltrace() {
+    $e = new Exception();
+    $trace = explode("\n", $e->getTraceAsString());
+    // reverse array to make steps line up chronologically
+    $trace = array_reverse($trace);
+    array_shift($trace); // remove {main}
+    array_pop($trace); // remove call to this method
+    $length = count($trace);
+    $result = array();
+   
+    for ($i = 0; $i < $length; $i++) {
+           $result[] = ($i + 1)  . ')' . substr($trace[$i], strpos($trace[$i], ' ')); // replace '#someNum' with '$i)', set the right ordering
+    }
+   
+    return "\t" . implode("\n\t", $result);
+}
+   
+
 //----------------------------------------------------------------------------
 function file_write( $_filename, $_data, $_mode ='w', $_verbose =false, $_verbose_message =false ) {
 	
     if ($_verbose)	echo "Save $_verbose_message ($_filename)... ";
-        
+
     $fp =fopen( $_filename, $_mode );
 
     if (!$fp) {
     //	echo "unable to save file $_filename!\n";
-        if ($_verbose)echo_error( "ERROR (writing)" );
+        if ($_verbose) echo_error( "ERROR (writing)" );
+
+        $include_list =get_included_files();
+        $calltrace =debug_calltrace();
+
+        $debug =date('r') .' -------------------------------------------------------\n'
+            .$_filename
+            ."\n\nREQUEST\n"
+            .print_r( $_REQUEST, true )
+
+            ."\n\nINCLUDE\n"
+            .print_r( $include_list, true )
+
+            ."\n\nCALLTRACE\n"
+            .print_r( $calltrace, true )
+            
+            ."\n";
+        
+        file_write("/web/httpd/vhost-jacow.org/jict_ipac24/tmp/debug-fwrite.log", $debug, 'a' );
+
         return false;
     }
 
     fwrite( $fp, (is_array($_data) ? implode('',$_data) : $_data) );
 
     fclose( $fp );
+
+    if ($_mode == 'a' || $_mode == 'w') chown( $_filename, 'apache' );
 
     if ($_verbose)	echo_ok();
 

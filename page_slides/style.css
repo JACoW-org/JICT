@@ -98,3 +98,7 @@ div.status_bar_empty {
 .publish_no {
     background: #ff7171 !important;
 }
+
+.ok {
+    background: #2ECC40 !important;
+}
