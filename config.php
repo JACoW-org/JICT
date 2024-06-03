@@ -103,6 +103,8 @@ $cws_config =[
 		'papers_hidden_sessions'=>[],
         'refs_hidden_sessions'  =>[],
 		'posters_hidden_sessions'=>[],
+
+		'import_custom_fields' 	=>[ 'CAT_publish' ],
 				
 		'tmp_path'				=>'{tmp_path}/indico',
 		'pdf_path'				=>'{data_path}/papers',
@@ -139,10 +141,13 @@ $cws_config =[
 		'in_papers'			    =>'{data_path}/papers.json',
 		'in_stats'				=>'{data_path}/stats.json',
 		'in_last_nums'			=>'{data_path}/last_nums.json',
+		'in_authors_check'		=>'{data_path}/author_reception.json',
+		'in_slides'				=>'{data_path}/slides.json',
 //		'in_revisions'			=>'{data_path}/papers-revisions.json',
 
 		// out
-		'out_editors'			=>'{data_path}/editors.json',
+		'out_team'				=>'{data_path}/team.json',
+//		'out_editors'			=>'{data_path}/editors.json',
 		'out_stats'				=>'{data_path}/stats.json',
 		'out_papers'			=>'{data_path}/papers.json',
 		'out_abstracts_stats'	=>'{data_path}/abstracts_stats.json',
@@ -208,7 +213,8 @@ $cws_config =[
 
 		// in
 		'in_stats'			=>'{data_path}/stats.json',
-		'in_editors'		=>'{data_path}/editors.json',
+		'in_team'			=>'{data_path}/team.json',
+//		'in_editors'		=>'{data_path}/editors.json',
 		'in_papers'			=>'{data_path}/papers.json',
 		'in_editing_tags'	=>'{data_path}/editing_tags.json',
 		'in_authors_check'	=>'{data_path}/author_reception.json',
@@ -459,7 +465,8 @@ $cws_config =[
 		'label_r'		=>'RED DOT (unsuccessfully processed)',
 		
 		// in
-		'in_editors'	=>'{data_path}/editors.json',
+//		'in_editors'	=>'{data_path}/editors.json',
+		'in_team'		=>'{data_path}/team.json',
 		'in_papers'		=>'{data_path}/papers.json',
 		'in_stats'		=>'{data_path}/stats.json'
 		],

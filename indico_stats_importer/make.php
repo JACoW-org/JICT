@@ -57,6 +57,8 @@ $Indico =new INDICO( $cfg );
 
 $Indico->load();
 
+if (function_exists('import_stats_pre_f')) import_stats_pre_f( $Indico->data );
+
 $Indico->import_stats();
 if (empty($cfg['skip-abstracts'])) {
 	echo "\n";
@@ -67,6 +69,8 @@ if (empty($cfg['skip-registrants'])) {
 	echo "\n";	
 	$Indico->import_registrants();
 }
+
+if (function_exists('import_stats_post_f')) import_stats_post_f( $Indico->data );
 
 echo "\n";	
 $Indico->save_all([ 'save_empty' =>true ]);

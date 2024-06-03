@@ -68,7 +68,7 @@ class PO_STATUS extends JICT_OBJ {
             if ($s['ts'] > $_ts_rqst) $this->ret['history'][$sid] =$s;
         }
 
-        $this->ret['editors'] =$this->data['editors'];
+        $this->ret['editors'] =$this->data['team']['editors'];
         
         $this->ret['ts'] =time();
         

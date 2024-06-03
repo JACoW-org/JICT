@@ -2,7 +2,8 @@
 
 /* by Stefano.Deiuri@Elettra.Eu
 
-2024.05.19 - publishing status
+2024.05.23 - show editing status
+2024.05.19 - handle publishing status
 2023.04.05 - update (bottom navbar)
 2023.04.03 - update (auth & template)
 2023.03.03 - 1st version
@@ -80,8 +81,17 @@ $status =&$Indico->data['status'];
 $status_key =$Indico->request( '/event/{id}/editing/api/slides/list' );
 
 $status_slide =[];
+$qa =[];
 foreach ($Indico->data[$status_key] as $x) {
     $status_slide[$x['code']] =empty($x['editable']) ? false : $x['editable']['state'];
+
+    if (!empty($x['editable']['tags'])) {
+        foreach ($x['editable']['tags'] as $tag) {
+            if (substr( $tag['code'], 0, 2 ) == 'QA') {
+                $status_slide[$x['code']] =$tag['title'];
+            }
+        }
+    }
 }
 
 
@@ -189,7 +199,8 @@ foreach ($Indico->data['programme']['days'][$conf_day] as $sid =>$s) {
                 'Type' =>$s['type'],
                 'Title' =>$p['title'],
                 'Presenter' =>$p['presenter'],
-                'Publish' =>""
+                'Publish' =>"",
+                'Status' =>ucwords(strtr($status_slide[$pcode], '_', ' ')) ?? false
                 ];
 
             $i ++;
@@ -212,6 +223,10 @@ if (!empty($rows[1])) {
     <tbody>
     ";
 }
+
+$map_status =MAP_STATUS;
+$map_status['QA Approved'] ='qaok';
+$map_status['rejected'] ='removed';
 
 foreach ($rows as $r) {
     $pcode =$r['Code'];
@@ -252,7 +267,17 @@ foreach ($rows as $r) {
 
     $r['Title'] =sprintf( "<a href='%s' target='_blank'>%s</a>", $contribution_url, $r['Title'] );
     
-    $content .="<tr class='$cls'><td>" .implode( "</td><td>", array_values( $r )) ."</td></tr>\n";
+    $content .="<tr class='$cls'>"; 
+    // ."<td>" .implode( "</td><td>", array_values( $r )) ."</td>"
+    foreach ($r as $key => $value ) {
+        $td_options =false;
+
+        if ($key == 'Status') $td_options =sprintf( " class='b_%s'", (isset($map_status[ $status_slide[$pcode] ]) ? $map_status[ $status_slide[$pcode] ] : "_".$status_slide[$pcode]) );
+
+        $content .=sprintf( "<td%s>%s</td>", $td_options, $value );
+    }
+    
+    $content .="</tr>\n";
 }
 $content .="</table>";
 

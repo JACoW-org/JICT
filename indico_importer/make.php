@@ -58,4 +58,6 @@ $Indico->save_all([ 'save_empty' =>true ]);
 
 $Indico->export_refs();
 
+echo sprintf( "\nIndico's requests: %d (cache) / %d\n", $Indico->requests_cache_count, $Indico->requests_api_count );
+
 ?>

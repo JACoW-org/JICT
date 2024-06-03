@@ -108,73 +108,75 @@ $now =time();
 $content =false;
 
 foreach ($Indico->data['data'] as $pcode =>$x) {
-    $p =$Indico->data['papers'][$pcode];
-
-    if ($p[$cfg['filter']['key']] == $cfg['filter']['value']) {
-        $warning =false;
+    if (!empty($Indico->data['papers'][$pcode])) {
+        $p =$Indico->data['papers'][$pcode];
     
-        $authors =false;
-        foreach ($p['authors_by_inst'] as $inst =>$a) {
-            if (empty($inst)) {
-                $inst ="<b style='color: red'>NO AFFILIATION</b>";
-                $warning =true;
-            }
-
-            $authors .=($authors ? "<br ?>" : false) .implode( ', ', $a ) .' - ' .$inst;
-        }
+        if ($p[$cfg['filter']['key']] == $cfg['filter']['value']) {
+            $warning =false;
         
-        $tip =explode( ' ', $p['title'] );
-        $tpp =explode( ' ', str_replace( array('∗', '*', "\u2217"),  array("","",""), strtolower($x['pdf_title']) ));
+            $authors =false;
+            foreach ($p['authors_by_inst'] as $inst =>$a) {
+                if (empty($inst)) {
+                    $inst ="<b style='color: red'>NO AFFILIATION</b>";
+                    $warning =true;
+                }
     
-        $title =false;
-        foreach ($tip as $word) {            
-            if (!in_array( strtolower($word), $tpp )) {
-                $wrong_word =true;
-                $warning =true;
-
-            } else {
-                $wrong_word =false;
+                $authors .=($authors ? "<br ?>" : false) .implode( ', ', $a ) .' - ' .$inst;
             }
-
-            $title .=($title ? " " : false) .sprintf( ($wrong_word ? "<wrong>%s</wrong>" : "%s"), $word );
-        }
+            
+            $tip =explode( ' ', $p['title'] );
+            $tpp =explode( ' ', str_replace( array('∗', '*', "\u2217"),  array("","",""), strtolower($x['pdf_title']) ));
+        
+            $title =false;
+            foreach ($tip as $word) {            
+                if (!in_array( strtolower($word), $tpp )) {
+                    $wrong_word =true;
+                    $warning =true;
     
-        $row =false;
-        if (empty($x['done'])) {
-            if ($show != 'done') $row ="
-                <div id='paper_$pcode' class='paper' onMouseOver='show_buttons(\"$pcode\",1)' onMouseOut='show_buttons(\"$pcode\",0)'>
-                <button id='refresh_$pcode' class='refresh' onClick='refresh(\"$pcode\")'>Refresh</button>
-                <button id='done_$pcode' class='done' onClick='done(\"$pcode\")'> Done </button>
-                <code><a href='https://indico.jacow.org/event/$cfg[indico_event_id]/contributions/$x[id]' target='paper'>$pcode</a></code>
-                <editor>$p[editor]</editor>
-                <div class='title'>$title</div>
-                <authors>$authors</authors>
-                <img src='images/$pcode.jpg?$now' width='700px'/>
-                </div>\n";
-
-            $todo_n ++;
-
-        } else {
-            if ($show != 'todo') $row ="
-                <div id='paper_$pcode' class='paper no-print done'>"
-                .($user['admin'] || true ? "<button id='undone_$pcode' class='undone' onClick='undone(\"$pcode\")'> UnDone </button>" : false)
-                ."<doneinfo>" .date('r', $x['done_ts']) ." - $x[done_author]</doneinfo>
-                <code><a href='https://indico.jacow.org/event/$cfg[indico_event_id]/contributions/$x[id]' target='paper'>$pcode</a></code>
-                <editor>$p[editor]</editor>
-                <div class='title'>$title</div>
-                <authors>$authors</authors>
-                <img src='images/$pcode.jpg?$now' width='700px'/>
-                </div>\n";
-
-            $done_n ++;
-        }
-
-        if (!empty($x['undone_date'])) $undone_n ++;
-
-        if ($show == 'warn' && !$warning) {
-            // skip
-        } else {
-            $content .=$row;
+                } else {
+                    $wrong_word =false;
+                }
+    
+                $title .=($title ? " " : false) .sprintf( ($wrong_word ? "<wrong>%s</wrong>" : "%s"), $word );
+            }
+        
+            $row =false;
+            if (empty($x['done'])) {
+                if ($show != 'done') $row ="
+                    <div id='paper_$pcode' class='paper' onMouseOver='show_buttons(\"$pcode\",1)' onMouseOut='show_buttons(\"$pcode\",0)'>
+                    <button id='refresh_$pcode' class='refresh' onClick='refresh(\"$pcode\")'>Refresh</button>
+                    <button id='done_$pcode' class='done' onClick='done(\"$pcode\")'> Done </button>
+                    <code><a href='https://indico.jacow.org/event/$cfg[indico_event_id]/contributions/$x[id]' target='paper'>$pcode</a></code>
+                    <editor>$p[editor]</editor>
+                    <div class='title'>$title</div>
+                    <authors>$authors</authors>
+                    <img src='images/$pcode.jpg?$now' width='700px'/>
+                    </div>\n";
+    
+                $todo_n ++;
+    
+            } else {
+                if ($show != 'todo') $row ="
+                    <div id='paper_$pcode' class='paper no-print done'>"
+                    .($user['admin'] || true ? "<button id='undone_$pcode' class='undone' onClick='undone(\"$pcode\")'> UnDone </button>" : false)
+                    ."<doneinfo>" .date('r', $x['done_ts']) ." - $x[done_author]</doneinfo>
+                    <code><a href='https://indico.jacow.org/event/$cfg[indico_event_id]/contributions/$x[id]' target='paper'>$pcode</a></code>
+                    <editor>$p[editor]</editor>
+                    <div class='title'>$title</div>
+                    <authors>$authors</authors>
+                    <img src='images/$pcode.jpg?$now' width='700px'/>
+                    </div>\n";
+    
+                $done_n ++;
+            }
+    
+            if (!empty($x['undone_date'])) $undone_n ++;
+    
+            if ($show == 'warn' && !$warning) {
+                // skip
+            } else {
+                $content .=$row;
+            }
         }
     }
 }

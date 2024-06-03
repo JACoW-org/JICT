@@ -2,6 +2,7 @@
 
 /* by Stefano.Deiuri@Elettra.Eu
 
+2024.05.23 - days stats & slides charts
 2024.05.07 - update
 2023.06.21 - editors QA fail
 2023.04.16 - editors stats
@@ -31,8 +32,6 @@ $T->set([
     'path' =>'../',
     'style' =>'
         main { font-size: 22px; } 
-        table.editors td { text-align: center !important; } 
-        table.editors tbody tr:hover td, table.editors tbody tr:hover th { background: #aaff00; }
         .jqstooltip { box-sizing: content-box; }
         ',
     'title' =>$cfg['name'],
@@ -47,11 +46,15 @@ $vars =[
     'available' =>[ 'label' =>"Files Available", 'init' =>"Yes,No"  ],
     'source_type' =>[ 'label' =>"File Types" ],
     'source_type_rfr' =>[ 'label' =>"File Types RfR" ],
-    'status_indico' =>[ 'label' =>"Paper Status", 'init' =>"Accepted,Needs Changes,Needs Confirmation,Ready for Review,Assigned to an Editor"  ],
     'status_indico_1st' =>[ 'label' =>"Paper 1st Status", 'init' =>"Accepted,Needs Changes,Needs Confirmation"  ],
-    'status_qa' =>[ 'label' =>"Papers Check (QA)", 'init' =>'QA Approved,QA Failed,QA Pending'  ],
+    'status_indico' =>[ 'label' =>"Paper Status", 'init' =>"Accepted,Needs Changes,Needs Confirmation,Ready for Review,Assigned to an Editor"  ],
+    'status_qa' =>[ 'label' =>"Papers QA", 'init' =>'QA Approved,QA Failed,QA Pending'  ],
     'authors_check' =>[ 'label' =>"Authors Check", 'init' =>"Yes,No"  ],
-    'poster_police' =>[ 'label' =>"Posters Check", 'init' =>"OK,Fail" ]
+    'poster_police' =>[ 'label' =>"Posters Check", 'init' =>"OK,Fail" ],
+
+    'slides_check' =>[ 'label' =>"Slides Check", 'init' =>"Yes,No"  ],
+    'slides_status' =>[ 'label' =>"Slides Editing Status", 'init' =>"Accepted,Needs Submitter Changes,Needs Submitter Confirmation,Ready For Review,Assigned to an Editor"  ],
+    'slides_qa' =>[ 'label' =>"Slides QA", 'init' =>'QA Approved,QA Failed,QA Pending' ],
     ];
 
 $js =false;
@@ -90,6 +93,14 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
     }
 }
 
+$serie['slides_check'] =$Indico->data['team']['stats']['slides']['check'];
+$serie['slides_qa'] =$Indico->data['team']['stats']['slides']['qa_status'];
+foreach ($Indico->data['team']['stats']['slides']['editing_status'] as $key =>$value) {
+    $serie['slides_status'][$key] =$value;
+}
+
+//if ($_GET['debug']) print_r($serie);
+
 //print_r( $serie ); exit;
 
 if (!empty($serie['source_type_rfr'])) arsort($serie['source_type_rfr']);
@@ -119,8 +130,8 @@ if (!empty($Indico->data['editing_tags'])) {
 $editors =false;
 $editor_content =false;
 $n =1;
-if (!empty($Indico->data['editors'])) {
-    foreach ($Indico->data['editors'] as $x) {
+if (!empty($Indico->data['team']['editors'])) {
+    foreach ($Indico->data['team']['editors'] as $x) {
         $sum =$x['stats']['g'] +$x['stats']['r'] +$x['stats']['y'];
 
         $serie['status_indico_1st']['Accepted'] +=$x['stats']['g'];
@@ -169,17 +180,149 @@ if (!empty($Indico->data['editors'])) {
 }
 
 
+
+$type ='days';
+$table[$type] =false;
+if (!empty($Indico->data['team']['stats'][$type])) {
+    $headers =[];
+    foreach ($Indico->data['team']['stats'][$type]['editors_revisions'] as $date =>$value) {
+        $headers[] =substr( $date, 5 );
+    }
+    $year =substr( $date, 0, 4 );
+    sort($headers);
+    $headers[] ='Sum';
+
+    $tbody =false;
+
+    foreach ($Indico->data['team']['stats'][$type] as $group =>$stats) {
+        $row =[];
+        foreach ($headers as $date) {
+            if ($date != 'Sum') $row[] =empty($stats["$year-$date"]) ? '-': $stats["$year-$date"];
+        }
+
+        $sum =0;
+        foreach ($stats as $day =>$value) $sum +=$value;
+        $row[] =$sum;
+
+        $label =str_replace(['Qa','Ok'],['Papers QA','OK'],ucwords(strtr( $group, '_', ' ' )));
+        $tbody .="<tr>\n\t<th>$label</th>\n\t<td>" .implode( "</td>\n\t<td>", array_values( $row )) ."</td>\n\t</tr>\n";
+    }
+
+    $table[$type] =sprintf( "<h2>%s</h2>", ucwords(strtr( $type, '_', ' ')))
+        ."<table class='values days'>\n"
+        ."<thead>"
+            ."<tr><th></th><th>" .implode( "</th><th>", $headers ) ."</th></tr>"
+        ."</thead>"
+        ."<tbody>"
+            .$tbody
+        ."</tbody>"
+        ."</table>\n";
+}
+
+
+
+$type ='authors_check';
+$table[$type] =false;
+if (!empty($Indico->data['team'][$type])) {
+    
+    uasort($Indico->data['team'][$type]['people'], function ($a, $b) {
+        return $a['count'] < $b['count'];
+        });
+
+/*     $headers =[];    
+    foreach ($Indico->data['team'][$type]['days'] as $day =>$value) {
+        $headers[] =$day;
+    }
+    $headers[] ='Sum'; */
+    
+    $tbody =false;
+    $n =1;
+    foreach ($Indico->data['team'][$type]['people'] as $name =>$stats) {
+        $row =[];
+        $sum =0;
+        foreach ($headers as $date) {
+            if ($date != 'Sum') {
+                $row[] =empty($stats['days'][$date]) ? '-' : $stats['days'][$date];  
+                if (!empty($stats['days'][$date])) $sum +=$stats['days'][$date];
+            }      
+        }
+        $row[] =$sum;
+
+        $tbody .="<tr>\n\t<th>$n - $name</th>\n\t<td>" .implode( "</td>\n\t<td>", array_values( $row )) ."</td>\n\t</tr>\n";
+
+        $n ++;
+    }
+
+    
+	$table[$type] =sprintf( "<h2><br />%s</h2>", ucwords(strtr( $type, '_', ' ')))
+        ."<table class='values days'>\n"
+        ."<thead>"
+            ."<tr><th></th><th>" .implode( "</th><th>", $headers ) ."</th></tr>"
+        ."</thead>"
+        ."<tbody>"
+            .$tbody
+        ."</tbody>"
+        ."</table>\n";
+}
+
+
+
+
+$type ='editors_revisions';
+$table[$type] =false;
+if (!empty($Indico->data['team']['stats']['days'])) {
+    $tbody =false;
+
+    ksort($Indico->data['team']['stats'][$type]);
+
+    $n =1;
+    foreach ($Indico->data['team']['stats'][$type] as $label =>$stats) {
+        $row =[];
+        foreach ($headers as $date) {
+            if ($date != 'Sum') $row[] =empty($stats["$year-$date"]) ? '-': $stats["$year-$date"];
+        }
+
+        $sum =0;
+        foreach ($stats as $day =>$value) $sum +=$value;
+        $row[] =$sum;
+
+        $tbody .="<tr>\n\t<th>$n - $label</th>\n\t<td>" .implode( "</td>\n\t<td>", array_values( $row )) ."</td>\n\t</tr>\n";
+
+        $n ++;
+    }
+
+    $table[$type] =sprintf( "<h2><br />%s</h2>", ucwords(strtr( $type, '_', ' ')))
+        ."<table class='values days'>\n"
+        ."<thead>"
+            ."<tr><th></th><th>" .implode( "</th><th>", $headers ) ."</th></tr>"
+        ."</thead>"
+        ."<tbody>"
+            .$tbody
+        ."</tbody>"
+        ."</table>\n";
+}
+
+
+
 $content ="<div class='row p-5'>";
 foreach ($vars as $var =>$vcfg) {
     if (!empty($serie[$var])) $content .=__h( 'div', chart_pie( $serie[$var], array( 'title' =>$vcfg['label'], 'show%' =>true, 'sliceColors' =>json_encode( $sliceColors ) )), [ 'class' =>'col-md-3 ' ]);
-    else $content .=__h( 'div', " ", [ 'class' =>'col-md-3 ' ]);
+    //else $content .=__h( 'div', " ", [ 'class' =>'col-md-3 ' ]);
 }
-$content .="</div>\n"
-    ."<div class='row p-5'><div class='col-md-6'>\n<h2>Tags</h2>\n<table class='values'>\n$tags\n</table>\n</div>\n"
-    ."<div class='col-md-1'></div><div class='col-md-5'>\n<h2>Editors</h2>\n$editor_content</div>\n"
-    ."</div>\n";
+$content .="</div>\n";
 
-$debug =empty($_GET['y75_debug']) ? false : sprintf( "<pre>\n%s</pre>", print_r($Indico->data['editors'],true));
+$content .="<div class='row p-5'>"
+    ."<div class='col-md-4'>\n<h2>Tags</h2>\n<table class='values'>\n$tags\n</table>\n</div>\n"
+    ."<div class='col-md-4'>\n<h2>Editors</h2>\n$editor_content</div>\n"
+    ."<div class='col-md-4'>
+        $table[days]
+        $table[authors_check]
+        $table[editors_revisions]
+        </div>"
+    ."</div>\n";    
+
+
+// $debug =empty($_GET['y75_debug']) ? false : sprintf( "<pre>\n%s</pre>", print_r($Indico->data['editors'],true));
 
 $T->set( 'content', $content .$debug );
 $T->set( 'js', $js );
@@ -225,7 +368,7 @@ function chart_pie( $_serie, $_cfg ) {
     if (!empty($_cfg['sliceColors'])) $options .=", sliceColors: " .$_cfg['sliceColors'];
     
     $html ="
-<table class='layout'><tr><td>
+<table class='layout'><tr><td valign='top' style='padding-top:20px;'>
     <span class='sparklines' sparkType='pie' sparkWidth='150px' sparkHeight='150px' values='$values'></span>
     </td>
 <td valign='top'>

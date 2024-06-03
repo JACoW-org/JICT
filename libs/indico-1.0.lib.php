@@ -36,6 +36,10 @@ class INDICO extends JICT_OBJ {
 	var $source_file_type_id =false;
 	var $editing_tags =[];
 	var $editors_stats =[];
+	var $stats =[];
+	var $api =false;
+	var $requests_api_count =0;
+	var $requests_cache_count =0;
 
 	//-------------------------------------------------------------------------
 	function __construct( $_cfg =false, $_load =false ) {
@@ -186,6 +190,7 @@ class INDICO extends JICT_OBJ {
 		$cache =new CACHEDATA( $fname, $cache_time, APP_TMP_PATH );
 
 		if (!$cache->get( $this->data[$req] )) {
+			$this->requests_api_count ++;
 			$t0 =time();
 			if ($verbose) $this->verbose( "# $_method ($cache_time) $req... ", 2 );
 			
@@ -203,6 +208,7 @@ class INDICO extends JICT_OBJ {
             }
 
 		} else {
+			$this->requests_cache_count ++;
 			if ($verbose) $this->verbose( "# USE CACHE $fname... OK", 2 );
 		}
 
@@ -259,34 +265,10 @@ class INDICO extends JICT_OBJ {
 		return $url;
 	}
 
-/* 	function paper_status() {
-
-	} */
 
 	//-------------------------------------------------------------------------
 	function import_stats() {
 		global $cws_config;
-		/*         
-        $now =time();
-
-		if (strtotime($this->cfg['dates']['abstracts_submission']['from']) <= $now
-            && strtotime($this->cfg['dates']['abstracts_submission']['to']) >= $now
-            ) {
-                $this->import_abstracts_list();
-            } else {
-				unset($this->cfg['out_abstracts_stats']);
-			} 
-			
-		if (strtotime($this->cfg['dates']['registration']['from']) <= $now
-            && strtotime($this->cfg['dates']['registration']['to']) >= $now
-            ) {
-				$this->import_registrants();
-            } else {
-				unset($this->cfg['out_registrants']);
-			}
-		*/
-
-		//$this->import_registrants();
 
 		$this->verbose( "\nProcess stats" );
 
@@ -298,17 +280,13 @@ class INDICO extends JICT_OBJ {
 		$map_status =MAP_STATUS;
 
 		$nums =[ 'qaok' =>0, 'files' =>0, 'a' =>0, 'g' =>0, 'y' =>0, 'r' =>0, 'nofiles' =>0, 'processed' =>0, 'total' =>0 ];
-		//$editor_stats_init =[ 'g' =>0, 'y' =>0, 'r' =>0, 'a' =>0, 'revisions' =>0, 'qa_fail' =>0, 'qa_ok' =>0 ];
-		
+			
 		$this->data['stats']['papers_submission'] =[];
 
 		$editors =[];
 		$editor_papers =[];
 		$editor_papers_list =[];
-		//$editor_stats =[];
 		$days =[ 'processed' =>[] ];
-
-		//$revisions =$this->data['revisions'];
 
 		foreach ($papers_list as $x) {
 			$pcode =$x['code'];
@@ -335,24 +313,20 @@ class INDICO extends JICT_OBJ {
 						$cache_time =3600*8 +rand(0,3600);
 					}
 
-/* 					if (empty($revisions[$pcode]) || $rev_id != $revisions[$pcode]) {
-						echo sprintf( "\nUPDATE %s %s > %s (%s)\n", $pcode, (empty($revisions[$pcode]) ? "NEW" : $revisions[$pcode]), $rev_id, date('r') );
-						$revisions[$pcode] =$rev_id;
-						$cache_time =0;
-
-					} else {
-						$cache_time =3600*8 +rand(0,3600);
-					}
- */
 					$pedit =$this->process_paper_revisions( $p, $cache_time, true );
 					
+					if (empty($pedit['editor'])) $pedit =$this->process_paper_revisions( $p, 0, true );
+
 					$this->data['papers'][$pcode] =$p;
 					
 					$ieditor =false; // initial editor
-					$peditor =$pedit['editor']['full_name']; // current paper editor
 					if (empty($pedit['editor'])) {
+						$pedit =$this->process_paper_revisions( $p, 0, true );
 						echo "WARN: $pcode no editor\n";
-						//print_r( $pedit );
+						$peditor =false;
+
+					} else {
+						$peditor =$pedit['editor']['full_name']; // current paper editor
 					}
 					
 					$first_editing_state =false;
@@ -387,19 +361,21 @@ class INDICO extends JICT_OBJ {
 
 								$ieditor =$reditor; 
 							}
-							
-/* 							if ($rid == $pedit['last_revision'] && $r['type']['name'] == 'ready_for_review') {
-								$this->editor_stats_inc( $peditor, 'a' );
-							} */
+
+							$rdate =substr( $r['created_dt'], 0, 10 );
+							$this->stats_inc(sprintf( 'days.editors_revisions.%s', $rdate ));
+							$this->stats_inc(sprintf( 'editors_revisions.%s.%s', $reditor, $rdate ));
 						}
 
 						$editor =$r['is_editor_revision'] ? $reditor : $peditor;
 	
 						if ($r['qa'] == QA_OK) {
 							$this->editor_stats_inc( $editor, 'qa_ok' );
-	
+							$this->stats_inc( 'days.qa_approved.' .substr( $r['created_dt'], 0, 10 ));
+							
 						} else if ($r['qa'] == QA_FAIL) {
 							$this->editor_stats_inc( $editor, 'qa_fail' );
+							$this->stats_inc( 'days.qa_failed.' .substr( $r['created_dt'], 0, 10 ));
 						}
 					}					
 
@@ -411,12 +387,6 @@ class INDICO extends JICT_OBJ {
 					$status =isset($map_status[ $paper_status ]) ? $map_status[ $paper_status ] : "_$paper_status";
 
 					if (in_array( $status, ['y','r'])) $this->editor_stats_inc( $peditor, 'waiting' );
-
-/* 					if (empty($istatus) || $istatus == 'none') $istatus =$paper_status;
-
-					$istatus =$map_status[$istatus];
-
-					echo sprintf( "%s - %s - %s (%s)\n", $pcode, substr( $r['created_dt'], 0, 10 ), $istatus, $r['type']['name'] ); */
 				
 				} else {
 					$status =isset($map_status[ $paper_status ]) ? $map_status[ $paper_status ] : "_$paper_status";
@@ -476,8 +446,78 @@ class INDICO extends JICT_OBJ {
 			}
 		}
 
-		$this->data['editors'] =$editors;
-		//$this->data['revisions'] =$revisions;
+
+		$authors_check =[];
+		if (!empty($this->data['authors_check'])) {
+			foreach ($this->data['authors_check'] as $pcode =>$x) {
+				if (!empty($x) && !empty($x['done_author'])) {
+					if (empty($authors_check['people'][$x['done_author']])) {
+						$authors_check['people'][$x['done_author']] =[ 'count' =>0, 'days' =>[]];
+
+					} else {
+						$authors_check['people'][$x['done_author']]['count'] ++;
+	
+						if (!empty($x['done_ts'])) {
+							$day =date('m-d', $x['done_ts']);
+		
+							if (empty($authors_check['people'][$x['done_author']]['days'][$day])) $authors_check['people'][$x['done_author']]['days'][$day] =1;
+							else $authors_check['people'][$x['done_author']]['days'][$day] ++;
+		
+							if (empty($authors_check['days'][$day])) $authors_check['days'][$day] =1;
+							else $authors_check['days'][$day] ++;
+
+							$this->stats_inc( 'days.authors_check.' .date('Y-m-d', $x['done_ts']) );
+						}
+					}
+				}
+			}
+	
+			ksort( $authors_check['days'] );
+		}
+
+
+		echo "\nProcess Slides\n";
+
+		// slides stats
+		if (!empty($this->data['slides'])) {
+			foreach ($this->data['slides'] as $pcode =>$x) {
+				$this->stats_inc( 'days.slides_check.' .date('Y-m-d', $x['ts']) );
+			}
+		}
+
+		$slides_list =$this->request( '/event/{id}/editing/api/slides/list', 'GET', false, 
+			[ 'return_data' =>true, 'disable_cache' =>true ] );
+		if (!empty($slides_list)) {
+			foreach ($slides_list as $slide) {
+				if (!empty($slide['editable']) && empty($this->data['papers'][$slide['code']]['poster'])) {
+					$s =$slide['editable'];
+					//$status =empty($map_status[ $s['state'] ]) ? "_".$s['state'] : $map_status[ $s['state'] ];
+					$this->stats_inc( 'slides.editing_status.' .ucwords(strtr($s['state'],'_',' ')));
+
+					if (!empty($s['tags'])) {
+						foreach ($s['tags'] as $tag) {
+							if (substr( $tag['code'], 0, 2 ) == 'QA') {
+								$this->stats_inc( 'slides.qa_status.' .$tag['title'] );
+							}
+						}
+					}
+
+					$checked =empty($this->data['slides'][$slide['code']]) ? 'No' : 'Yes' ;
+					$this->stats_inc( 'slides.check.' .$checked );
+				}
+
+			}
+		}		
+
+
+		$this->data['team'] =[
+			'authors_check' =>$authors_check,
+			'editors' =>$editors,
+			'stats' =>$this->stats
+			];
+
+		// $this->data['editors'] =$editors;
+		// $this->data['revisions'] =$revisions;
 	}
 
 	//-------------------------------------------------------------------------
@@ -487,18 +527,31 @@ class INDICO extends JICT_OBJ {
 		$this->editors_stats[$_editor][$_var] ++;
 	}
 
+	//-------------------------------------------------------------------------
+	function stats_inc( $_key, $_increment =1 ) {
+		$k =explode( '.', $_key );
+
+		switch (count($k)) {
+			case 1:
+				if (empty($this->stats[$k[0]])) $this->stats[$k[0]] =$_increment;
+				else $this->stats[$k[0]] +=$_increment;
+				break;
+
+			case 2:
+				if (empty($this->stats[$k[0]][$k[1]])) $this->stats[$k[0]][$k[1]] =$_increment;
+				else $this->stats[$k[0]][$k[1]] +=$_increment;
+				break;
+
+			case 3:
+				if (empty($this->stats[$k[0]][$k[1]][$k[2]])) $this->stats[$k[0]][$k[1]][$k[2]] =$_increment;
+				else $this->stats[$k[0]][$k[1]][$k[2]] +=$_increment;
+				break;
+		}
+	}
+
     //-------------------------------------------------------------------------
     function import_registrants( $_details =true ) {
         global $cws_config;
-
-/* 		$now =time();
-
-        if (strtotime($this->cfg['dates']['registration']['from']) > $now
-            || strtotime($this->cfg['dates']['registration']['to']) < $now
-            ) {
-				unset($this->cfg['out_registrants']);
-				return false;
-			}	 */	
 
 		$this->verbose( "Process registrants" );
 
@@ -515,10 +568,6 @@ class INDICO extends JICT_OBJ {
 				'paid' =>$r['is_paid'] ? $r['price'] : 0
 				];
 		}
-
-/* 		print_r( $data_key2 );
-		print_r( $this->data[$data_key2] );
-		print_r( $conf_registrants ); */
 
 		$data_key =$this->request( '/api/events/{id}/registrants' );
 		
@@ -601,14 +650,6 @@ class INDICO extends JICT_OBJ {
     function import_abstracts() {
 		$now =time();
 
-/*         if (strtotime($this->cfg['dates']['abstracts_submission']['from']) < $now
-            || strtotime($this->cfg['dates']['abstracts_submission']['to']) < $now
-            ) {
-				unset($this->cfg['out_abstracts_stats']);
-				unset($this->cfg['out_persons']);
-				return false;
-			}
- */
 		$this->verbose( "Process Abstracts List" );
 
 		$data_key =$this->request( '/event/{id}/manage/abstracts/abstracts.json' );
@@ -718,8 +759,6 @@ class INDICO extends JICT_OBJ {
 
 		$editing_status =[];
 		if ($papers_submission_ok) {
-//			https://indico.jacow.org/event/41/editing/api/paper/file-type
-
 			$source_file_type_id =false;
 			$types =$this->request( '/event/{id}/editing/api/paper/file-types', 'GET', false, 
 				[ 'return_data' =>true, 'quiet' =>false ]);
@@ -730,16 +769,27 @@ class INDICO extends JICT_OBJ {
 
 			$data_key_editing_status =$this->request( '/event/{id}/editing/api/paper/list' );
 
-			//$papers_revision =[];
 			foreach ($this->data[$data_key_editing_status] as $x) {
 				if (!empty($x['editable'])) $editing_status[ $x['code'] ] =$x['editable'];
-
-//				$papers_revision[$x['code']] =empty($x['editable']['revision_count']) ? 0 : $x['editable']['revision_count'];
 			}
-
-			//print_r( $editing_status ); return;
 		}
-//		$papers_submission_ok =true;
+
+		$c_custom_fields =[]; //contributions custom fields
+		if (!empty($this->cfg["import_custom_fields"])) {
+			$contributions =$this->request( "/event/{id}/manage/contributions/contributions.json", 'GET', false, 
+				[ 'return_data' =>true, 'quiet' =>false, 'cache_time' =>1800 ]);
+	
+			if (!empty($contributions)) {
+				foreach ($contributions as $c) {
+					foreach ($c['custom_fields'] as $f) {
+						if (in_array( $f['name'], $this->cfg["import_custom_fields"] )) {
+							$c_custom_fields[ $c['code'] ][ $f['name'] ] =$f['value'];
+						}
+					}
+				}
+			}
+		}
+
 
 		$data_key_timetable =$this->request( '/export/timetable/{id}.json' );
 
@@ -747,7 +797,6 @@ class INDICO extends JICT_OBJ {
 			foreach ($day as $s) {
 				if (!empty($s['entries'])) {
 					if (!in_array( $s['code'], $this->cfg['papers_hidden_sessions'] ) && !empty($s['code'])) {
-//                        $programme['sessions'][ $s['code'] ] =[ 'code' =>$s['code'] ];
                         $programme['sessions'][ $s['sessionSlotId'] ] =[ 
 							'code' =>$s['code'],
 							'slotTitle' =>$s['slotTitle']
@@ -762,7 +811,6 @@ class INDICO extends JICT_OBJ {
 							$c_ts_to =strtotime( $c['endDate']['date'] .' ' .$c['endDate']['time'] );
 			
 							$presenter =empty($c['presenters'][0]) ? false : $c['presenters'][0];
-//							$author =empty($c['primaryauthors'][0]) ? false : $c['primaryauthors'][0];
 
 							$this->verbose( "$pcode | $c[title]", 4 );
 	
@@ -793,7 +841,6 @@ class INDICO extends JICT_OBJ {
 								"pdf_url" =>false,
 								"pdf_ts" =>0,
 								"created_ts" =>false,
-//								'prev_status' =>false,
 								"status" =>false,
 								"status_history" =>[],
                                 "status_ts" =>0,
@@ -806,12 +853,11 @@ class INDICO extends JICT_OBJ {
 								"qa_ok" =>false,
 								"qa_fail_count" =>0,
 								"editor" =>false,
-								"hide" =>in_array( $s['code'], $this->cfg['papers_hidden_sessions'] )
-                                ];		
+								"hide" =>in_array( $s['code'], $this->cfg['papers_hidden_sessions'] ),
+								"custom_fields" =>$c_custom_fields[$pcode] ?? false
+                                ];
 
 							$papers[$pcode] =$p;
-
-							//if ($pcode == 'MOXA1') print_r( $p );
 		
 							$abstracts[ $pcode ] =[
 								"text" =>$c['description'],
@@ -946,12 +992,7 @@ class INDICO extends JICT_OBJ {
 					"room" =>$room,
 					"location" =>$sb['room'],
 					'papers' =>$session_papers
-					];
-
-/*                 if (!empty($programme['sessions'][ $sb['code'] ])) {
-                    $programme['sessions'][ $sb['code'] ] =$programme['days'][$day][$session_key];
-                    $programme['sessions'][ $sb['code'] ]['papers'] =array_keys( $session_papers );
-                }  */                   
+					];          
 
                 if (!empty($programme['sessions'][ $sb['id'] ])) {
                     $programme['sessions'][ $sb['id'] ] =$programme['days'][$day][$session_key];
@@ -968,8 +1009,6 @@ class INDICO extends JICT_OBJ {
 		}
 
 		$this->verbose( "" );
-
-		//print_r( $papers['MOXA1'] );
 
 		$this->data['abstracts'] =$abstracts;	
 		$this->data['papers'] =$papers;
@@ -1516,6 +1555,7 @@ class INDICO extends JICT_OBJ {
 			$extra =false;
 
 			$r['qa'] =false;
+			$r['created_ts'] =strtotime( $r['created_dt'] );
 
 			foreach ($r['tags'] as $tag) {
 				switch ($tag['code']) {

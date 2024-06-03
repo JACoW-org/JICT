@@ -2,7 +2,8 @@
 
 /* by Stefano.Deiuri@Elettra.Eu
 
-2024.05.22 - new filter [y]
+2024.05.23 - new filter y2g with link to pdf
+2024.05.22 - new filter [y] and sort result for filters
 2024.05.18 - filters
 2024.05.16 - show yellow to green
 2023.04.05 - update (auth & template)
@@ -27,7 +28,12 @@ $Indico->load();
 
 $T =new TMPL( $cfg['template'] );
 $T->set([
-    'style' =>'main { font-size: 14px; margin-bottom: 2em } td.b_x { background: #555; color: white } td.b_y2g { background: #ADFF2F; color: black }',
+    'style' =>'
+        main { font-size: 14px; margin-bottom: 2em } 
+        td.b_x { background: #555; color: white } 
+        td.b_y2g { background: #ADFF2F; color: black }
+        tr:hover td { border-bottom: 2px solid black; }
+        ',
     'title' =>$cfg['name'],
     'logo' =>$cfg['logo'],
     'conf_name' =>$cfg['conf_name'],
@@ -40,13 +46,13 @@ $T->set([
     'js' =>false
     ]);
 
+$filter =$_GET['filter'] ?? false;
 
-/* if ($cfg['post_load_f']) {
-    $f =$cfg['post_load_f'];
-    $f();
-} */
+$sort ="[0, 'asc']";
+if ($filter == 'y') $sort ="[7,'desc']";
+else if ($filter == 'y2g') $sort ="[6,'asc'],[7,'desc']";
+else if ($filter == 'qa_pending') $sort ="[9,'desc'],[0,'asc']";
 
-/* $posters =false; */
 
 $registrants_email =[];
 $presents_email =[];
@@ -60,12 +66,23 @@ if (!empty($Indico->data['registrants']['registrants'])) {
 $rows =false;
 foreach ($Indico->data['papers'] as $pcode =>$p) {
     if (empty($p['hide'])) {
+        if ($p['status_indico'] != 'Accepted' && $p['status_qa'] == 'QA Pending') {
+            $Indico->data['papers'][$pcode]['status_qa'] =$p['status_qa'] ='QA Failed';
+
+        } else if ($p['status_indico'] == 'Accepted' && !empty($p['status_history']) && ($p['status_qa'] != 'QA Approved' || $filter != 'y2g')) {
+            $lrs =end( $p['status_history'] );
+            if ($lrs == '_changes_acceptance') {
+                $p['status_indico'] .=' by Author';
+                $Indico->data['papers'][$pcode]['status'] =$p['status'] ='y2g';
+            }
+        }
 
         $show =true;
         if (!empty($_GET['qa']) && $_GET['qa'] == 'pending' && $p['status_qa'] != 'QA Pending') $show =false;
-        else if (!empty($_GET['filter']) && $_GET['filter'] == 'y' && $p['status'] != 'y') $show =false;
-        else if (!empty($_GET['filter']) && $_GET['filter'] == 'qa_pending' && $p['status_qa'] != 'QA Pending') $show =false;
-        else if (!empty($_GET['filter']) && $_GET['filter'] == 'pdf_warnings' && empty($Indico->data['pdf_problems'][$pcode])) $show =false;
+        else if ($filter == 'y' && $p['status'] != 'y') $show =false;
+        else if ($filter == 'y2g' && $p['status'] != 'y2g') $show =false;
+        else if ($filter == 'qa_pending' && $p['status_qa'] != 'QA Pending') $show =false;
+        else if ($filter == 'pdf_warnings' && empty($Indico->data['pdf_problems'][$pcode])) $show =false;
         else if (!empty($_GET['pcode']) && strtolower($pcode) != strtolower($_GET['pcode'])) $show =false;
 
         if ($show) {
@@ -81,18 +98,7 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
                     if (in_array( $email, $registrants_email )) $author_registered ='OK';
                 }
             }
-    
-            if ($p['status_indico'] != 'Accepted' && $p['status_qa'] == 'QA Pending') {
-                $Indico->data['papers'][$pcode]['status_qa'] =$p['status_qa'] ='QA Failed';
-    
-            } else if ($p['status_indico'] == 'Accepted' && !empty($p['status_history'])) {
-                $lrs =end( $p['status_history'] );
-                if ($lrs == '_changes_acceptance') {
-                    $p['status_indico'] .=' by Author';
-                    $Indico->data['papers'][$pcode]['status'] ='y2g';
-                }
-            }
-    
+        
             if (!file_exists("../data/papers/$pcode.pdf")) $pdf_status ='NO PDF';
             else $pdf_status =empty($Indico->data['pdf_problems'][$pcode]) 
                 ? 'OK'
@@ -114,38 +120,49 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
                 'Authors_Check' =>!empty($Indico->data['authors_check'][$pcode]['done']) ? 'OK' : "",
                 'Author_Registered' =>$author_registered,
                 'Author_Present' =>$author_present,
+                'CAT_publish' =>$p['custom_fields']['CAT_publish'] ?? false,
                 ];
         }
     }
 }
 
-$content ="
+$filters =[
+    'All' =>false,
+    'QA Pending' =>'?filter=qa_pending',
+    'Needs Confirmation' =>'?filter=y',
+    'Accepted by Author' =>'?filter=y2g',
+    'PDF warnings' =>'?filter=pdf_warnings'
+    ];
 
-<a href='index.php'>All</a> | 
-<a href='index.php?filter=qa_pending'>QA Pending</a> | 
-<a href='index.php?filter=y'>Needs Confirmation</a> | 
-<a href='index.php?filter=pdf_warnings'>PDF warnings</a> |
-<a href='index.php?pcode='>pcode</a> | 
-";
+if (!empty($user['admin'])) $filters['pcode'] ='?pcode=x';
 
-if (!empty($rows)) {
-    $thead ="<tr><th>" .strtr( implode( "</th><th>", array_keys( $rows[0] ) ), '_', ' ' ) ."</th></tr>\n";
+$content =false;
 
-    $content .="<table id='papers' class='cell-border'>
+foreach ($filters as $label =>$x) {
+    $content .=($content ? ' | ' : false) .sprintf( "<a href='index.php%s'>%s</a>", $x, $label );
+}
+
+if (empty($rows)) {
+    $T->set( 'content', $content );
+    echo $T->get();
+    return;
+}
+
+
+$thead ="<tr><th>" .strtr( implode( "</th><th>", array_keys( $rows[0] ) ), '_', ' ' ) ."</th></tr>\n";
+
+$content .="<table id='papers' class='cell-border'>
 <thead>
 $thead
 <thead>
 <tbody>
 ";
-}
 
 $is_admin =!empty($user['admin']);
 
 foreach ($rows as $r) {
     $pcode =$r['Program_Code'];
     $p =$Indico->data['papers'][$pcode];
-    
-//    $qa_class =$p['status_qa'] == 'QA Approved' ? 'b_g' : false;
 
     $ac_class =$r['Authors_Check'] == 'OK' ? 'b_g' : false;
     $ar_class =$r['Author_Registered'] == 'OK' ? 'b_g' : 'b_r';
@@ -161,6 +178,8 @@ foreach ($rows as $r) {
     else if ($r['Poster_Police'] == 'Fail') $pp_class ='b_r';
     else if ($r['Poster_Police'] == 'Unmanned') $pp_class ='b_y';
     else $pp_class =false; 
+
+    $cat_class =empty($r['CAT_publish']) ? false : 'b_y';
     
     $contribution_url ="https://indico.jacow.org/event/$cfg[indico_event_id]/contributions/$p[id]";
     $paper_url ="https://indico.jacow.org/event/$cfg[indico_event_id]/contributions/$p[id]/editing/paper";
@@ -169,7 +188,12 @@ foreach ($rows as $r) {
 
     $pre_status =false;
     $post_status =false;
-    if (!empty($_GET['filter']) && $_GET['filter'] == 'y' && $p['status'] == 'y') $pre_status =sprintf( "<small>updated %s days ago</small><br /><br />", round((time() -$p['status_ts'])/86400,0 ));
+    if ($filter == 'y' && $p['status'] == 'y') $pre_status =sprintf( "<small>updated %s days ago</small><br /><br />", round((time() -$p['status_ts'])/86400,0 ));
+    else if ($filter == 'y2g' && $p['status'] == 'y2g') {
+        $pre_status =sprintf( "<small>updated %s days ago</small><br /><br />", round((time() -$p['status_ts'])/86400,0 ));
+        $r['PDF'] =sprintf( "<a href='%s' target='_blank' style='text-decoration: underline;'>PDF</a>", $p['pdf_url'] );
+    }
+
     if ($r['PDF'] != 'OK' && $r['PDF'] != 'NO PDF') $post_status =sprintf( "<br /><br /><small>%s</small>", date( 'd/m H:i', $p['status_ts'] ));
 
     $content .="<tr>
@@ -187,6 +211,7 @@ foreach ($rows as $r) {
 <td class='$ac_class'>$r[Authors_Check]</td>
 <td class='$ar_class'>$r[Author_Registered]</td>
 <td class='$ap_class'>$r[Author_Present]</td>
+<td class='$cat_class'>$r[CAT_publish]</td>
 </tr>
 ";
 }
@@ -197,7 +222,7 @@ $(document).ready(function() {
     $('#papers').DataTable({        
         dom: \"<'row'<'col-sm-6'i><'col-sm-6'f>><'row'<'col-sm-12'tr>>\",
         paging: false,
-		order: [[0, 'asc']]
+		order: [$sort]
     });
 } );
 " );

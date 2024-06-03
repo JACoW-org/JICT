@@ -12,3 +12,4 @@ page_authors_check/images/*
 exports/*.csv
 conference-config.php
 libs/phpqrcode/cache/*
+indico_stats_importer/not_present.txt

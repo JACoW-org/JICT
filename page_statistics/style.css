@@ -100,6 +100,7 @@ table.values {
   border: 0;
   border-collapse: collapse;
   margin-top: 5px;
+  width: 100%;
 }
 table.values td,
 table.values th {
@@ -109,15 +110,42 @@ table.values th {
 }
 table.values td {
   text-align: right;
-  padding-left: 15px;
+  _padding-left: 15px;
 
 }
 table.values th {
   text-align: left;
 }
 
+table.editors td { text-align: center !important; } 
+       
+table.editors tbody tr:hover td, table.editors tbody tr:hover th { background: #aaff00; }
+
 table.editors td:nth-child(2),
 table.editors td:nth-child(5),
 table.editors td:nth-child(7) {
   border-right: 1px dotted black !important;
+}
+
+
+
+table.days tbody tr:hover td, 
+table.days tbody tr:hover th { 
+  background: #aaff00; 
+}
+
+table.days tbody td { 
+  text-align: center !important; 
+} 
+
+table.days td:last-child {
+  border-left: 1px dotted black !important;
+}
+
+table.days th {
+  text-align: center;
+}
+
+table.days th:nth-child(1) {
+  text-align: left;
 }

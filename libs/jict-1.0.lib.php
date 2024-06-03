@@ -843,6 +843,8 @@ class API_REQUEST {
 		} else {
             if (strpos( $headers['Content-Type'], 'html' )) $this->result =$result;
 			else $this->result =json_decode( $result, true );
+
+            //$this->error =false;
 		}
 		
 		return $this->result;
