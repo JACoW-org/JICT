@@ -38,6 +38,7 @@ $T->set([
     td:nth-child(1),td:nth-child(2) { font-size: 10px} 
     table tr.editor td { background: #effb5a } 
     table tr.undone td { background: #fd8989 } 
+    table tr.reset td { background: #aaa; } 
     span.tag { border: 1px solid #777; border-radius: 3px; padding: 1px 3px 1px 3px; margin-right: 3px; }
     
     ',
@@ -62,12 +63,10 @@ return;
 function get_paper_revisions( $_pid ) {
     global $Indico;
 
-/*     $pedit =$Indico->request( "/event/{id}/api/contributions/$_pid/editing/paper", 'GET', false, 
-        [ 'return_data' =>true, 'quiet' =>true, 'cache_time' =>0 ]);
-
-    $pedit['revisions'] =fix_revisions( $pedit['revisions'] ); */
-
-    $pedit =$Indico->get_paper_details( $_pid, 0, true );
+    $pedit =empty($_GET['raw']) 
+        ? $Indico->get_paper_details( $_pid, 0, true )
+        : $Indico->request(sprintf( "/event/{id}/api/contributions/%d/editing/paper", $_pid ), 'GET', false, [ 'return_data' =>true, 'quiet' =>true, 'cache_time' =>0 ])
+        ;
 
     $editor =$pedit['editor']['full_name'];
 
@@ -79,7 +78,6 @@ function get_paper_revisions( $_pid ) {
         $row =[];
         $class =false;
         foreach ($keys as $k) {
-
             if (strpos( $k, '.' )) list( $k1, $k2 ) =explode( '.', $k );
             else {
                 $k1 = $k;
@@ -108,7 +106,10 @@ function get_paper_revisions( $_pid ) {
 
             } else if ($k == 'user.full_name') {
                 $row[$k] =$r[$k1][$k2];
-                if ($r['is_editor_revision']) {
+                if ($r['type']['name'] == 'reset') {
+                    $class ='reset';
+
+                } else if ($r['is_editor_revision']) {
                     $row[$k] .=" (editor)";
                     $class ='editor';
                 }

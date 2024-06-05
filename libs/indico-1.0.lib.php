@@ -1552,42 +1552,43 @@ class INDICO extends JICT_OBJ {
 
 		$i =0;
 		foreach ($pedit['revisions'] as $rid =>$r) {
-			$extra =false;
-
-			$r['qa'] =false;
-			$r['created_ts'] =strtotime( $r['created_dt'] );
-
-			foreach ($r['tags'] as $tag) {
-				switch ($tag['code']) {
-					case 'QA02': // pending
-						$r['qa'] =$tag['title'];
-
-						if ($r['is_undone']) {							
-							$r['is_undone'] =false;
-							$revisions[$i -1]['is_undone'] =false;
-							
-							$extra =$r;
-							$extra['type']['name'] ='ready_for_review';
-							$extra['qa'] =QA_FAIL;
-							$extra['tags'] =[[
-								'code' =>'QA03',
-								'color' =>'red',
-								'system' =>true,
-								'title' =>$extra['qa']
-								]];
-						}
-						break;
-
-					case 'QA01': // ok
-						$r['qa'] =$tag['title'];
-						break;
-				}
-
-			}
-			
-			$revisions[$i++] =$r;
+			if ($r['type']['name'] != 'reset') {
+				$extra =false;
 	
-			if ($extra) $revisions[$i++] =$extra;
+				$r['qa'] =false;
+				$r['created_ts'] =strtotime( $r['created_dt'] );
+	
+				foreach ($r['tags'] as $tag) {
+					switch ($tag['code']) {
+						case 'QA02': // pending
+							$r['qa'] =$tag['title'];
+	
+							if ($r['is_undone']) {							
+								$r['is_undone'] =false;
+								$revisions[$i -1]['is_undone'] =false;
+								
+								$extra =$r;
+								$extra['type']['name'] ='ready_for_review';
+								$extra['qa'] =QA_FAIL;
+								$extra['tags'] =[[
+									'code' =>'QA03',
+									'color' =>'red',
+									'system' =>true,
+									'title' =>$extra['qa']
+									]];
+							}
+							break;
+	
+						case 'QA01': // ok
+							$r['qa'] =$tag['title'];
+							break;
+					}
+				}
+				
+				$revisions[$i++] =$r;
+		
+				if ($extra) $revisions[$i++] =$extra;
+			}
 		}
 		
  		if ($_remove_undone) {
