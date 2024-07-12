@@ -472,7 +472,7 @@ class INDICO extends JICT_OBJ {
 				}
 			}
 	
-			ksort( $authors_check['days'] );
+			if (!empty($authors_check['days'])) ksort( $authors_check['days'] );
 		}
 
 

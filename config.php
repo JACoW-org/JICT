@@ -137,23 +137,19 @@ $cws_config =[
 		'pdf_path'				=>'{data_path}/papers',
 	
 		// in
-//		'in_po'				    =>'{data_path}/po.json',
 		'in_papers'			    =>'{data_path}/papers.json',
 		'in_stats'				=>'{data_path}/stats.json',
 		'in_last_nums'			=>'{data_path}/last_nums.json',
 		'in_authors_check'		=>'{data_path}/author_reception.json',
 		'in_slides'				=>'{data_path}/slides.json',
-//		'in_revisions'			=>'{data_path}/papers-revisions.json',
 
 		// out
 		'out_team'				=>'{data_path}/team.json',
-//		'out_editors'			=>'{data_path}/editors.json',
 		'out_stats'				=>'{data_path}/stats.json',
 		'out_papers'			=>'{data_path}/papers.json',
 		'out_abstracts_stats'	=>'{data_path}/abstracts_stats.json',
         'out_registrants'	    =>'{data_path}/registrants.json',
 		'out_last_nums'			=>'{data_path}/last_nums.json',
-//		'out_revisions'			=>'{data_path}/papers-revisions.json',
 		],
 
 	//-------------------------------------------------------------------------------------------------
@@ -214,7 +210,6 @@ $cws_config =[
 		// in
 		'in_stats'			=>'{data_path}/stats.json',
 		'in_team'			=>'{data_path}/team.json',
-//		'in_editors'		=>'{data_path}/editors.json',
 		'in_papers'			=>'{data_path}/papers.json',
 		'in_editing_tags'	=>'{data_path}/editing_tags.json',
 		'in_authors_check'	=>'{data_path}/author_reception.json',
@@ -230,9 +225,6 @@ $cws_config =[
 	'page_slides' =>[
 		'name'				=>'Slides',
 		'allow_roles'		=>[ 'WSA', 'JSA', 'JPM' ],		
-
-//		'cron'				=>'*:10',
-//		'post_load_f'		=>false,
 
 		'tmp_path'			=>'{tmp_path}/slides',
 
@@ -279,8 +271,6 @@ $cws_config =[
 		'allow_roles'		=>[ '*' ],
 
 		'cron'				=>'*:10',
-
-//		'post_load_f'		=>false,
 
         'tmp_path'			=>'{tmp_path}/indico',
 

@@ -13,7 +13,7 @@ require_lib( 'jict', '1.0' );
 require_lib( 'indico', '1.0' );
 
 
-$cfg =config( 'indico_stats_importer', true );
+$cfg =config( false, false, false );
 
 for ($i =1; $i <count($argv); $i ++) {
 	switch ($argv[$i]) {

@@ -8,6 +8,8 @@
 
 define( 'WEB_ECHO_STYLE', 'font-family: Arial; font-weight: bold; padding: 3px;' );
 
+$cws_echo_mode =false;
+
 //-----------------------------------------------------------------------------
 function echo_result( $_status, $_error_message ='ERROR', $_ok_message ='OK' ) {
     if ($_status) echo_ok( $_ok_message);
@@ -199,10 +201,10 @@ function config( $_app =false, $_check_in_file_exit =false, $_check_in_file =tru
 	
 	echo "Read config for $_app\n\n";
  }
-  
- if (!isset($cws_config[$_app])) {
-	echo_error( "App undefined!\n\n" );
-	die;
+ 
+ if (empty($cws_config[$_app])) {
+    echo "App ($_app) undefined!\n\n";
+    die;
  }
  
  cws_define( 'app', $_app );
@@ -307,8 +309,6 @@ function config( $_app =false, $_check_in_file_exit =false, $_check_in_file =tru
  date_default_timezone_set( CWS_TIMEZONE );
  
  $cws_echo_mode =$cfg['echo_mode'];
-
-// print_r( $cfg ); $d =get_defined_constants(true); print_r( $d['user'] ); exit;
 
  return $cfg;
 }
@@ -483,7 +483,7 @@ function download_file( $_tmp_fname, $_download_fname, $_content_type ='text' ) 
     readfile( $_tmp_fname );
 }
 
-//-----------------------------------------------------------------------------
+/* //-----------------------------------------------------------------------------
 function _R( $_name, $_value =false, $_false_value =false ) {
     if (!isset( $_REQUEST[$_name] )) return $_false_value;
     if ($_value && ($_REQUEST[$_name] != $_value)) return $_false_value;
@@ -502,7 +502,7 @@ function _G( $_name, $_value =false, $_false_value =false ) {
     if (!isset( $_GET[$_name] )) return $_false_value;
     if ($_value && ($_GET[$_name] != $_value)) return $_false_value;
     return $_GET[$_name];
-}
+} */
 
 //-----------------------------------------------------------------------------
 function gz_http_response( $_text ) {
