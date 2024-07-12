@@ -104,6 +104,8 @@ $cws_config =[
         'refs_hidden_sessions'  =>[],
 		'posters_hidden_sessions'=>[],
 
+		'refs_final' 			=>false, // final version is with page number and doi
+
 		'import_custom_fields' 	=>[ 'CAT_publish' ],
 				
 		'tmp_path'				=>'{tmp_path}/indico',

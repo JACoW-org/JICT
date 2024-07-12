@@ -1085,6 +1085,7 @@ class INDICO extends JICT_OBJ {
 
 	//-----------------------------------------------------------------------------
 	function export_refs( $_fname =false, $_final =false ) {
+		if ($this->cfg['refs_final']) return $this->export_refs_final( $_fname );
 		
 		$out_fname =$_fname ? $_fname : $this->cfg['export_refs'];
 		
@@ -1121,38 +1122,77 @@ class INDICO extends JICT_OBJ {
 
 
 	//-----------------------------------------------------------------------------
-	function export_refs_v3( $_fname =false ) {
+	// copy dois files from meow /opt/cat/meow/var/run
+	function export_refs_final( $_fname =false ) {
 		
 		$out_fname =$_fname ? $_fname : $this->cfg['export_refs'];
 		
-		$this->verbose( "# Save REFS data (" .$out_fname .")... ", 1, false );
-		$citations =false;
+		$this->verbose( "# Save REFS data ($out_fname)... ", 1, false );
+		$refs =[];
+
+		$doi_info =file_read_json( sprintf( "%s/doi/%d.json", $this->cfg['data_path'], $this->cfg['indico_event_id'] ), true );
+
+		if (empty($doi_info)) {
+			$this->verbose_error( "Unable to read DOI data" );
+			return false;
+		}
+
+		$pubdate =false;
 
 		foreach ($this->data['papers'] as $pid =>$p) {
 			if (!empty($p['authors']) && !in_array( $p['session_code'], $this->cfg['refs_hidden_sessions'] )) {
-				$citations[] =array(
+				$position =false;
+
+				$refs[$pid] =[
 					'PaperId' =>$pid,
 					'Authors' =>$p['authors'],
 					'Title' =>$p['title'],
-					'PageRange' =>$p['position'],
+					'PageRange' =>false,
 					'Contribution_ID' =>$p['abstract_id'],
-					'DOI' =>$p['position'] ? '10.18429/JACoW-IPAC2023-' .$pid : false,
-					'PubStatus' =>$p['position'] ? 1 : 3,
-					'SPMS_Id' =>41,
-					'Publication_Date' =>'9,2023'
-					);
+					'DOI' =>false,
+					'PubStatus' =>3,
+					'SPMS_Id' =>$this->cfg['indico_event_id'],
+					'Publication_Date' =>false
+					];
+
+				$doi_fname =sprintf( "%s/doi/%s.json", $this->cfg['data_path'], $pid );
+                if (file_exists( $doi_fname)) {
+					$doi =file_read_json( $doi_fname, true );
+
+					if (empty($doi)) {
+						echo "ERROR: $pid";
+						return false;
+					}
+
+					if ($doi && !empty($doi['data']['attributes']['sizes'][0])) $position =trim(str_replace( ' pages', "", $doi['data']['attributes']['sizes'][0] ));
+
+					if (!$pubdate) {
+						foreach ($doi['data']['attributes']['dates'] as $d) {
+							if ($d['dateType'] == 'Issued') {
+								$ts =strtotime( $d['date'] );
+								$pubdate =date( 'n,Y', $ts );
+							}
+						}
+					}
+
+					$refs[$pid]['PageRange'] =$position;
+					$refs[$pid]['DOI'] =$doi['data']['id'];
+					$refs[$pid]['PubStatus'] =1;
+					$refs[$pid]['Publication_Date'] =$pubdate;
+				}
+
 			}
 		}
 		
-		if ($citations) {
+		if (!empty($refs)) {
 			$fp =fopen( $out_fname, 'w' );
-			fputcsv( $fp, array_keys( $citations[0] ) );
-			foreach ($citations as $cit) {
+			fputcsv( $fp, array_keys( reset($refs) ));
+			foreach ($refs as $cit) {
 				fputcsv( $fp, $cit );
 			}
 			fclose( $fp );
 
-			$this->verbose_ok( "(" .count($citations) .") " );
+			$this->verbose_ok( "(" .count($refs) .") " );
 			
 		} else {
 			$this->verbose_error( "(No data)" );
