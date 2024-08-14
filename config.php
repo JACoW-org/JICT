@@ -28,10 +28,8 @@ $cws_config =[
 		'admin'				=>false,
 
 		'location'			=>'', // Malmö, Sweden
-//		'date_start'		=>'', // 2099-05-19
-//		'date_end'			=>'', // 2099-05-23
 
-		'cws_timezone'		=>'', // Australia/Melbourne
+		// 'timezone'			=>'', // Australia/Melbourne
 		
         'dates' =>[
             'conference' =>[ 'from' =>'', 'to' =>'' ],

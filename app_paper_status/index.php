@@ -31,7 +31,7 @@ if (!need_file( APP_IN_PAPERS )) {
 
 
 	
-$pc =strtoupper(trim(_G('paper_code')));
+$pc =strtoupper(trim($_GET['paper_code'] ?? false));
 if ($pc) {
 	$papers =file_read_json( APP_IN_PAPERS, true );
 	
@@ -98,11 +98,5 @@ $T->set([
 	]);
 
 echo $T->get();
-
-/* $tmpl =implode( '', file( APP_IN_TEMPLATE_HTML ));
-foreach (array( 'title', 'on_load', 'page', 'primary_color' ) as $var) {
-	$tmpl =str_replace( '{'.$var.'}', $$var, $tmpl );
-}
-echo $tmpl; */
 
 ?>

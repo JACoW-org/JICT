@@ -14,3 +14,5 @@ conference-config.php
 libs/phpqrcode/cache/*
 indico_stats_importer/not_present.txt
 indico_stats_importer/make.php.orig
+init.php
+logo.png

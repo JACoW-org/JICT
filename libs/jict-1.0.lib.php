@@ -188,7 +188,7 @@ function config( $_app =false, $_check_in_file_exit =false, $_check_in_file =tru
  
 // print_r($cws_config);
 
- foreach (array( 'conf_name', 'indico_server_url', 'indico_event_id', 'indico_token', 'cws_timezone', 'root_url', 'root_path') as $var) {
+ foreach (array( 'conf_name', 'indico_server_url', 'indico_event_id', 'indico_token', 'root_url', 'root_path') as $var) {
     if (!isset($cws_config['global'][$var]) || $cws_config['global'][$var] == '') {
         echo_error( "\n\nWrong configuration! Please check config.php! (global\\$var)\n\n\n" );
         die;
@@ -306,7 +306,7 @@ function config( $_app =false, $_check_in_file_exit =false, $_check_in_file =tru
 	}
  }
  
- date_default_timezone_set( CWS_TIMEZONE );
+//  date_default_timezone_set( TIMEZONE );
  
  $cws_echo_mode =$cfg['echo_mode'];
 

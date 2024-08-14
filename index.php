@@ -42,20 +42,22 @@ if (ROOT_PATH == '.' || ROOT_PATH == '') {
 
 $links =false;
 foreach ($cws_config as $app =>$x) {
-	if (isset($x['out_html'])) {
-		$href ="html/" .str_replace( '{out_path}/', "", $x['out_html'] );
-
-		if (file_exists($href)) $links[$x['name']] ="<a href='$href' target='_blank'>$x[name]</a>";
-		else $links[$x['name']] ="$x[name]" .(substr($app,0,4) == 'make' ? "<br /><small>(run $app/make.php [$href])</small>" : false);
-		
-	} else if (isset($x['default_page']) && (empty($x['only_me']) || me())) {
-		$href =str_replace( '{app}', $app, $x['default_page'] );
-
-		if (file_exists($href)) $links[$x['name']] ="<a href='$href' target='_blank'>$x[name]</a>";
-		else $links[$x['name']] ="$x[name]" .(substr($app,0,4) == 'make' ? "<br /><small>(run $app/make.php)</small>" : false);
-
-		if (!empty($x['allow_roles']) && empty($user['public'])) $links[$x['name']] .=sprintf( ' <i class="fa-solid fa-lock" title="roles allowed: %s"></i>', implode( ',', $x['allow_roles'] ));
-	}
+    if (empty($x['hide'])) {
+        if (isset($x['out_html'])) {
+            $href ="html/" .str_replace( '{out_path}/', "", $x['out_html'] );
+    
+            if (file_exists($href)) $links[$x['name']] ="<a href='$href' target='_blank'>$x[name]</a>";
+            else $links[$x['name']] ="$x[name]" .(substr($app,0,4) == 'make' ? "<br /><small>(run $app/make.php [$href])</small>" : false);
+            
+        } else if (isset($x['default_page']) && (empty($x['only_me']) || me())) {
+            $href =str_replace( '{app}', $app, $x['default_page'] );
+    
+            if (file_exists($href)) $links[$x['name']] ="<a href='$href' target='_blank'>$x[name]</a>";
+            else $links[$x['name']] ="$x[name]" .(substr($app,0,4) == 'make' ? "<br /><small>(run $app/make.php)</small>" : false);
+    
+            if (!empty($x['allow_roles']) && empty($user['public'])) $links[$x['name']] .=sprintf( ' <i class="fa-solid fa-lock" title="roles allowed: %s"></i>', implode( ',', $x['allow_roles'] ));
+        }
+    }
 }
 
 ksort( $links );

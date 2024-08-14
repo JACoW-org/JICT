@@ -50,10 +50,11 @@ $delegates_n =count( $D );
 $delegates_list =implode( "<br />\n", $D );
 
 $S =&$participants['S'];
-if (count($S)) {
+if (!empty($S) && count($S)) {
     ksort( $S );
     $exhibitors_n =count( $S );
     $exhibitors_list =implode( "<br />\n", $S );
+
 } else {
     $exhibitors_n =0;
 }

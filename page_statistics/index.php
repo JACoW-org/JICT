@@ -270,7 +270,7 @@ if (!empty($Indico->data['team'][$type])) {
 
 $type ='editors_revisions';
 $table[$type] =false;
-if (!empty($Indico->data['team']['stats']['days'])) {
+if (!empty($Indico->data['team']['stats'][$type])) {
     $tbody =false;
 
     ksort($Indico->data['team']['stats'][$type]);

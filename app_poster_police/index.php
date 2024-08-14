@@ -33,9 +33,9 @@ class PosterPolice extends JICT_OBJ {
 	$this->PP =false;
 	$this->PPS =false;
 		
-	$this->day =_G('day');
-	$this->session =_G('session');
-	$this->poster =_G('poster');
+	$this->day =$_GET['day'] ?? false;
+	$this->session =$_GET['session'] ?? false;
+	$this->poster =$_GET['poster'] ?? false;
 
 	$this->cfg =[ 
 		'pps_fname' =>false
@@ -122,12 +122,14 @@ class PosterPolice extends JICT_OBJ {
  
  //-----------------------------------------------------------------------------
  function handle() {
-	if (_G('export')) {
+	if (!empty($_GET['export'])) {
 		$this->export();
 		return;
 	}
  
-	if (_R('cmd', 'session_sync')) {
+	$cmd =$_REQUEST['cmd'] ?? false;
+
+	if ($cmd == 'session_sync') {
 		list( $tp, $tpc, $errors, $pcode, $status )=$this->session_sync();
 		$percent =round( $tpc * 100 / $tp );
 
@@ -135,10 +137,10 @@ class PosterPolice extends JICT_OBJ {
 		return;
 	}
  
-	if (_G('save')) {
-		$this->save_status( _G('status0'), _G('status1'), _G('status2'), _G('status3'), _G('comment') );
-		if (_G('next')) {
-			$this->poster =_G('next');
+	if (!empty($_GET['save'])) {
+		$this->save_status( $_GET['status0'], $_GET['status1'], $_GET['status2'], $_GET['status3'], $_GET['comment'] );
+		if (!empty($_GET['next'])) {
+			$this->poster =$_GET['next'];
 //			$this->poster =str_pad( ++$this->poster, 3, '0', STR_PAD_LEFT );
 		} else {
 			$this->poster =0;

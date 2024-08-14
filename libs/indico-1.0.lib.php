@@ -2,6 +2,7 @@
 
 /* by Stefano.Deiuri@Elettra.Eu
 
+2024.07.16 - 
 2023.11.27 - handle public access mode
 2023.03.01 - fix session block handlers
 2022.08.29 - remove edots
@@ -187,7 +188,7 @@ class INDICO extends JICT_OBJ {
 		if (isset($_rqst_cfg['cache_time'])) $cache_time =$_rqst_cfg['cache_time'];
         else $cache_time =empty($_rqst_cfg['disable_cache']) ? $this->cfg['cache_time'] : 0;
 
-		$cache =new CACHEDATA( $fname, $cache_time, APP_TMP_PATH );
+		$cache =new CACHEDATA( $fname, $cache_time, $this->cfg['tmp_path'] );
 
 		if (!$cache->get( $this->data[$req] )) {
 			$this->requests_api_count ++;
@@ -202,7 +203,7 @@ class INDICO extends JICT_OBJ {
 			}
 
             if (empty($_rqst_cfg['disable_cache'])) {
-                if ($verbose) $this->verbose( "# SAVE " .APP_TMP_PATH ."/$fname... ", 2 );
+                if ($verbose) $this->verbose(sprintf( "# SAVE %s/%s... ", $this->cfg['tmp_path'], $fname ), 2 );
 				$cache_status =$cache->save( $this->data[$req] );
                 if ($verbose) $this->verbose_status( !$cache_status );
             }
@@ -410,7 +411,7 @@ class INDICO extends JICT_OBJ {
 			}
 		}
 		
-		ksort( $this->data['stats']['papers_submission']['by_dates'] );
+		if (!empty($this->data['stats']['papers_submission'])) ksort( $this->data['stats']['papers_submission']['by_dates'] );
 
 		$ts_deadline =strtotime($cws_config['global']['dates']['papers_submission']['deadline']);
 		
@@ -791,25 +792,50 @@ class INDICO extends JICT_OBJ {
 		}
 
 
+		$data_key_event =$this->request( '/export/event/{id}.json', 'GET', [ 'detail' =>'sessions' ]);
+
+//		$this->cfg['timezone'] =$this->data[$data_key_event]['results'][0]['timezone'];
+
+//		print_r( $this );
+
 		$data_key_timetable =$this->request( '/export/timetable/{id}.json' );
 
 		foreach ($this->data[$data_key_timetable]['results'][$this->event_id] as $day) {
 			foreach ($day as $s) {
-				if (!empty($s['entries'])) {
+				if ($s['entryType'] == 'Break') {
+					$b_from =new DateTime( $s['startDate']['date'] .' ' .$s['startDate']['time'], new DateTimeZone($s['startDate']['tz']));
+					$b_from->setTimezone(new DateTimeZone($this->cfg['timezone']));
+	
+					$b_to =new DateTime( $s['endDate']['date'] .' ' .$s['endDate']['time'], new DateTimeZone($s['endDate']['tz']));
+					$b_to->setTimezone(new DateTimeZone($this->cfg['timezone']));
+
+					$programme['breaks'][ $b_from->format('Y-m-d') ][ $b_to->format('H:i') ] =[ 
+						'title' =>$s['title'],
+						"time_from" =>$b_from->format( 'H:i' ),
+						"time_to" =>$b_to->format( 'H:i' ),
+						"tsz_from" =>$b_from->getTimestamp(),
+						"tsz_to" =>$b_to->getTimestamp(),							
+						];
+				
+				} else if (!empty($s['entries'])) {
 					if (!in_array( $s['code'], $this->cfg['papers_hidden_sessions'] ) && !empty($s['code'])) {
                         $programme['sessions'][ $s['sessionSlotId'] ] =[ 
 							'code' =>$s['code'],
 							'slotTitle' =>$s['slotTitle']
 							];
-                    }
+
+                    } 
 
 					foreach ($s['entries'] as $c) {										
 						if (!empty($c['code'])) {
 							$pcode =$c['code'];
 
-							$c_ts_from =strtotime( $c['startDate']['date'] .' ' .$c['startDate']['time'] );
-							$c_ts_to =strtotime( $c['endDate']['date'] .' ' .$c['endDate']['time'] );
+							$c_from =new DateTime( $c['startDate']['date'] .' ' .$c['startDate']['time'], new DateTimeZone($c['startDate']['tz']));
+							$c_from->setTimezone(new DateTimeZone($this->cfg['timezone']));
 			
+							$c_to =new DateTime( $c['endDate']['date'] .' ' .$c['endDate']['time'], new DateTimeZone($c['endDate']['tz']));
+							$c_to->setTimezone(new DateTimeZone($this->cfg['timezone']));
+
 							$presenter =empty($c['presenters'][0]) ? false : $c['presenters'][0];
 
 							$this->verbose( "$pcode | $c[title]", 4 );
@@ -823,10 +849,10 @@ class INDICO extends JICT_OBJ {
 								'title' =>$c['title'],
 								'type' =>false,
 								'poster' =>$s['isPoster'],
-								"time_from" =>date( 'H:i', $c_ts_from ),
-								"time_to" =>date( 'H:i', $c_ts_to ),
-								"tsz_from" =>$c_ts_from,
-								"tsz_to" =>$c_ts_to,
+								"time_from" =>$c_from->format( 'H:i' ),
+								"time_to" =>$c_to->format( 'H:i' ),
+								"tsz_from" =>$c_from->getTimestamp(),
+								"tsz_to" =>$c_to->getTimestamp(),
 								"abstract" =>!empty($c['description']),
 								"primary_code" =>"Y",
 								"presenter" =>$presenter ? sprintf( "%s %s - %s", $presenter['firstName'], $presenter['familyName'], $presenter['affiliation'] ) : false,
@@ -874,23 +900,23 @@ class INDICO extends JICT_OBJ {
 
 		$this->verbose( "Process sessions" );
 
-		$data_key_event =$this->request( '/export/event/{id}.json', 'GET', 
-			[ 'detail' =>'sessions' ]);
-
 		if (!empty($this->data[$data_key_event]['results'][0]['sessions'])) {
 			foreach ($this->data[$data_key_event]['results'][0]['sessions'] as $sb) {
 				$s =$sb['session'];
 	
 				$chair =empty($s['sessionConveners'][0]) ? false : $s['sessionConveners'][0];
 	
-				$s_ts_from =strtotime( $sb['startDate']['date'] .' ' .$sb['startDate']['time'] );
-				$s_ts_to =strtotime( $sb['endDate']['date'] .' ' .$sb['endDate']['time'] );
+				$s_from =new DateTime( $sb['startDate']['date'] .' ' .$sb['startDate']['time'], new DateTimeZone($sb['startDate']['tz']));
+				$s_from->setTimezone(new DateTimeZone($this->cfg['timezone']));
+
+				$s_to =new DateTime( $sb['endDate']['date'] .' ' .$sb['endDate']['time'], new DateTimeZone($sb['endDate']['tz']));
+				$s_to->setTimezone(new DateTimeZone($this->cfg['timezone']));
 	
 				$day =$s['startDate']['date'];
 	
 				$this->verbose( "$day - $sb[code] ($sb[room] | $s[room]) - $sb[title]" );
 	
-				$session_key =date( 'Hi', $s_ts_from )
+				$session_key =$s_from->format( 'Hi' )
 					.'_' .str_replace( ' ', "", $sb['room'] )
 					.'_' .$sb['code']
 					.'_' .$sb['id']
@@ -900,9 +926,6 @@ class INDICO extends JICT_OBJ {
 				foreach ($sb['contributions'] as $c) {
 					$pcode =$c['code'];
 
-					$c_ts_from =strtotime( $c['startDate']['date'] .' ' .$c['startDate']['time'] );
-					$c_ts_to =strtotime( $c['endDate']['date'] .' ' .$c['endDate']['time'] );
-	
                     if (!empty($papers[$pcode])) {
                         $p =$papers[$pcode];
 						
@@ -985,10 +1008,10 @@ class INDICO extends JICT_OBJ {
 					"title" =>$sb['title'],
 					"chair" =>$chair ? "$chair[first_name] $chair[last_name]" : false,
 					"chair_inst" =>$chair ? "$chair[affiliation]" : false,
-					"time_from" =>date( 'H:i', $s_ts_from ),
-					"time_to" =>date( 'H:i', $s_ts_to ),
-					"tsz_from" =>$s_ts_from,
-					"tsz_to" =>$s_ts_to,
+					"time_from" =>$s_from->format( 'H:i' ),
+					"time_to" =>$s_to->format( 'H:i' ),
+					"tsz_from" =>$s_from->getTimestamp(),
+					"tsz_to" =>$s_to->getTimestamp(),
 					"room" =>$room,
 					"location" =>$sb['room'],
 					'papers' =>$session_papers
@@ -1145,14 +1168,11 @@ class INDICO extends JICT_OBJ {
 
 				$refs[$pid] =[
 					'PaperId' =>$pid,
-					'Authors' =>$p['authors'],
+					'AuthorList' =>$p['authors'],
 					'Title' =>$p['title'],
-					'PageRange' =>false,
-					'Contribution_ID' =>$p['abstract_id'],
-					'DOI' =>false,
+					'PageNumbers' =>false,
+					'UniqueIdentifier' =>$p['abstract_id'],
 					'PubStatus' =>3,
-					'SPMS_Id' =>$this->cfg['indico_event_id'],
-					'Publication_Date' =>false
 					];
 
 				$doi_fname =sprintf( "%s/doi/%s.json", $this->cfg['data_path'], $pid );
@@ -1175,18 +1195,15 @@ class INDICO extends JICT_OBJ {
 						}
 					}
 
-					$refs[$pid]['PageRange'] =$position;
-					$refs[$pid]['DOI'] =$doi['data']['id'];
+					$refs[$pid]['PageNumbers'] =$position;
 					$refs[$pid]['PubStatus'] =1;
-					$refs[$pid]['Publication_Date'] =$pubdate;
 				}
-
 			}
 		}
 		
 		if (!empty($refs)) {
 			$fp =fopen( $out_fname, 'w' );
-			fputcsv( $fp, array_keys( reset($refs) ));
+			// fputcsv( $fp, array_keys( reset($refs) ));
 			foreach ($refs as $cit) {
 				fputcsv( $fp, $cit );
 			}
@@ -1198,7 +1215,6 @@ class INDICO extends JICT_OBJ {
 			$this->verbose_error( "(No data)" );
 		}
 	}
-
 
 
 	//-----------------------------------------------------------------------------

@@ -257,7 +257,7 @@ DESCRIPTION:Session: $S[title]
 
 		fwrite( $fp_day, "<table class='day' " .APP_TAB_W ." cellpadding='3' cellspacing='0'>\n"
 			."<tr class='days'>\n"
-			."<td class='overview clickable' onClick='document.location=\"javascript:day(0);\"'>Overview</td>\n"
+			// ."<td class='overview clickable' onClick='document.location=\"javascript:day(0);\"'>Overview</td>\n"
 			.$menu
 			."</tr>\n"
 			."</table>\n"
@@ -280,9 +280,11 @@ DESCRIPTION:Session: $S[title]
 			if ($ltf && ($ltf != $tf)) {
 				$page =$this->session( $ps, $sid, $SHTML );
 				
-				if (in_array( $tf, $this->cfg['coffee_break_time_end'])) $page .=$this->event( $lte, $tf, 'Coffee Break' );
-				else if (in_array( $tf, $this->cfg['lunch_break_time_end'])) $page .=$this->event( $lte, $tf, 'Lunch Break' );
+				if (!empty($this->programme['breaks'][$day][$tf])) $page .=$this->event( $lte, $tf, $this->programme['breaks'][$day][$tf]['title'] );
 
+/* 				if (in_array( $tf, $this->cfg['coffee_break_time_end'])) $page .=$this->event( $lte, $tf, 'Coffee Break' );
+				else if (in_array( $tf, $this->cfg['lunch_break_time_end'])) $page .=$this->event( $lte, $tf, 'Lunch Break' );
+ */
 				fwrite( $fp_day, $page );
 
 				$ps =[];
