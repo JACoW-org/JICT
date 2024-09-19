@@ -353,23 +353,26 @@ function file_write( $_filename, $_data, $_mode ='w', $_verbose =false, $_verbos
     //	echo "unable to save file $_filename!\n";
         if ($_verbose) echo_error( "ERROR (writing)" );
 
-        $include_list =get_included_files();
-        $calltrace =debug_calltrace();
 
-        $debug =date('r') .' -------------------------------------------------------\n'
-            .$_filename
-            ."\n\nREQUEST\n"
-            .print_r( $_REQUEST, true )
+		if (false) { // for debug problems
+       	 	$include_list =get_included_files();
+        	$calltrace =debug_calltrace();
 
-            ."\n\nINCLUDE\n"
-            .print_r( $include_list, true )
+       	 	$debug =date('r') ." -------------------------------------------------------\n"
+        	    .$_filename
+    	        ."\n\nREQUEST\n"
+ 	           .print_r( $_REQUEST, true )
 
-            ."\n\nCALLTRACE\n"
-            .print_r( $calltrace, true )
+        	    ."\n\nINCLUDE\n"
+    	        .print_r( $include_list, true )
+
+	            ."\n\nCALLTRACE\n"
+            	.print_r( $calltrace, true )
             
-            ."\n";
+            	."\n";
         
-        file_write("/web/httpd/vhost-jacow.org/jict_ipac24/tmp/debug-fwrite.log", $debug, 'a' );
+        	file_write( TMP_PATH ."/debug-fwrite.log", $debug, 'a' );
+		}
 
         return false;
     }

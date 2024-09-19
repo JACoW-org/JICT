@@ -37,7 +37,7 @@ class INDICO extends JICT_OBJ {
 	var $source_file_type_id =false;
 	var $editing_tags =[];
 	var $editors_stats =[];
-	var $stats =[];
+	var $stats =[ 'slides' =>[ 'check' =>[ 'Yes' =>0, 'No' =>0 ]]];
 	var $api =false;
 	var $requests_api_count =0;
 	var $requests_cache_count =0;
