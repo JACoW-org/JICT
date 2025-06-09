@@ -87,11 +87,13 @@ $cws_config =[
 		'label_nofiles' 	=>'No valid files uploaded yet' */
 		],
 	
+
 	//-------------------------------------------------------------------------------------------------
 	'cron' =>[
 		'name'					=>'Cron job',
 		'enabled'				=>false
 		],
+
 
 	//-------------------------------------------------------------------------------------------------
 	'indico_importer' =>[
@@ -130,6 +132,7 @@ $cws_config =[
 		'export_transp'			=>'{out_path}/transparencies.csv'
 		],
 
+
 	//-------------------------------------------------------------------------------------------------
 	'indico_stats_importer' =>[
 		'name'				    =>'Indico Statistics Importer',
@@ -162,11 +165,13 @@ $cws_config =[
 		'out_last_nums'			=>'{data_path}/last_nums.json',
 		],
 
+
 	//-------------------------------------------------------------------------------------------------
 	'data_bak' =>[
 		'name'			=>'Data Backup',
 		'cron'			=>'*:59',
 		],
+
 
     //-------------------------------------------------------------------------------------------------
 	'page_dashboard' =>[
@@ -189,6 +194,7 @@ $cws_config =[
 		'default_page'		    =>'{app}/index.php'        
 		],
 
+
 	//-------------------------------------------------------------------------------------------------
 	'make_colors_css' =>[
 		'name'				=>'Colors Style Sheet',
@@ -197,6 +203,7 @@ $cws_config =[
         'out_css'           =>'{out_path}/colors.css'
 		],
 		
+
 	//-------------------------------------------------------------------------------------------------
 	'page_authors' =>[
 		'name'				=>'Authors',
@@ -212,6 +219,7 @@ $cws_config =[
 		// out
 		'default_page'		=>'{app}/index.php'
 		], 
+
 
 	//-------------------------------------------------------------------------------------------------
 	'page_statistics' =>[
@@ -232,6 +240,7 @@ $cws_config =[
 		'default_page'		=>'{app}/index.php'
 		], 
 
+
 	//-------------------------------------------------------------------------------------------------
 	'page_team' =>[
 		'name'				=>'Team Statistics',
@@ -249,6 +258,7 @@ $cws_config =[
 		// out
 		'default_page'		=>'{app}/index.php'
 		], 
+
 
 	//-------------------------------------------------------------------------------------------------
 	'page_slides' =>[
@@ -268,6 +278,7 @@ $cws_config =[
 		
 		'default_page'		=>'{app}/index.php'
 		], 
+
 
 	//-------------------------------------------------------------------------------------------------
 	'page_authors_check' =>[
@@ -294,6 +305,7 @@ $cws_config =[
 		'out_path'		=>'{data_path}/papers'
 		], 
 		
+
 	//-------------------------------------------------------------------------------------------------
 	'abstracts' =>[
 		'name'				=>'Abstracts',
@@ -312,6 +324,7 @@ $cws_config =[
 		// out
 		'default_page'		=>'{app}/index.php'
 		], 
+
 
 	//-------------------------------------------------------------------------------------------------
 	'page_papers' =>[
@@ -336,6 +349,7 @@ $cws_config =[
 		// out
 		'default_page'		=>'{app}/index.php'
 		], 
+
 
 	//-------------------------------------------------------------------------------------------------
 	'make_page_participants' =>[
@@ -362,6 +376,7 @@ $cws_config =[
 		'out_html'			=>'participants.html'
 		],
 		
+
 	//-------------------------------------------------------------------------------------------------
 	'make_page_programme' =>[
 		'name'			=>'Programme',
@@ -397,6 +412,7 @@ $cws_config =[
 		'ics'			=>'{app_out_path}/programme.ics'
 		],
 		
+
 	//-------------------------------------------------------------------------------------------------
 	'app_paper_status' =>[
 		'name'			=>'App Paper Status',
@@ -421,6 +437,7 @@ $cws_config =[
 		'log'			=>'{app_data_path}/usage.log'
 		],
 		
+
 	//-------------------------------------------------------------------------------------------------
 	'app_poster_police' =>[
 		'name'			=>'App Poster Police',
@@ -433,6 +450,7 @@ $cws_config =[
 		'echo_mode'		=>'web',
 
 		'data_path'		=>'{data_path}/{app}',
+		'pictures_path'	=>'{data_path}/{app}/pictures',
 
 		'default_page'	=>'{app}/index.php',
 		
@@ -489,6 +507,7 @@ $cws_config =[
 		'in_papers'			=>'{data_path}/papers.json'
 		],	
 		
+
 	//-------------------------------------------------------------------------------------------------
 	'page_po_status' =>[
 		'name'			=>'Proceedings Office Status',
@@ -512,6 +531,7 @@ $cws_config =[
 		'in_stats'		=>'{data_path}/stats.json'
 		],
 		
+
 	//-------------------------------------------------------------------------------------------------
 	'barcode' =>[
 		'name'			=>'BarCode Page',
@@ -536,16 +556,17 @@ $cws_config =[
 		'in_papers'		=>'{data_path}/papers.json'
 	],
 
+	
 	//-------------------------------------------------------------------------------------------------
 	'conference4me' =>[
-		'name'				    =>'Conference4me Exporter',
-		'cron'				    =>'*:05',
+		'name'			=>'Conference4me Exporter',
+		'cron'			=>'*:05',
 		
-		'cache_time'			=>600, // useful for test
-        'tmp_path'			    =>'{tmp_path}/indico',
+		'cache_time'	=>600, // useful for test
+        'tmp_path'		=>'{tmp_path}/indico',
 
 		// out
-        'export'			    =>'{root_path}/exports/{app}.json'
+        'export'		=>'{root_path}/exports/{app}.json'
         ]
 	];
 

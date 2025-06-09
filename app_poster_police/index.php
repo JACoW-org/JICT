@@ -263,12 +263,12 @@ class PosterPolice extends JICT_OBJ {
 	$csv_fname =str_replace( '/data/', '/tmp/', substr( $this->cfg['pps_fname'], 0, -5 )) .'.csv';
 	$fp =fopen( $csv_fname, 'w' );
 	
-	$record =array( 'Poster Code', 'Abstract ID', 'Manned', 'Posted', 'Satisfactory', 'Picture', 'Comments' );
+	$record =[ 'Poster Code', 'Abstract ID', 'Manned', 'Posted', 'Satisfactory', 'Picture', 'Comments' ];
 	fputcsv( $fp, array_values($record) );
 
 	foreach ($this->PPS as $scode =>$so) {
 		foreach ($so as $pcode =>$s) {
-			$record =array(  $scode.$pcode, $s[5], $s[0], $s[1], $s[2], $s[3], $s[4] );
+			$record =[ $scode.$pcode, $s[5], $s[0], $s[1], $s[2], $s[3], $s[4] ];
 			fputcsv( $fp, array_values($record) );
 		}
 	}
@@ -289,7 +289,7 @@ class PosterPolice extends JICT_OBJ {
 		$sync =file_read_json( $sync_file, true );
 	} else {
 		foreach ($this->PPS as $pcode =>$s) {
-			$sync[$pcode] =array( 'data' =>$s, 'sync_ts' =>false, 'sync_status' =>false );
+			$sync[$pcode] =[ 'data' =>$s, 'sync_ts' =>false, 'sync_status' =>false ];
 		}
 	}
 	
@@ -333,7 +333,7 @@ class PosterPolice extends JICT_OBJ {
 	
 	if ($ns == $n) rename( $sync_file, substr( $sync_file, 0, -5 ) .'-' .date('U') .'.json' );
 	
-	return array( $n, $ns, $ne, $sync_pcode, $sync_status );
+	return [ $n, $ns, $ne, $sync_pcode, $sync_status ];
  } 
  
  
@@ -364,7 +364,7 @@ class PosterPolice extends JICT_OBJ {
 		if (file_exists( $this->cfg['pps_fname'] )) {
 			$this->PPS =file_read_json( $this->cfg['pps_fname'], true );
 		} else {
-			return array( $tp, 0, 0 );
+			return [ $tp, 0, 0 ];
 		}
 	}
 	
@@ -383,18 +383,19 @@ class PosterPolice extends JICT_OBJ {
 		}
 	}
 	
-	return array( $tp, $tpc, $percent, $last_sync, $sync_pending );
+	return [ $tp, $tpc, $percent, $last_sync, $sync_pending ];
  }
  
  
  //-----------------------------------------------------------------------------
  function select_session() {
-
+	$png_1px ="url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mPUK1z0HwAEWAJCrPIdhgAAAABJRU5ErkJggg==)";
 
 	if ($this->session) {
 		list( $tp, $tpc, $percent ) =$this->session_stats();
 		
-		$style ="background-image: url(1px.png); background-repeat: no-repeat; background-size: $percent% 100%;";
+		$style ="background-image: $png_1px; background-repeat: no-repeat; background-size: $percent% 100%;";
+		
 		echo "<div class='session_selected' onClick='select_session(false)' style='$style'>" .$this->PP[$this->day][$this->session]['location'] .' (' .$this->session  .')'
 			."<span style='float: right'>$tpc / $tp</span></div>\n"
 			."</div>\n";
@@ -408,7 +409,7 @@ class PosterPolice extends JICT_OBJ {
 		if (empty($this->cfg['hide_sessions']) || !in_array( $code, $this->cfg['hide_sessions'] )) {
 			@list( $tp, $tpc, $percent, $last_sync, $sync_pending ) =$this->session_stats( $code );
 			
-            $style ="background-image: url(1px.png); background-repeat: no-repeat; background-size: $percent% 100%;";
+            $style ="background-image: $png_1px; background-repeat: no-repeat; background-size: $percent% 100%;";
 
 			$percent =0;
             
@@ -468,10 +469,16 @@ class PosterPolice extends JICT_OBJ {
         $pid =$this->poster;
         $id =$sid .$pid;
 
-        $pictures ="";
+        $pictures =false;
 
         // $pictures_list =scandir( $this->cfg['data_path'] .'/pictures/', SCANDIR_SORT_DESCENDING );
-		exec( sprintf( "ls -1 ./pictures/%s*small*", $id ), $pictures_list );
+		// exec( sprintf( "ls -1 ./pictures/%s*small*", $id ), $pictures_list );
+		exec( sprintf( "ls -1 %s/%s*small*", $this->cfg['pictures_path'], $id ), $pictures_list );
+
+		foreach ($pictures_list as $pid =>$fname) {
+			$pictures_list[$pid] =str_replace( $this->cfg['root_path'], "..", $fname );
+		}
+
 		$pic_id =1;
         foreach ($pictures_list as $x) {
 			$caption =preg_match( "/$id-(\\d+)-small\\.jpg/", $x, $matches)
@@ -644,13 +651,14 @@ class PosterPolice extends JICT_OBJ {
 	
 	if (!isset($posters)) return;
 	
-    $posters_with_pictures =[];
-    $pictures_list =scandir( $this->cfg['data_path'] .'/pictures/', SCANDIR_SORT_DESCENDING );
-    foreach ($pictures_list as $x) {
-        if (strpos( $x, $sid ) !== false) {
-            if (preg_match( "/$sid(\\d+)-*/", $x, $matches )) $posters_with_pictures[ $matches[1] ] =true;
-        }
-    }
+
+
+	exec( sprintf( "ls -1 %s/%s*small*", $this->cfg['pictures_path'], $sid ), $pictures_list );
+
+	$posters_with_pictures =[];
+	foreach ($pictures_list as $pid =>$fname) {
+		if (preg_match( "/$sid(\\d+)-*/", $fname, $matches )) $posters_with_pictures[ $matches[1] ] =true;
+	} 
 
 	foreach ($posters as $code =>$po) {
 		$s =$this->get_status( $code );
@@ -719,7 +727,7 @@ class PosterPolice extends JICT_OBJ {
 		$this->PPS =file_read_json( $pps_fname, true );
 		
 	} else {
-		$this->PPS =array();
+		$this->PPS =[];
 	}
  }
 }

@@ -226,6 +226,32 @@ function config( $_app =false, $_check_in_file_exit =false, $_check_in_file =tru
         $value =str_replace( '{root_path}', ROOT_PATH, $value );       
         cws_define( $name, $value );
 
+        // global paths
+        if (substr( $name, -5 ) == '_path') {
+            $dir =strtoupper( substr( $name, 0, -5 ));
+            $path =$value;
+
+            if (!file_exists( $path )) {
+                echo "Create $dir directory ($path)... ";
+
+                if (mkdir( $path, 0775, true )) {
+                    system( 'chown apache.apache ' .$path );
+        //			system( 'chmod 775 ' .$path );
+                    echo( "OK\n" );
+
+                } else {
+                    echo( "ERROR! (unable to create $dir directory)" );
+                    die;
+                }		
+
+            } else if ($dir != 'ROOT') {
+                if (!is_writable( $path )) {
+                    echo( "ERROR! Unable to write in $dir directory ($path)" );
+                    die;
+                }
+            }
+        }
+
     } else {
         foreach ($value as $name1 =>$value1) {
             if (!is_array($value1)) {

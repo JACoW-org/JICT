@@ -136,7 +136,7 @@ $now =time();
 
 $content =false;
 
-ksort( $Indico->data['data'] );
+if (!empty($Indico->data['data'])) ksort( $Indico->data['data'] );
 
 if ($show == 'todo2') $content .="<button class='action' onClick='document.location=\"$_SERVER[PHP_SELF]?show=$show&print=1\"'> PRINT </button><br /><br />";
 
