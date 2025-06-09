@@ -12,7 +12,7 @@ var cfg ={
 	pageh: 1030,
 	change_page_delay: 10, // seconds
 	reload_data_delay: 30, // seconds	
-	history_date_start: '2019-08-21',
+	history_date_start: '2025-05-21',
 	debug: false
 	};
 
@@ -138,7 +138,8 @@ function load_data() {
 				return;
 			}
 			
-			console.log( `Load data ${obj.ts}` );
+			ts =new Date( obj.ts *1000 );
+			console.log( `Load data ${ts.toISOString()} (${obj.ts})` );
 			
 			if (init.page) {
 				init.page =false;
@@ -153,7 +154,7 @@ function load_data() {
 					console.dir( cfg );
 				}
 				
-				document.title =`${cfg.conf_name} ${cfg.title}`;
+				document.title =`${cfg.title} - ${cfg.conf_name}`;
 				$('#title').html( `<b>${cfg.conf_name}</b> ${cfg.title}` );
 
 				footer_html ='';
@@ -353,7 +354,7 @@ function update_history( obj ) {
 
 
 	console.log(`history days: ${days}`);
-	console.dir( days_list );
+	// console.dir( days_list );
 
 	history_chart.draw( data, history_chart_options );
 }		
@@ -607,12 +608,12 @@ function update_rates_today( obj ) {
 		tm2 =tms[i];
 		tm1 =tms[i -1];
 		
-		//console.log( `${i} ${tm1} ${tm2}` );
+		// console.log( `${i} ${tm1} ${tm2}` );
 
 		val =obj[tm2].processed -obj[tm1].processed;
 		
 		if (tm2.slice(0, 10) == todayDate) {
-			serie[ parseInt(tm2.substr( 11, 12 )) ] =val;
+			serie[ parseInt(tm2.substr( 11, 12 )) +cfg.difftime_hours ] =val;
 			if (val > 0) rates_page_ok =true;
 		}
 	}
@@ -627,13 +628,13 @@ function update_rates_today( obj ) {
 		d =new Date(tm.slice(0, 10));
 		//console.log(tm);
 		//console.dir(d);
-		day =tm.substr( 5, 5 ) +'&nbsp;' +dayOfWeekAsString(d.getDay());
-		//console.log(`${tm} ${d} ${day}`);
+		day =tm.substr( 5, 5 ) +'&nbsp;' +d.toString().substr(0,2); // dayOfWeekAsString(d.getDay());
+		// console.log(`${tm} ${d} ${day}`);
 		days_rates[day] =obj[tm].processed; 
 		days_rates_qaok[day] =obj[tm].qaok; 
 	}
 	
-	console.dir( days_rates );
+	// console.dir( days_rates );
 
 	var days =Object.keys( days_rates );
 	
@@ -648,7 +649,7 @@ function update_rates_today( obj ) {
 		serie[ day2 ] =days_rates[day2] -days_rates[day1];
 	}
 	
-	console.dir( serie );
+	// console.dir( serie );
 
 	$('#rates_days').html( rates_chart( 'rates_days', 'Papers Daily Rates', serie, 900 ));
 	

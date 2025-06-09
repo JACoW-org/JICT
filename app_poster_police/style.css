@@ -64,6 +64,7 @@ div.session_selected {
 	padding: 0.5em;
 	}		
 div.poster {
+	position: relative;
 	font-size: 50px;
 	background: #aaa;
 	color: black;
@@ -273,3 +274,53 @@ div.stats {
 	font-size: 25px;
 	}	
 	
+.bullet {
+	position: absolute; /* *** Posiziona l'elemento rispetto al suo genitore posizionato (contenitore-con-pallino) *** */
+	top: 5px; /* Sposta il pallino di 10px verso l'alto fuori dal bordo del div */
+	right: 5px; /* Sposta il pallino di 10px verso destra fuori dal bordo del div */
+	width: 15px; /* Dimensione del pallino */
+	height: 15px; /* Deve essere uguale alla larghezza per un cerchio */
+	padding: 0;
+	border: none;
+	background-color: rgb(12, 67, 160); /* Colore del pallino */
+	border-radius: 50%; /* Rende l'elemento un cerchio */
+	display: flex; /* Per centrare il testo, se presente */
+	justify-content: center;
+	align-items: center;
+	color: white; /* Colore del testo all'interno, se vuoi mettere un numero */
+	font-size: 0.2em;
+	font-weight: bold;
+	}
+
+#loadingSpinner {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+	display: none;
+	padding-top: 30vh;
+	font-size: 4em;
+	color: #fff;
+	background: #000000BB;
+	font-weight: bold;
+	flex-direction: column;
+	align-items: center;
+}
+
+/* Stili per l'animazione di caricamento (spinner) */
+.spinner {
+	background: #00000000;
+	border: 8px solid #f3f3f3; /* Light grey */
+	border-top: 8px solid #3498db; /* Blue */
+	border-radius: 50%;
+	width: 100px;
+	height: 100px;
+	animation: spin 1s linear infinite; /* Animazione di rotazione */
+	margin-bottom: 10px;
+}
+
+@keyframes spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}

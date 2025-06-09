@@ -315,13 +315,15 @@ DESCRIPTION:Session: $S[title]
 			if (!empty($this->cfg['special_sessions_class'][$sid])) $sclass =$this->cfg['special_sessions_class'][$sid];
 			else $sclass ="b_room$S[room]";
 
+			$session_title =trim(str_replace( $sid, "", $S['title'] ), ': ');
+
 			$SHTML["_$sidb"] =
 				"<td width='##W##' room='$S[room]' timefrom='$timefrom' timeto='$timeto' class='$sclass session"
                 .($npapers ? " clickable' onClick='javascript:ms(\"$sidb\",\"##OSID##\");'" : "'")
                 .">$code " 
 				.(!$S['poster_session'] && !empty($S['chair']) ? "<span class='chair'><i>Chair:</i>&nbsp;$S[chair]</span><br />" : false) 
 //				.($npapers ? "<a href='javascript:ms(\"$sidb\",\"##OSID##\");'>" : false) 
-				."$S[title]<br />$times</td>";
+				."$session_title<br />$times</td>";
 		
 			$SHTML["{$sidb}_"]=		
 				"<table id='$sidb' border='0' cellpadding='3' cellspacing='0' class='prg talks' " .APP_TAB_W ." style='display: none; border-top: none;' room='$S[room]' timefrom='$timefrom' timeto='$timeto'>\n"
@@ -331,7 +333,7 @@ DESCRIPTION:Session: $S[title]
 		
 			$SHTML[$sidb] =
 				"<table border='0' cellpadding='3' cellspacing='0' class='prg'" .APP_TAB_W .">\n"
-				."<tr><td colspan='3' class='$sclass session'>$code $S[title]"
+				."<tr><td colspan='3' class='$sclass session'>$code $session_title"
 				.(!empty($S['chair']) ? "<br /><span class='chair'><i>Chair:</i> $S[chair]</span> <span class='inst'>($S[chair_inst])</span>" : false)
 				.($npapers ? false : "<br />$times") 
 				."</td></tr>\n";

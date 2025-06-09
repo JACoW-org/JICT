@@ -2,9 +2,6 @@
 
 /* by Stefano.Deiuri@Elettra.Eu
 
-2025.06.05 - scale picture before upload & show spinner during upload
-2025.06.01 - now is possible to delete the pictures
-2025.05.31 - take picture fron the app
 2023.04.04 - use Indico oauth
 2022.08.29 - save out_posters_status
 
@@ -80,23 +77,22 @@ class PosterPolice extends JICT_OBJ {
 	<meta name='_viewport' content='width=device-width, initial-scale=1.0'>
 	<meta name='mobile-web-app-capable' content='yes'>
 
-	<title>Poster Police - " .CONF_NAME ."</title>
+	<title>" .CONF_NAME ." PosterPolice</title>
 
 	<link href='https://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
-	<link href='style.css?20250604a' rel='stylesheet' type='text/css' />	
-
+	<link href='style.css' rel='stylesheet' type='text/css' />	
+	
 	<script src='../dist/jquery-3.4.1/jquery.min.js'></script>
 	
 	<script>
 	var script ='$_SERVER[PHP_SELF]';
 	var sync =false;
-    var usecamera =true;
 	var day ='$day';
 	var session ='$session';
 	$poster_vars
 	</script>
 	
-	<script src='poster_police.js?20250605b'></script>
+	<script src='poster_police.js'></script>
 </head>
 
 <body>
@@ -123,95 +119,7 @@ class PosterPolice extends JICT_OBJ {
 ";
  }
 
-  //-----------------------------------------------------------------------------
-  function upload_picture() {
-	$response = [
-		'success' => false,
-		'message' => 'Unknown error',
-		'fileName' => null,
-		'fileSize' => null,
-		'fileType' => null,
-		'ts' =>0
-		];
-
-	if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-		if (isset($_FILES['picture']) && $_FILES['picture']['error'] === UPLOAD_ERR_OK) {
-			$file = $_FILES['picture'];
-
-			$fileName = basename($file['name']); // Nome originale del file
-			$fileTmpName = $file['tmp_name'];  // Percorso temporaneo sul server
-			$fileSize = $file['size'];         // Dimensione del file
-			$fileType = $file['type'];         // Tipo MIME del file
-
-			$ts =time() +$this->cfg['difftime_sec'];
-
-			$fileExt = pathinfo($fileName, PATHINFO_EXTENSION);
-			$newFileName =sprintf( "%s%s-%s.%s", $this->session, $this->poster, $ts, $fileExt );
-			$uploadPath = $this->cfg['data_path'] .'/pictures/' .$newFileName;
-
-			if (move_uploaded_file($fileTmpName, $uploadPath)) {
-				$response['success'] = true;
-				$response['message'] = 'Upload ok!';
-				$response['fileName'] = $newFileName;
-				$response['fileSize'] = $fileSize;
-				$response['fileType'] = $fileType;
-				$response['filePath'] = $uploadPath; // Percorso sul server
-				$response['ts'] =$ts;
-				
-				$system_cmd =sprintf( "convert %s -resize x300 %s-small.jpg", $uploadPath, substr($uploadPath,0,-4) );
-				$response['system_cmd'] =$system_cmd;
-
-				system( $system_cmd );
-
-			} else {
-				$response['message'] = 'Error moving file';
-			}
-
-		} else {
-			$response['message'] = 'No file: ' . ($_FILES['picture']['error'] ?? 'N/A');
-		}
-	}
-
-	header('Content-Type: application/json'); // Assicurati di rispondere con JSON
-	echo json_encode($response);
- }
  
-  //-----------------------------------------------------------------------------
-  function delete_picture() {
-	$response = [
-		'success' => false,
-		'message' => 'Unknown error'
-		];
-
-	if (!empty($_POST['picture_ts'])) {
-		$ts =(int)trim($_POST['picture_ts']);
-		exec( sprintf( "ls -1 ./pictures/%s%s-%s*.jpg", $this->session, $this->poster, $ts ), $pictures_list );
-
-		if (empty($pictures_list)) $response['message'] ='Files note found';
-		else {
-			$response['debug'] =$pictures_list;
-
-			foreach ($pictures_list as $f) {
-				$fname = basename($f);
-				$safe_path = realpath( './pictures/' .$fname );
-
-				$response['file_to_delete'][] =$safe_path;
-				unlink( $safe_path );
-			}
-			
-			$response['success'] =true;
-			$response['message'] ='Pictures deleted';
-		}
-	}
-
-	$response['POST'] =$_POST;
-	$response['GET'] =$_GET;
-
-	header('Content-Type: application/json'); // Assicurati di rispondere con JSON
-	echo json_encode($response);
-  }
-
-
  //-----------------------------------------------------------------------------
  function handle() {
 	if (!empty($_GET['export'])) {
@@ -220,17 +128,6 @@ class PosterPolice extends JICT_OBJ {
 	}
  
 	$cmd =$_REQUEST['cmd'] ?? false;
-
-    if ($cmd == 'upload_picture') {
-		$this->upload_picture();
-		return;
-    }
-
-    if ($cmd == 'delete_picture') {
-		$this->delete_picture();
-		return;
-    }
-
 
 	if ($cmd == 'session_sync') {
 		list( $tp, $tpc, $errors, $pcode, $status )=$this->session_sync();
@@ -434,13 +331,9 @@ class PosterPolice extends JICT_OBJ {
  
  //-----------------------------------------------------------------------------
  function select_poster() {
-    $sid =$this->session;
-
-	$posters =&$this->PP[$this->day][$sid]['posters'];
+	$posters =&$this->PP[$this->day][$this->session]['posters'];
 
 	if ($this->poster) {
-		$read_only =!empty($_GET['read_only']);
-
 		$p =$posters[$this->poster];
 		
 		$s =$this->get_status();
@@ -448,7 +341,7 @@ class PosterPolice extends JICT_OBJ {
 			$class0  =$s[0] ? 'On' : 'Off';
 			$class1  =$s[1] ? 'On' : 'Off';
 			$class2  =$s[2] ? 'On' : 'Off';
-			// $class3  =$s[3] ? 'PhotoYes' : 'PhotoNo';
+			$class3  =$s[3] ? 'PhotoYes' : 'PhotoNo';
 			$class_comment =$s[4] ? 'comment_set' : 'comment';
 			$comment =$s[4] ? $s[4] : 'Comments';
 			
@@ -465,193 +358,62 @@ class PosterPolice extends JICT_OBJ {
 		$next =next($posterslist);
 		
 
-        $pid =$this->poster;
-        $id =$sid .$pid;
+		if ($_GET['testcamera']) {
 
-        $pictures ="";
+echo "
+<script>
+    const cameraInput = document.getElementById('cameraInput');
+    const photoPreview = document.getElementById('photoPreview');
 
-        // $pictures_list =scandir( $this->cfg['data_path'] .'/pictures/', SCANDIR_SORT_DESCENDING );
-		exec( sprintf( "ls -1 ./pictures/%s*small*", $id ), $pictures_list );
-		$pic_id =1;
-        foreach ($pictures_list as $x) {
-			$caption =preg_match( "/$id-(\\d+)-small\\.jpg/", $x, $matches)
-				? date( "d/m H:i", $matches[1] )
-				: false
-				; 
+    cameraInput.addEventListener('change', (event) => {
+        const files = event.target.files;
+        if (files.length > 0) {
+            const file = files[0];
+            const reader = new FileReader();
 
-			$xp =explode( '-', $x );
+            reader.onload = (e) => {
+                photoPreview.src = e.target.result;
+                photoPreview.style.display = 'block';
+                console.log('Foto acquisita:', file.name, file.type, file.size);
+            };
 
-			$pictures .="
-			<figure id='pic$pic_id'>
-				<img src='$x' />
-				<figcaption>
-					" .($read_only ? false : "<button onClick='delete_picture($pic_id,$xp[1])'>Delete</button>") ."
-					$caption
-				</figcaption>
-			</figure>    
-			";
-
-			$pic_id ++;
+            reader.readAsDataURL(file); // Legge il file come URL di dati (Base64)
+            // Oppure: reader.readAsArrayBuffer(file); per lavorare con un buffer binario
         }
+    });
+</script>
+";
 
-        $pictures_cointainer ="
-        <style>
-			figure { display: inline-block; }
-			img { height: 100%; max-height: 300px; width: auto; border: 3px solid black; } 
-			figcaption { margin-top: 5px; font-weight: bold; color: black; font-size: 2em; }
-			figure button { font-size: 1em; width: 100%; height: 2em; display: block; margin-bottom: 0.5em; font-weight: 200; background: #ff8e8e; border: 3px solid black; }
-			</style>
-		
-		<input type='file' accept='image/*' capture='environment' id='cameraInput' style='display: none;'>
-		<canvas id='canvas' style='display:none;'></canvas>
-
-		<div id='pictures_cointainer' style='border: none;'>
-			$pictures
-			<figure id='pic0' style='display: none;'>
-				<img id='photoPreview' alt='New picture'>
-				<figcaption>
-					<button onClick='delete_picture(0,last_picture_ts)'>Delete</button>
-					now
-				</figcaption>
-			</figure>    
-			<div id='loadingSpinner'>
-				<div class='spinner'></div>
-				<p>Upload picture...</p>
-			</div>
-
-		</div>
-
-        <script>
-            const cameraInput = document.getElementById('cameraInput');
-			const canvas = document.getElementById('canvas');
-            const photoPreview = document.getElementById('photoPreview');
-            const pic0 = document.getElementById('pic0');
-			const loadingSpinner = document.getElementById('loadingSpinner');
-
-            const ctx = canvas.getContext('2d');
-			
-        	const MAX_WIDTH = 1200;  // Larghezza massima desiderata per l'immagine ridimensionata
-        	const MAX_HEIGHT = 1200; // Altezza massima desiderata, per esempio
-        	const QUALITY = 0.8;    // Qualità del JPG (da 0.0 a 1.0)
-			
-			let acquiredFile = null;
-			let last_picture_ts =null;
-
-            cameraInput.addEventListener('change', (event) => {
-                const files =event.target.files;
-
-                if (files.length > 0) {
-                    acquiredFile =files[0];
-
-					const img =new Image();
-                    const reader =new FileReader();
-
-                    reader.onload = (e) => {
-						img.src =e.target.result;
-                        //photoPreview.src =e.target.result;
-                        console.log( \"Picture ready for upload:\", acquiredFile.name, acquiredFile.type, acquiredFile.size);
-                        };
-
-					img.onload = () => {
-						// Calcola le nuove dimensioni mantenendo le proporzioni
-						let width = img.width;
-						let height = img.height;
-
-						console.log( `Immagine size: \${width.toFixed(0)} x \${height.toFixed(0)}` );
-
-						if (width > height) {
-							if (width > MAX_WIDTH) {
-								height *= MAX_WIDTH / width;
-								width = MAX_WIDTH;
-							}
-						} else {
-							if (height > MAX_HEIGHT) {
-								width *= MAX_HEIGHT / height;
-								height = MAX_HEIGHT;
-							}
-						}
-
-						// Imposta le dimensioni del canvas alle nuove dimensioni
-						canvas.width = width;
-						canvas.height = height;
-
-						// Disegna l'immagine sul canvas con le nuove dimensioni
-						ctx.drawImage( img, 0, 0, width, height );
-
-						// Ottieni l'immagine ridimensionata come Blob
-						canvas.toBlob((blob) => {
-							if (blob) {
-								// resizedBlob =blob;
-								photoPreview.src =URL.createObjectURL( blob ); // Mostra l'anteprima
-								photoPreview.style.display ='block';
-								console.log( `Immagine ridimensionata a \${width.toFixed(0)} x \${height.toFixed(0)} pixel. Pronta per l'invio.` );
-
-								upload_picture( blob );
-
-							} else {
-								console.log( 'Errore nella creazione del Blob ridimensionato.' );
-							}
-
-						}, 'image/jpeg', QUALITY); // Formato e qualità dell'output
-
-
-					};
-
-                    reader.readAsDataURL( acquiredFile );
-
-                } else {
-                    acquiredFile = null; // Nessun file selezionato
-                    pic0.style.display = 'none';
-                }
-            });
-
-			function take_picture() {
-				if (last_picture_ts == null) $(\"#cameraInput\").click();
-				else alert( \"Please delete last picture taken before upload a new one\" );
-			}
-        </script>";
-        
+$camera ="		<input type='file' accept='image/*' capture='environment' id='cameraInput'>
+		<img id='photoPreview' alt='Foto acquisita' style='width: 100%; max-width: 600px; display: none;'>
+";
+		}
+				
 		echo "<div class='poster_selected'>
-			<h1>" .$this->poster ."</h1>
-			<h1>$p[title]</h1>
-			<h2>$p[presenter]</h2>
-			<center>
-			<div class='$class1' id='status1' onClick='change_poster_status(1)'>Posted</div>
-			<div class='$class0' id='status0' onClick='change_poster_status(0)'>Manned</div>
-			<div class='$class2' id='status2' onClick='change_poster_status(2)'>Satisfactory</div>
+		<h1>" .$this->poster ."</h1>
+		<h1>$p[title]</h1>
+		<h2>$p[presenter]</h2>
+		<center>
+		<div class='$class1' id='status1' onClick='change_poster_status(1)'>Posted</div>
+		<div class='$class0' id='status0' onClick='change_poster_status(0)'>Manned</div>
+		<div class='$class2' id='status2' onClick='change_poster_status(2)'>Satisfactory</div>
+		<div class='$class3' id='status3' onClick='change_poster_status(3)'>Picture</div>
 
-			$pictures_cointainer
-			";
+		$camera
 
-		if (!$read_only) echo "
-			<br />
-			<div class='comment' id='picture button' onClick='take_picture();'>Take a picture</div>
-			<div class='$class_comment' id='comment' onClick='poster_comment()'>$comment</div>
-			<br />
-			<div class='button' onClick='poster_close()'>Close</div>
-			<div class='button' onClick='poster_save()'>Save</div>"
-			.($next ? "<div class='button' onClick='poster_save(\"$next\")'>Save & Next</div>". "<div class='button' onClick='poster_next(\"$next\")'>Skip</div>" : false)
-			."</center>
-			</div>\n";
-
-		else echo "
-			<div class='$class_comment'>$comment</div>
-			";
-
-		if ($read_only) echo "<script>document.body.style.pointerEvents = 'none';</script>";
+		<br />
+		<div class='$class_comment' id='comment' onClick='poster_comment()'>$comment</div>
+		<br />
+		<div class='button' onClick='poster_close()'>Close</div>
+		<div class='button' onClick='poster_save()'>Save</div>"
+		.($next ? "<div class='button' onClick='poster_save(\"$next\")'>Save & Next</div>". "<div class='button' onClick='poster_next(\"$next\")'>Skip</div>" : false)
+		."</center>
+		</div>\n";
 		return;
 	}
 	
 	if (!isset($posters)) return;
 	
-    $posters_with_pictures =[];
-    $pictures_list =scandir( $this->cfg['data_path'] .'/pictures/', SCANDIR_SORT_DESCENDING );
-    foreach ($pictures_list as $x) {
-        if (strpos( $x, $sid ) !== false) {
-            if (preg_match( "/$sid(\\d+)-*/", $x, $matches )) $posters_with_pictures[ $matches[1] ] =true;
-        }
-    }
-
 	foreach ($posters as $code =>$po) {
 		$s =$this->get_status( $code );
 		
@@ -659,12 +421,8 @@ class PosterPolice extends JICT_OBJ {
 		else if (!$s[0] && $s[1] && $s[2]) $xclass =' unmanned';
 		else $xclass =$s[0] && $s[1] && $s[2] ? ' ok' : ' warning';
 
-		echo "<div class='poster${xclass}' onClick='select_poster(\"$code\")'>$code" 
-            .(!empty($posters_with_pictures[ $code ]) ? "<div class='bullet'></div>" : false)
-            ."</div>\n";
+		echo "<div class='poster${xclass}' onClick='select_poster(\"$code\")'>$code</div>\n";
 	}
-
-
  }
  
  //-----------------------------------------------------------------------------
@@ -678,7 +436,7 @@ class PosterPolice extends JICT_OBJ {
 	global $user;
 
 	$aid =$this->PP[$this->day][$this->session]['posters'][$this->poster]['abstract_id'];
-	$this->PPS[$this->poster] =[ $_s0, $_s1, $_s2, $_s3, $_comment, $aid, time(), $user['email'] ];
+	$this->PPS[$this->poster] =array( $_s0, $_s1, $_s2, $_s3, $_comment, $aid, time(), $user['email'] );
 
 	file_write_json( $this->cfg['pps_fname'], $this->PPS );
 
@@ -697,12 +455,10 @@ class PosterPolice extends JICT_OBJ {
         else if (empty($p[6])) $s ='Pending';
         else $s ='Fail';
 
-        $status[$pid] =[
+        $status[$pid] =array(
             'status' =>$s,
-			'comment' =>$p[4],
-			'picture' =>$p[3],
             'ts' =>$p[6]
-			];
+            );
     }
 
     file_write_json( $this->cfg['out_posters_status'], $status );

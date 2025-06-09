@@ -12,7 +12,7 @@ error_reporting(E_ERROR);
 require( '../config.php' );
 require_lib( 'jict', '1.0' );
 
-define( 'CFG_VERSION', 6 );
+define( 'CFG_VERSION', 11 );
 
 class PO_STATUS extends JICT_OBJ {
     var $ret;
@@ -34,7 +34,9 @@ class PO_STATUS extends JICT_OBJ {
                 'conf_name' =>CONF_NAME,
                 'change_page_delay' =>10, // seconds
                 'reload_data_delay' =>30, // seconds	
-                'history_date_start' =>$this->cfg['dates']['proceedings_office']['history_from']
+                'mode' =>'slow',
+                'history_date_start' =>$this->cfg['dates']['proceedings_office']['history_from'],
+                'difftime_hours' =>$this->cfg['difftime_sec'] /3600
                 ];
 
             $_ts_rqst =strtotime( $this->cfg['dates']['proceedings_office']['history_from'] );
@@ -43,7 +45,8 @@ class PO_STATUS extends JICT_OBJ {
         if (!empty($this->cfg['hidden_sessions'])) {
             $papers =false;
             foreach ($this->data['papers'] as $paper_id =>$p) {
-                if (!in_array( $p['session_code'], $this->cfg['hidden_sessions'])) {
+                // if (!in_array( $p['session_code'], $this->cfg['hidden_sessions'])) {
+                if (empty($p['hide'])) {
                     $papers[$paper_id] =$p;
                 }
             }

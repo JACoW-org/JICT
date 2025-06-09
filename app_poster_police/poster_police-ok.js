@@ -168,13 +168,11 @@ async function delete_picture( _pid, _pts ) {
 }
 
 //-----------------------------------------------------------------------------
-async function upload_picture( _blob ) {
-    if (!_blob) return false;
-
-	console.log( 'Start uploading...' ); 
+async function save_picture() {
+    if (!acquiredFile) return false;
 
     const formData = new FormData();
-    formData.append( 'picture', _blob, 'resized_image.jpg' );
+    formData.append( 'picture', acquiredFile );
 
     try {
 		loadingSpinner.style.display = 'flex';

@@ -96,11 +96,13 @@ if ($show == 'affiliations') {
 
 
 } else {
+    // print_r ($Indico->data['authors']);
+
     foreach ($Indico->data['authors'] as $aid =>$a) {
         $papers_as_primary =0;
+        $papers =false;
 
         if (!empty($a['papers'])) {
-            $papers =false;
             foreach ($a['papers'] as $pcode =>$p) {
                 if (!empty($Indico->data['authors_check'][$pcode]['done'])) $p['status'] ='final';
 
@@ -108,17 +110,15 @@ if ($show == 'affiliations') {
 
                 if ($p['primary']) $papers_as_primary ++;
             }
-
-            $rows[] =[
-                'Name' =>$a['name'],
-                'Affiliation' =>$a['affiliation'],
-                'N_Papers_Primary' =>$papers_as_primary,
-                'N_Papers' =>count($a['papers']),
-                'Papers_Code' =>$papers
-                ];
-
-            
         }
+
+        $rows[] =[
+            'Name' =>$a['name'],
+            'Affiliation' =>$a['affiliation'],
+            'N_Papers_Primary' =>$papers_as_primary,
+            'N_Papers' =>$papers ? count($a['papers']) : false,
+            'Papers_Code' =>$papers
+            ];          
     }
 }
 
@@ -137,40 +137,41 @@ if ($rows) {
     <tbody>
     ";
 
+    $lname =false;
+    foreach ($rows as $r) {
+        if ($show == 'affiliations') {
+            $content .="<tr>
+                <td>$r[Affiliation]</td>
+                <td>$r[N_Authors]</td>
+                <td>$r[N_Papers_Primary]</td>
+                <td>$r[N_Papers]</td>"
+                .(!empty($_GET['nopaperscode']) ? false : "<td class='affiliations_view'>$r[Papers_Code]</td>")
+                ."</tr>
+                ";
+        } else {
+            $aff_class =empty($r['Affiliation']) ? 'b_r' : false;
+            $name_class =($lname == $r['Name']) ? 'b_r' : false;
+    
+            $content .="<tr>
+                <td class='$name_class'>$r[Name]</td>
+                <td class='$aff_class'>$r[Affiliation]</td>
+                <td>$r[N_Papers_Primary]</td>
+                <td>$r[N_Papers]</td>"
+                .(!empty($_GET['nopaperscode']) ? false : "<td>$r[Papers_Code]</td>")
+                ."</tr>
+                ";
+                
+            $lname =$r['Name'];
+        }
+    }
+    $content .="</table>";
+
 } else {
     $thead =false;
     $content =false;
 }
 
-$lname =false;
-foreach ($rows as $r) {
-    if ($show == 'affiliations') {
-        $content .="<tr>
-            <td>$r[Affiliation]</td>
-            <td>$r[N_Authors]</td>
-            <td>$r[N_Papers_Primary]</td>
-            <td>$r[N_Papers]</td>"
-            .(!empty($_GET['nopaperscode']) ? false : "<td class='affiliations_view'>$r[Papers_Code]</td>")
-            ."</tr>
-            ";
-    } else {
-        $aff_class =empty($r['Affiliation']) ? 'b_r' : false;
-        $name_class =($lname == $r['Name']) ? 'b_r' : false;
 
-        $content .="<tr>
-            <td class='$name_class'>$r[Name]</td>
-            <td class='$aff_class'>$r[Affiliation]</td>
-            <td>$r[N_Papers_Primary]</td>
-            <td>$r[N_Papers]</td>"
-            .(!empty($_GET['nopaperscode']) ? false : "<td>$r[Papers_Code]</td>")
-            ."</tr>
-            ";
-            
-        $lname =$r['Name'];
-    }
-
-}
-$content .="</table>";
 
 $T->set( 'js', "
 $(document).ready(function() {

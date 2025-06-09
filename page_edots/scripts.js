@@ -1,6 +1,7 @@
 
 /* bY Stefano.Deiuri@Elettra.Eu
 
+2025.05.28 - set single page by url parameter
 2022.07.20 - update
 
 */
@@ -19,11 +20,14 @@ var active_page =0;
 
 var data_ts =0;
 
+var single_page =false;
+
 var edots =[];
 
 var init ={
 	page: true,
 	edots: true,
+	show_page: true
 	};
 
 $(document).ready( function() {
@@ -32,13 +36,17 @@ $(document).ready( function() {
 		cfg.mode ='slow';
 	}
 		
+	var url =new URL(window.location.href);
+	single_page =url.searchParams.get("page");
+	
 	load_data();
-	show_page();
+
 	setInterval( update_clock, 500 );
+
 	});
 
 //---------------------------------------------------------------------------------------------
-function show_page() {
+function show_page( _page ) {
 	$('#timer').css( 'width', '100%' );
 	$('#timer').animate( { width: 0 }, { duration: cfg.change_page_delay *1000, queue: false } );
 	
@@ -58,8 +66,13 @@ function show_page() {
 			}
 		}
 		
-		active_page ++;
-		if (active_page == (cfg.pages+1)) active_page =1;
+		if (_page) {
+			active_page =_page;
+
+		} else {
+			active_page ++;
+			if (active_page == (cfg.pages+1)) active_page =1;
+		} 
 
 		switch (cfg.mode) {
 			case 'slow':
@@ -73,7 +86,7 @@ function show_page() {
 		if (cfg.pages) $('#activepage').html( active_page ); 
 	}
 
-	setTimeout( show_page, cfg.change_page_delay *1000 );
+	if (_page == null) setTimeout( show_page, cfg.change_page_delay *1000 );
 }
 
 //---------------------------------------------------------------------------------------------
@@ -111,7 +124,6 @@ function load_data() {
 				$('#title').html( `<b>${cfg.conf_name}</b> ${cfg.title}` );
 
 				if (cfg.qrcode) $('#qrcode').html( `<img src='${cfg.qrcode}' />` );
-
 			}
 			
 			if (obj.cfg.version != cfg.version) {
@@ -149,6 +161,11 @@ function load_data() {
 				update_edots( edots );
 			}
 			
+			if (init.show_page) {
+				show_page( single_page );
+				init.show_page =false;
+			}
+
 			setTimeout( load_data, cfg.reload_data_delay *1000 );
 			})
 			

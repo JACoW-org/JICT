@@ -29,7 +29,8 @@ $cws_config =[
 
 		'location'			=>'', // Malmö, Sweden
 
-		// 'timezone'			=>'', // Australia/Melbourne
+		'timezone'			=>'', // Australia/Melbourne
+		'difftime_sec'		=>0,
 		
         'dates' =>[
             'conference' =>[ 'from' =>'', 'to' =>'' ],
@@ -52,13 +53,14 @@ $cws_config =[
 		'chart_width'		=>800,
 		'chart_height'		=>300,
 	
-		'logo'			=>'logo.png',
+		'logo'				=>'logo.png',
 
         'colors' =>[
             'primary'		=>'#0062a3',
             'secondary'	    =>'#d73d06',
             'r' 			=>'#FF4136',
             'y' 			=>'#FFDC00',
+            'y2g' 			=>'#ADFF2F',
             'g' 			=>'#2ECC40',
             'a' 			=>'#ff14b1', //990099',
             'nofiles' 	    =>'#555555',
@@ -109,12 +111,14 @@ $cws_config =[
 		'tmp_path'				=>'{tmp_path}/indico',
 		'pdf_path'				=>'{data_path}/papers',
 				
-		// out
+		// IN
 		'in_papers'				=>'{app_data_path}/papers.json',
+		'in_abstracts_sub'		=>'{app_data_path}/abstracts_sub.json',
 
-		// out
+		// OUT
 		'out_papers'			=>'{app_data_path}/papers.json',
-		'out_abstracts'			=>'{app_data_path}/abstracts.json',
+		'out_abstracts'			=>'{app_data_path}/abstracts.json', // papers abstracts
+		'out_abstracts_sub'		=>'{app_data_path}/abstracts_sub.json', // abstracts submission
 		'out_persons'			=>'{app_data_path}/persons.json',
 		'out_affiliations'		=>'{app_data_path}/affiliations.json',		
 		'out_posters'			=>'{app_data_path}/posters.json',
@@ -130,6 +134,12 @@ $cws_config =[
 	'indico_stats_importer' =>[
 		'name'				    =>'Indico Statistics Importer',
 		'cron'				    =>'*:05',
+
+		'skip-abstracts'		=>false,
+
+		'skip-registrants'		=>false,
+		'registrants_form_id'	=>false,
+		'registrants_skip_by_tags' =>false,
 
 		'cache_time'			=>600, // useful for test
 
@@ -147,7 +157,7 @@ $cws_config =[
 		'out_team'				=>'{data_path}/team.json',
 		'out_stats'				=>'{data_path}/stats.json',
 		'out_papers'			=>'{data_path}/papers.json',
-		'out_abstracts_stats'	=>'{data_path}/abstracts_stats.json',
+		'out_abstracts_submission'	=>'{data_path}/abstracts_submission.json', // abstracts statistics
         'out_registrants'	    =>'{data_path}/registrants.json',
 		'out_last_nums'			=>'{data_path}/last_nums.json',
 		],
@@ -166,9 +176,10 @@ $cws_config =[
 
 		'order'					=>[ 'abstracts', 'registrants', 'country', 'payments', 'papers' ],
 
+		'import_path'			=>'../data',
 		'import_past_conferences' =>[],
 
-        'in_abstracts_stats'	=>'{data_path}/abstracts_stats.json',
+        'in_abstracts_submission'	=>'{data_path}/abstracts_submission.json',
         'in_registrants'	    =>'{data_path}/registrants.json',
         'in_stats'			    =>'{data_path}/stats.json',
 
@@ -222,9 +233,27 @@ $cws_config =[
 		], 
 
 	//-------------------------------------------------------------------------------------------------
+	'page_team' =>[
+		'name'				=>'Team Statistics',
+		'allow_roles'		=>[ 'JAD', 'JED' ],
+
+		// in
+		'in_stats'			=>'{data_path}/stats.json',
+		'in_team'			=>'{data_path}/team.json',
+		'in_papers'			=>'{data_path}/papers.json',
+		'in_editing_tags'	=>'{data_path}/editing_tags.json',
+		'in_authors_check'	=>'{data_path}/author_reception.json',
+
+		'template'			=>'template.html',
+
+		// out
+		'default_page'		=>'{app}/index.php'
+		], 
+
+	//-------------------------------------------------------------------------------------------------
 	'page_slides' =>[
 		'name'				=>'Slides',
-		'allow_roles'		=>[ 'WSA', 'JSA', 'JPM' ],		
+		'allow_roles'		=>[ 'JAD', 'JES' ],		
 
 		'tmp_path'			=>'{tmp_path}/slides',
 
@@ -246,9 +275,10 @@ $cws_config =[
 		'cron'			=>'*:05',
 //		'cron_options'	=>'-f',
 
-		'allow_roles'	=>[ 'WSA', 'JSA', 'JAR' ],
+		'allow_roles'	=>[ 'JAD', 'JAR' ],
 
-		'filter'		=>[ 'key' =>'status_qa', 'value' =>'QA Approved' ],
+		// 'filter'		=>[ 'key' =>'status_qa', 'value' =>'QA Approved' ],
+		'filter'		=>[ 'key' =>'status', 'value' =>'g' ],
 	
 		'tmp_path'		=>'{tmp_path}/indico',
 
@@ -264,6 +294,25 @@ $cws_config =[
 		'out_path'		=>'{data_path}/papers'
 		], 
 		
+	//-------------------------------------------------------------------------------------------------
+	'abstracts' =>[
+		'name'				=>'Abstracts',
+
+		'allow_roles'		=>[ 'JAD' ],
+
+		'cron'				=>'*:10',
+
+        'tmp_path'			=>'{tmp_path}/indico',
+
+		// in
+		'in_abstracts_sub'	=>'{data_path}/abstracts_sub.json',
+
+		'template'			=>'template.html',
+
+		// out
+		'default_page'		=>'{app}/index.php'
+		], 
+
 	//-------------------------------------------------------------------------------------------------
 	'page_papers' =>[
 		'name'				=>'Papers',
@@ -376,7 +425,7 @@ $cws_config =[
 	'app_poster_police' =>[
 		'name'			=>'App Poster Police',
 
-		'allow_roles'	=>[ 'WSA', 'JSA', 'JPP' ],
+		'allow_roles'	=>[ 'JAD', 'JPP' ],
 
 		'dummy_mode'	=>false,
 
@@ -399,7 +448,7 @@ $cws_config =[
 	//-------------------------------------------------------------------------------------------------
 	'cis' =>[
 		'name'				=>'Conference Information System (CIS Admin)',
-		'allow_roles'		=>[ 'WSA', 'JSA', 'WCM' ],
+		'allow_roles'		=>[ 'JAD' ],
 
 		'echo_mode'			=>'web',
 		
@@ -433,6 +482,8 @@ $cws_config =[
 		'paper_status_url' 	=>false,
 		'paper_status_qrcode' 	=>true,
 		'qrcode_cells'		=>4,
+
+		'hidden_sessions'	=>[],
 
 		// in
 		'in_papers'			=>'{data_path}/papers.json'
@@ -483,7 +534,19 @@ $cws_config =[
 		// in
 		'template_html'	=>'template.html',
 		'in_papers'		=>'{data_path}/papers.json'
-		]
+	],
+
+	//-------------------------------------------------------------------------------------------------
+	'conference4me' =>[
+		'name'				    =>'Conference4me Exporter',
+		'cron'				    =>'*:05',
+		
+		'cache_time'			=>600, // useful for test
+        'tmp_path'			    =>'{tmp_path}/indico',
+
+		// out
+        'export'			    =>'{root_path}/exports/{app}.json'
+        ]
 	];
 
 

@@ -3,6 +3,7 @@
 
 /* by Stefano.Deiuri@Elettra.Eu
 
+2025.05.29 - extracting pdf_authors
 2022.09.15 - fix pdf download
 2022.08.26 - fix extracting pdf_title
 2022.08.19 - 1st version (use poppler-utils)
@@ -106,6 +107,7 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
             $nl =0;
             $tl =0;
             $pdf_title =false;
+            $pdf_authors =false;
             $title_block =true;
             $head =false;
             
@@ -123,6 +125,10 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
 
                 } else {
                     $title_block =false;
+
+                    if (strtolower(trim($line_nt)) == 'abstract') break;
+
+                    if (strpos( $line_nt, '.' )) $pdf_authors .=($pdf_authors ? ", " : false) .trim($line_nt);
                 }
 
                 if (strtolower(trim($line)) == 'abstract') break;
@@ -141,8 +147,23 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
             system( $cmd );
             $Indico->verbose_next( ".", false );
 
+            $pdf_authors_list =[];
+            if (!empty($pdf_authors)) {
+                foreach (explode( ',', str_replace( [' and '], [ ',' ], $pdf_authors )) as $x) {
+                    if (strpos( $x, '.' )) {
+                        $sa =preg_replace( '/[^\p{L}\.\s]/u', '', trim($x));
+
+                        $pdf_authors_list[] =$sa;
+
+                        $pdf_authors_list[] =strtolower(trim(end(explode( '.', $sa ))));
+                    }
+                }
+            }
+
             $app_data[$pcode]['id'] =$p['id'];
             $app_data[$pcode]['pdf_title'] =$pdf_title;
+            $app_data[$pcode]['pdf_authors'] =$pdf_authors;
+            $app_data[$pcode]['pdf_authors_list'] =$pdf_authors_list;
             $app_data[$pcode]['pdf_ts'] =$now;
             $app_data[$pcode]['title_lines'] =$tl;
             $app_data[$pcode]['head'] =$head;

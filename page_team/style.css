@@ -149,7 +149,3 @@ table.days th {
 table.days th:nth-child(1) {
   text-align: left;
 }
-
-.filter_bar {
-  font-size: 16px;
-}

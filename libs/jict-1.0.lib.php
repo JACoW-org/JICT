@@ -210,6 +210,7 @@ function config( $_app =false, $_check_in_file_exit =false, $_check_in_file =tru
  cws_define( 'app', $_app );
   
  $cfg =$cws_config[$_app];
+ $cfg['app'] =$_app;
 
  foreach ([ 'data_path', 'tmp_path', 'out_path', 'logs_path' ] as $path_name) {
 	if (!isset($cfg[$path_name])) {

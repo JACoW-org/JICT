@@ -2,7 +2,6 @@
 
 /* by Stefano.Deiuri@Elettra.Eu
 
-2025.06.05 - scale picture before upload & show spinner during upload
 2025.06.01 - now is possible to delete the pictures
 2025.05.31 - take picture fron the app
 2023.04.04 - use Indico oauth
@@ -96,7 +95,7 @@ class PosterPolice extends JICT_OBJ {
 	$poster_vars
 	</script>
 	
-	<script src='poster_police.js?20250605b'></script>
+	<script src='poster_police.js?20250604b'></script>
 </head>
 
 <body>
@@ -497,7 +496,7 @@ class PosterPolice extends JICT_OBJ {
         $pictures_cointainer ="
         <style>
 			figure { display: inline-block; }
-			img { height: 100%; max-height: 300px; width: auto; border: 3px solid black; } 
+			img { height: 100%; max-height: 300px; border: 3px solid black; } 
 			figcaption { margin-top: 5px; font-weight: bold; color: black; font-size: 2em; }
 			figure button { font-size: 1em; width: 100%; height: 2em; display: block; margin-bottom: 0.5em; font-weight: 200; background: #ff8e8e; border: 3px solid black; }
 			</style>
@@ -529,75 +528,30 @@ class PosterPolice extends JICT_OBJ {
 			const loadingSpinner = document.getElementById('loadingSpinner');
 
             const ctx = canvas.getContext('2d');
-			
+
+        	let resizedBlob = null; // Per memorizzare il Blob dell'immagine ridimensionata
+
         	const MAX_WIDTH = 1200;  // Larghezza massima desiderata per l'immagine ridimensionata
         	const MAX_HEIGHT = 1200; // Altezza massima desiderata, per esempio
         	const QUALITY = 0.8;    // Qualità del JPG (da 0.0 a 1.0)
-			
+		
 			let acquiredFile = null;
 			let last_picture_ts =null;
 
             cameraInput.addEventListener('change', (event) => {
-                const files =event.target.files;
-
+                const files = event.target.files;
                 if (files.length > 0) {
                     acquiredFile =files[0];
-
-					const img =new Image();
                     const reader =new FileReader();
 
                     reader.onload = (e) => {
-						img.src =e.target.result;
-                        //photoPreview.src =e.target.result;
+                        photoPreview.src =e.target.result;
                         console.log( \"Picture ready for upload:\", acquiredFile.name, acquiredFile.type, acquiredFile.size);
                         };
 
-					img.onload = () => {
-						// Calcola le nuove dimensioni mantenendo le proporzioni
-						let width = img.width;
-						let height = img.height;
+                    reader.readAsDataURL(acquiredFile);
 
-						console.log( `Immagine size: \${width.toFixed(0)} x \${height.toFixed(0)}` );
-
-						if (width > height) {
-							if (width > MAX_WIDTH) {
-								height *= MAX_WIDTH / width;
-								width = MAX_WIDTH;
-							}
-						} else {
-							if (height > MAX_HEIGHT) {
-								width *= MAX_HEIGHT / height;
-								height = MAX_HEIGHT;
-							}
-						}
-
-						// Imposta le dimensioni del canvas alle nuove dimensioni
-						canvas.width = width;
-						canvas.height = height;
-
-						// Disegna l'immagine sul canvas con le nuove dimensioni
-						ctx.drawImage( img, 0, 0, width, height );
-
-						// Ottieni l'immagine ridimensionata come Blob
-						canvas.toBlob((blob) => {
-							if (blob) {
-								// resizedBlob =blob;
-								photoPreview.src =URL.createObjectURL( blob ); // Mostra l'anteprima
-								photoPreview.style.display ='block';
-								console.log( `Immagine ridimensionata a \${width.toFixed(0)} x \${height.toFixed(0)} pixel. Pronta per l'invio.` );
-
-								upload_picture( blob );
-
-							} else {
-								console.log( 'Errore nella creazione del Blob ridimensionato.' );
-							}
-
-						}, 'image/jpeg', QUALITY); // Formato e qualità dell'output
-
-
-					};
-
-                    reader.readAsDataURL( acquiredFile );
+                    save_picture();
 
                 } else {
                     acquiredFile = null; // Nessun file selezionato

@@ -32,7 +32,7 @@ $T->set([
         main { font-size: 14px; margin-bottom: 2em } 
         td.b_x { background: #555; color: white } 
         td.b_y2g { background: #ADFF2F; color: black }
-        tr:hover td { border-bottom: 2px solid black; }
+        __tr:hover td { border-bottom: 2px solid black; }
         ',
     'title' =>$cfg['name'],
     'logo' =>$cfg['logo'],
@@ -50,7 +50,7 @@ $filter =$_GET['filter'] ?? false;
 
 $sort ="[0, 'asc']";
 if ($filter == 'y') $sort ="[7,'desc']";
-else if ($filter == 'y2g') $sort ="[6,'asc'],[7,'desc']";
+else if ($filter == 'y2g') $sort ="[7,'desc']";
 else if ($filter == 'qa_pending') $sort ="[9,'desc'],[0,'asc']";
 
 
@@ -63,19 +63,35 @@ if (!empty($Indico->data['registrants']['registrants'])) {
     }
 }
 
-$rows =false;
+exec( sprintf( "ls -1 %s/app_poster_police/pictures/*-small.jpg", $cfg['data_path'] ), $pictures_list );
+
+$poster_with_picture =[];
+if (!empty($pictures_list)) {
+    foreach ($pictures_list as $pic) {
+        if (preg_match( "/pictures\/(.*)-(\\d+)-small\\.jpg/", $pic, $matches)) $poster_with_picture[] =$matches[1];
+    }
+}
+
+$rows =[];
 foreach ($Indico->data['papers'] as $pcode =>$p) {
     if (empty($p['hide'])) {
-        if ($p['status_indico'] != 'Accepted' && $p['status_qa'] == 'QA Pending') {
+        // if ($p[] == 'accepted_submitter')
+/*         if ($p['status_indico'] != 'Accepted' && $p['status_qa'] == 'QA Pending') {
             $Indico->data['papers'][$pcode]['status_qa'] =$p['status_qa'] ='QA Failed';
 
-        } else if ($p['status_indico'] == 'Accepted' && !empty($p['status_history']) && ($p['status_qa'] != 'QA Approved' || $filter != 'y2g')) {
+        } else  */
+        
+        if ($p['status_indico'] == 'Accepted by Submitter') {
+            $Indico->data['papers'][$pcode]['status'] =$p['status'] ='y2g';
+        }
+
+/*         if ($p['status_indico'] == 'Accepted' && !empty($p['status_history']) && ($p['status_qa'] != 'QA Approved' || $filter != 'y2g')) {
             $lrs =end( $p['status_history'] );
             if ($lrs == '_changes_acceptance') {
                 $p['status_indico'] .=' by Author';
                 $Indico->data['papers'][$pcode]['status'] =$p['status'] ='y2g';
             }
-        }
+        } */
 
         $show =true;
         if (!empty($_GET['qa']) && $_GET['qa'] == 'pending' && $p['status_qa'] != 'QA Pending') $show =false;
@@ -85,11 +101,21 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
         else if ($filter == 'pdf_warnings' && empty($Indico->data['pdf_problems'][$pcode])) $show =false;
         else if (!empty($_GET['pcode']) && strtolower($pcode) != strtolower($_GET['pcode'])) $show =false;
 
-        if ($show) {
-            $poster_police =$p['poster']  && !empty($Indico->data['posters_status'][$pcode]['status']) 
-                ? $Indico->data['posters_status'][$pcode]['status'] 
-                : "";
- 
+        if ($show) {        
+            if ($p['poster'] && !empty($Indico->data['posters_status'][$pcode]['status'])) {
+                if (in_array( $pcode, $poster_with_picture )) {
+                    preg_match( "/^([A-Z]+)(\d+)$/", $p['code'], $code_parts );
+                    $pp_url =sprintf( "../app_poster_police/index.php?day=%s&session=%s&poster=%s&read_only=1", date('Y-m-d', $p["tsz_from"] ), $code_parts[1], $code_parts[2] );
+                }
+
+                $poster_police =$Indico->data['posters_status'][$pcode]['status']
+                    .(!empty($Indico->data['posters_status'][$pcode]['comment']) ? sprintf( "<br /><i>%s</i>", $Indico->data['posters_status'][$pcode]['comment'] ) : false)
+                    .(in_array( $pcode, $poster_with_picture ) ? sprintf( "<br /><a href='%s' target='_blank'>pictures</a>", $pp_url ) : false);
+
+            } else {
+                $poster_police =false;
+            }
+      
             $author_present ='Not present';
             $author_registered ='Not registered';
             if (!empty($p['authors_emails'])) {
@@ -103,7 +129,7 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
             else $pdf_status =empty($Indico->data['pdf_problems'][$pcode]) 
                 ? 'OK'
                 : 'PDF Warning<ul><li>' .implode( '</li><li>', $Indico->data['pdf_problems'][$pcode] ) .'</li></ul>'
-                    .($p['pdf_ts'] ? sprintf( "<br /><small>%s</small>", date( 'd/m H:i', $p['pdf_ts'] ) ) : false);
+                    .($p['pdf_ts'] ? sprintf( "<br /><small>%s</small>", date( 'd/m H:i', $p['pdf_ts'] +$cfg['difftime_sec'] ) ) : false);
 
             $rows[] =[
                 'Abstract_ID' =>$p['abstract_id'],
@@ -158,7 +184,10 @@ $thead
 <tbody>
 ";
 
-$is_admin =!empty($user['admin']);
+// print_r( $user );
+
+// $is_admin =!empty($user['admin']);
+$is_admin =in_array( 'JAD', $user['roles'] );
 
 foreach ($rows as $r) {
     $pcode =$r['Program_Code'];
@@ -174,9 +203,9 @@ foreach ($rows as $r) {
     else if ($p['status_qa'] == 'QA Failed') $qa_class ='b_r';
     else $qa_class =false; 
     
-    if ($r['Poster_Police'] == 'OK') $pp_class ='b_g';
-    else if ($r['Poster_Police'] == 'Fail') $pp_class ='b_r';
-    else if ($r['Poster_Police'] == 'Unmanned') $pp_class ='b_y';
+    if (substr($r['Poster_Police'],0,2) == 'OK') $pp_class ='b_g';
+    else if (substr($r['Poster_Police'],0,4) == 'Fail') $pp_class ='b_r';
+    else if (substr($r['Poster_Police'],0,8) == 'Unmanned') $pp_class ='b_y';
     else $pp_class =false; 
 
     $cat_class =empty($r['CAT_publish']) ? false : 'b_y';
@@ -190,32 +219,42 @@ foreach ($rows as $r) {
     $post_status =false;
     if ($filter == 'y' && $p['status'] == 'y') $pre_status =sprintf( "<small>updated %s days ago</small><br /><br />", round((time() -$p['status_ts'])/86400,0 ));
     else if ($filter == 'y2g' && $p['status'] == 'y2g') {
-        $pre_status =sprintf( "<small>updated %s days ago</small><br /><br />", round((time() -$p['status_ts'])/86400,0 ));
+        $pre_status =sprintf( "<small>%s<br />updated %s days ago</small><br /><br />", date( 'd/m H:i', $p['status_ts'] +$cfg['difftime_sec'] ), round((time() -$p['status_ts'])/86400,0 ));
         $r['PDF'] =sprintf( "<a href='%s' target='_blank' style='text-decoration: underline;'>PDF</a>", $p['pdf_url'] );
     }
 
-    if ($r['PDF'] != 'OK' && $r['PDF'] != 'NO PDF') $post_status =sprintf( "<br /><br /><small>%s</small>", date( 'd/m H:i', $p['status_ts'] ));
+    if ($r['PDF'] != 'OK' && $r['PDF'] != 'NO PDF' && $filter != 'y2g') $post_status =sprintf( "<br /><br /><small>%s</small>", date( 'd/m H:i', $p['status_ts'] +$cfg['difftime_sec'] ));
 
     $content .="<tr>
     <td><a href='$contribution_url' target='_blank'>$r[Abstract_ID]</a></td>
-<td><a href='$paper_url' target='_blank'>$pcode</a>$revisions</td>
-<td>$r[Type]</td>
-<td>$r[Title]</td>
-<td>$r[PAuthor]</td>
-<td>$r[Source]</td>
-<td>$r[Editor]</td>
-<td class='b_$p[status]'>$pre_status $r[Status] $post_status</td>
-<td class='$qa_class'>$r[QA]</td>
-<td class='$pdf_class'>$r[PDF]</td>
-<td class='$pp_class'>$r[Poster_Police]</td>
-<td class='$ac_class'>$r[Authors_Check]</td>
-<td class='$ar_class'>$r[Author_Registered]</td>
-<td class='$ap_class'>$r[Author_Present]</td>
-<td class='$cat_class'>$r[CAT_publish]</td>
-</tr>
-";
+<td><a href='$paper_url' target='_blank'>$pcode</a>$revisions</td>"
+._td($r['Type'])
+._td($r['Title'])
+._td($r['PAuthor'])
+._td($r['Source'])
+._td($r['Editor'])
+._td("$pre_status $r[Status] $post_status", ($p['status'] ? "b_$p[status]" : false))
+._td($r['QA'], $qa_class)
+._td($r['PDF'], $pdf_class)
+._td($r['Poster_Police'],$pp_class)
+._td($r['Authors_Check'],$ac_class)
+._td($r['Author_Registered'],$ar_class)
+._td($r['Author_Present'],$ap_class)
+._td($r['CAT_publish'],$cat_class)
+."</tr>\n";
 }
 $content .="</table>";
+
+
+function _td( $_content, $_class =false ) {
+	$_content =trim($_content);
+	if (empty($_content)) return "<td></td>\n";
+	if (empty($_class)) return "<td>$_content</td>\n";
+	return sprintf( "<td class='%s'>%s</td>\n", $_class, $_content );
+
+}
+
+
 
 $T->set( 'js', "
 $(document).ready(function() {

@@ -18,7 +18,9 @@ define( 'DAYS', 86400 );
 $cfg =config( 'page_dashboard' );
 $cfg['verbose'] =0;
 
-$dates =$cws_config['global']['dates'];
+//print_r( $cfg );
+
+$dates =$cfg['dates'];
 
 $Indico =new INDICO( $cfg );
 $Indico->load();
@@ -37,9 +39,9 @@ if (!empty($cfg['import_past_conferences'])) {
 //echo sprintf( '<pre>%s</pre>', print_r( $old_confs, true )); return;
 
 $colors =[ 
+    '186,31,50',  // rosso
     '49,139,66', // verde
     '47,75,140', // blu
-    '186,31,50',  // rosso
     '114,135,206', // azzurro
     '255,126,0', // arancio
     ];
@@ -47,12 +49,16 @@ $colors =[
 $main_parts =[ 
     'papers' =>
 '<div class="row">
-<div class="col-md-6">
+<div class="col-md-4">
     <canvas id="papers_by_dates" class="chart"></canvas>
 </div>
-<div class="col-md-6">
+<div class="col-md-4">
+    <canvas id="papers_by_hours_to_deadline" class="chart"></canvas>
+</div>
+<div class="col-md-4">
     <canvas id="papers_by_days_to_deadline" class="chart"></canvas>
 </div>
+
 </div>',
 
     'registrants' =>
@@ -88,10 +94,10 @@ $main_parts =[
     'abstracts' =>
 '<div class="row">
 <div class="col-md-6">
-    <canvas id="abstracts_stats_by_dates" class="chart"></canvas>
+    <canvas id="abstracts_submission_by_dates" class="chart"></canvas>
 </div>
 <div class="col-md-6">
-    <canvas id="abstracts_stats_by_days_to_deadline" class="chart"></canvas>
+    <canvas id="abstracts_submission_by_days_to_deadline" class="chart"></canvas>
 </div>
 </div>'
 ];
@@ -120,8 +126,8 @@ $payments =[];
 //echo sprintf( '<pre>%s</pre>', print_r( $payments, true )); return;
 
 $vars =[ 
-    'page_title' =>APP_NAME, 
-    'registered_n' =>0,
+    'page_title' =>$cfg['name'], 
+    'registrants_n' =>0,
     'papers_n' =>0,
     'payments_n' =>0,
     'content' =>"",
@@ -133,6 +139,7 @@ $charts =[];
 // PAPERS -------------------------------------------------------------------
 $Indico->data['papers']['by_dates'] =$Indico->data['stats']['papers_submission']['by_dates'];
 $Indico->data['papers']['by_days_to_deadline'] =$Indico->data['stats']['papers_submission']['by_days_to_deadline'];
+$Indico->data['papers']['by_hours_to_deadline'] =$Indico->data['stats']['papers_submission']['by_hours_to_deadline'];
 
 $group ='papers';
 $id ='by_dates';
@@ -144,7 +151,7 @@ $charts[$chart_id] =[
     'series' =>false
     ];
 
-$charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME ."-$group", $Indico->data[$group][$id], 
+$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'] ."-$group", $Indico->data[$group][$id], 
     [ 'by_dates_show_zero' =>true, 'x_type' =>'date', 'x_upper_limit' =>strtotime($dates['papers_submission']['deadline']) +10*86400 ] );
     
 $id ='by_days_to_deadline';
@@ -157,15 +164,33 @@ $charts[$chart_id] =[
     'series' =>false
     ];
 
-$dtd_limit =-15;
+$dtd_limit =-20;
 $x_upper_limit =10;
 
-$charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME, $Indico->data[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>10 ] );
+$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit ] );
 $vars[ $group .'_n' ] =number_format( $sum, 0, ',', '.' );
 
 foreach ($old_confs as $cname =>$cdata) {
     $charts[$chart_id]['series'][$cname] =get_chart_serie( $cname, $cdata[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit  ] );
 }
+
+
+$id ='by_hours_to_deadline';
+$chart_id ="${group}_${id}";
+$charts[$chart_id] =[
+    'title' =>ucwords($group) .' progress',
+    'type' =>'scatter',
+    'x_label' =>sprintf( 'hours to deadline (%s)', substr( $dates['papers_submission']['deadline'], 0, 10 )),
+    'y_label' =>$group,
+    'series' =>false
+    ];
+
+$dtd_limit =-48;
+$x_upper_limit =24*7;
+
+$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit ] );
+$vars[ $group .'_n' ] =number_format( $sum, 0, ',', '.' );
+
 
 
 
@@ -181,7 +206,7 @@ if (!empty($Indico->data[$group])) {
         'series' =>false
         ];
     
-    $charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME, $payments[$id]['count'], [ 'by_dates_show_zero' =>true, 'x_type' =>'date' ] );
+    $charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $payments[$id]['count'], [ 'by_dates_show_zero' =>true, 'x_type' =>'date' ] );
         
     $id ='by_days_to_deadline';
     $chart_id ="${group}_${id}";
@@ -193,15 +218,14 @@ if (!empty($Indico->data[$group])) {
         'series' =>false
         ];
     
-    $charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME,  $payments[$id]['count'], [ 'sum' =>true ] );
-    $vars['payments_n'] =number_format( $sum, 0, ',', '.' );
+    $charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'],  $payments[$id]['count'], [ 'sum' =>true ] );
+    $vars[$group.'_n'] =number_format( $sum, 0, ',', '.' );
 }
 
 
 
 // ABSTRACTS -------------------------------------------------------------------
-
-$group ='abstracts_stats';
+$group ='abstracts_submission';
 $id ='by_dates';
 $chart_id ="${group}_${id}";
 $charts[$chart_id] =[
@@ -211,10 +235,8 @@ $charts[$chart_id] =[
     'series' =>false
     ];
 
-$charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME ."-$group", $Indico->data[$group][$id], 
+$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'] ."-$group", $Indico->data[$group][$id], 
     [ 'by_dates_show_zero' =>true, 'x_type' =>'date', 'x_upper_limit' =>strtotime($dates['abstracts_submission']['deadline']) +10*86400 ] );
-
-
 
 $id ='by_days_to_deadline';
 $chart_id ="${group}_${id}";
@@ -226,16 +248,11 @@ $charts[$chart_id] =[
     'series' =>false
     ];
 
-$dtd_limit =-15;
-$x_upper_limit =0;
+$dtd_limit =-7;
+$x_upper_limit =7;
 
-$charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME, $Indico->data[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit ] );
+$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit ] );
 $vars['abstracts_n'] =number_format( $sum, 0, ',', '.' );
-
-
-/* for ($year =22; $year >=19; $year --) {
-    $charts[$chart_id]['series']['IPAC'.$year] =import_data( "abstracts-ipac${year}.txt", $dtd_limit );
-} */
 
 $group ='abstracts';
 foreach ($old_confs as $cname =>$cdata) {
@@ -245,7 +262,6 @@ foreach ($old_confs as $cname =>$cdata) {
 
 
 // REGISTRANTS -------------------------------------------------------------------
-
 $group ='registrants';
 $id ='by_dates';
 $chart_id ="${group}_${id}";
@@ -256,7 +272,7 @@ $charts[$chart_id] =[
     'series' =>false
     ];
 
-$charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME, $Indico->data[$group]['stats'][$id], [ 'by_dates_show_zero' =>true, 'x_type' =>'date' ] );
+$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group]['stats'][$id], [ 'by_dates_show_zero' =>true, 'x_type' =>'date' ] );
 
 
 $id ='by_days_to_deadline';
@@ -271,8 +287,8 @@ $charts[$chart_id] =[
 
 $dtd_limit =-200;
 $x_upper_limit =7;
-$charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME, $Indico->data[$group]['stats'][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit ] );
-$vars['registrants_n'] =number_format( $sum, 0, ',', '.' );
+$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group]['stats'][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit ] );
+$vars[$group.'_n'] =number_format( $sum, 0, ',', '.' );
 
 foreach ($old_confs as $cname =>$cdata) {
     $charts[$chart_id]['series'][$cname] =get_chart_serie( $cname, $cdata[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit ] );
@@ -282,7 +298,6 @@ foreach ($old_confs as $cname =>$cdata) {
 $charts[$chart_id]['series']['IPAC'.$year] =import_data( "${group}-ipac${year}.txt" ); */
 
 // COUNTRIES -------------------------------------------------------------------
-
 $id ='country';
 $chart_id ="${group}_${id}";
 $charts[$chart_id] =[
@@ -292,7 +307,7 @@ $charts[$chart_id] =[
     'series' =>false
     ];
 
-$charts[$chart_id]['series'][CONF_NAME] =get_chart_serie( CONF_NAME, $Indico->data[$group]['stats'][$id] );
+$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group]['stats'][$id] );
 $vars['country_n'] =count( $Indico->data[$group]['stats'][$id] );
 
 $Indico->data[$group]['stats'][$id]['United States of America'] =$Indico->data[$group]['stats'][$id]['United States'];
@@ -343,11 +358,10 @@ const chart = new Chart(document.getElementById(\"registrants_country_code\").ge
 ";
 
 
-foreach([ 'papers', 'payments', 'country' ] as $k) {
+foreach([ 'papers', 'payments', 'country', 'registrants' ] as $k) {
     if (!$vars[$k.'_n']) {
         $vars['js'] .="$('#$k').hide();\n";
         $vars['js'] .="$('#grp_$k').hide();\n";
-
     }
 }
 
@@ -358,29 +372,32 @@ echo $T->get();
 
 if (!empty($_GET['export_data'])) {
     $export =[
-        'conf_name' =>$cws_config['global']['conf_name'],
-    
-        'abstracts' =>[ 
-            'dates' =>$dates['abstracts_submission'],
-            'history' =>$Indico->data['abstracts_stats']['by_dates'],
-            'count' =>array_sum($Indico->data['abstracts_stats']['by_dates']),
-            'withdrawn' =>$Indico->data['abstracts_stats']['withdrawn']
-            ],
-    
-        'registrants' =>[ 
-            'dates' =>$dates['registration'],
-            'history' =>$Indico->data['registrants']['stats']['by_dates'],
-            'count' =>array_sum($Indico->data['registrants']['stats']['by_dates'])
-            ],
-    
-        'papers' =>[ 
-            'dates' =>$dates['papers_submission'],
-            'history' =>$Indico->data['stats']['papers_submission']['by_dates'],
-            'count' =>array_sum($Indico->data['stats']['papers_submission']['by_dates'])
-            ]
+        'conf_name' =>$cfg['conf_name'],
+        ];
+
+    if (!empty($Indico->data['stats']['abstracts_submission']['by_dates'])) $export['abstracts'] =[ 
+        'dates' =>$dates['abstracts_submission'],
+        'history' =>$Indico->data['abstracts_submission']['by_dates'],
+        'count' =>array_sum($Indico->data['abstracts_submission']['by_dates']),
+        'withdrawn' =>$Indico->data['abstracts_submission']['withdrawn']
         ];
     
-    file_write_json( strtolower(str_replace( "'", "", '../exports/' .$cws_config['global']['conf_name'] )) .'.json', $export );    
+    if (!empty($Indico->data['stats']['registrants']['by_dates'])) $export['registrants'] =[ 
+        'dates' =>$dates['registration'],
+        'history' =>$Indico->data['registrants']['stats']['by_dates'],
+        'count' =>array_sum($Indico->data['registrants']['stats']['by_dates'])
+        ];
+    
+    if (!empty($Indico->data['stats']['papers_submission']['by_dates'])) $export['papers'] =[ 
+        'dates' =>$dates['papers_submission'],
+        'history' =>$Indico->data['stats']['papers_submission']['by_dates'],
+        'count' =>array_sum($Indico->data['stats']['papers_submission']['by_dates'])
+        ];
+    
+    $fname =str_replace( "'", "", $cfg['conf_name'] );
+
+    file_write_json( strtolower( sprintf( '../exports/%s.json', $fname )), $export );    
+    file_write_json( strtolower( sprintf(  '%s/%s.json', $cfg['import_path'], $fname )), $export );    
 }
 
 
@@ -550,7 +567,9 @@ function import_payments() {
 
 //-----------------------------------------------------------------------------
 function import_data_conf( $_name ) {
-    $data =file_read_json( sprintf( "../data/%s.json", $_name ), true );
+    global $cfg;
+
+    $data =file_read_json( sprintf( "%s/%s.json", $cfg['import_path'], strtolower($_name) ), true );
 
     foreach ($data as $grp =>$x) {
         if (!empty($x['dates']['deadline'])) {
@@ -608,13 +627,16 @@ function import_data( $_fname, $_dtd_limit =-100 ) {
 function get_chart_serie( $_serie_name, $_data, $_cfg =[]) {
     global $sum;
 
+    $sum =0;
+
+    if (empty($_data)) return [];
+
     $serie =[];
     
     if (!isset($_cfg['x_low_limit'])) $_cfg['x_low_limit'] =false;
     if (!isset($_cfg['x_upper_limit'])) $_cfg['x_upper_limit'] =false;    
 
     $ldate_ts =false;
-    $sum =0;
 
     foreach ($_data as $x =>$y) {
         if (!empty($_cfg['by_dates_show_zero'])) {

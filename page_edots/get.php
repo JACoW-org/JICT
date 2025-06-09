@@ -13,7 +13,7 @@ error_reporting(E_ERROR);
 require( '../config.php' );
 require_lib( 'jict', '1.0' );
 
-define( 'CFG_VERSION', 2 );
+define( 'CFG_VERSION', 3 );
 
 class DOTTING_BOARD extends JICT_OBJ {
     var $ret;
@@ -54,7 +54,7 @@ class DOTTING_BOARD extends JICT_OBJ {
             $legend[$name] =$desc;
         }	
         
-        if (!empty($this->cfg['hidden_sessions'])) {
+/*         if (!empty($this->cfg['hidden_sessions'])) {
             $papers =false;
             foreach ($this->data['papers'] as $paper_id =>$p) {
                 if (!in_array( $p['session_code'], $this->cfg['hidden_sessions'])) {
@@ -64,6 +64,12 @@ class DOTTING_BOARD extends JICT_OBJ {
 
         } else {
             $papers =$this->data['papers'];
+        } */
+
+        foreach ($this->data['papers'] as $paper_id =>$p) {
+            if (empty($p['hide'])) {
+                $papers[$paper_id] =$p;
+            }
         }
 
         $n_dots =count( $papers );
@@ -90,6 +96,7 @@ class DOTTING_BOARD extends JICT_OBJ {
             'conf_name' =>CONF_NAME,
             'change_page_delay' =>APP_CHANGE_PAGE_DELAY,
             'reload_data_delay' =>APP_RELOAD_DATA_DELAY, // seconds	
+            'mode' =>'slow',
             'cols' =>$cols,
             'rows' =>$rows,
             'legend' =>$legend,
@@ -97,7 +104,7 @@ class DOTTING_BOARD extends JICT_OBJ {
             'qrcode_cells' =>$qrcode_img ? $this->cfg['qrcode_cells'] : 0,
             'dots' =>$n_dots,
             'pages' =>ceil( $n_dots /($cols * $rows)),
-            '_cfg' =>$this->cfg
+            '_cfg' =>me() ? $this->cfg : false
             ];	
     }
 
@@ -107,7 +114,7 @@ class DOTTING_BOARD extends JICT_OBJ {
     
         $map_days =[ 'mo' =>1, 'tu' =>2, 'we' =>3, 'th' =>4, 'fr' =>5, 'su' =>0 ];
         
-        if (!empty($this->cfg['hidden_sessions'])) {
+/*         if (!empty($this->cfg['hidden_sessions'])) {
             $papers =false;
             foreach ($this->data['papers'] as $paper_id =>$p) {
                 if (!in_array( $p['session_code'], $this->cfg['hidden_sessions'])) {
@@ -117,6 +124,12 @@ class DOTTING_BOARD extends JICT_OBJ {
 
         } else {
             $papers =$this->data['papers'];
+        } */
+
+        foreach ($this->data['papers'] as $paper_id =>$p) {
+            if (empty($p['hide'])) {
+                $papers[$paper_id] =$p;
+            }
         }
 
         foreach ($papers as $paper_id =>$p) {

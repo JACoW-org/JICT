@@ -2,6 +2,7 @@
 
 /* by Stefano.Deiuri@Elettra.Eu
 
+2024.12.11 - autoselect 1st day
 2024.05.23 - show editing status
 2024.05.19 - handle publishing status
 2023.04.05 - update (bottom navbar)
@@ -122,8 +123,28 @@ if (!empty($_GET['ok'])) {
 if (empty($conf_day)) {
     $day =date( 'Y-m-d' );
     if (!empty($Indico->data['programme']['days'][$day])) {
-        header( "location: $_SERVER[PHP_SELF]?day=$day" );
-        return;
+        foreach ($Indico->data['programme']['days'][$day] as $sid =>$s) {
+            if (empty($s['poster_session']) && !empty($s['papers'])) {
+                $conf_day =$day;
+                break;
+            }
+        }
+
+        if ($conf_day) {
+            header( "location: $_SERVER[PHP_SELF]?day=$conf_day" );
+            return;
+        }
+    } 
+
+    foreach ($Indico->data['programme']['days'] as $day =>$sessions) {
+        if (!$conf_day) {
+            foreach ($sessions as $sid =>$s) {
+                if (empty($s['poster_session']) && !empty($s['papers'])) {
+                    $conf_day =$day;
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -182,6 +203,10 @@ $i =1;
 
 $thead =false;
 $rows =false;
+$room =false;
+$last_room =false;
+$room_slide_id =0; // progressivo per la stanza
+
 foreach ($Indico->data['programme']['days'][$conf_day] as $sid =>$s) {
     if (empty($s['poster_session']) && !empty($s['papers'])) {
         foreach ($s['papers'] as $pcode =>$p) {
@@ -189,13 +214,20 @@ foreach ($Indico->data['programme']['days'][$conf_day] as $sid =>$s) {
 
             list( $presenter, $affiliation ) =explode( ' - ', $p['presenter'] );
 
-            $fname =strtr(sprintf( '%02d-%s-%s', $i, $pcode, $presenter ), ' ', '_' );
+            $room =str_replace( ["First","Second","Floor"], ["",""], $s['room']);
+
+            if ($room != $last_room) $room_slide_id =1;
+            else $room_slide_id ++;
+
+            $last_room =$room;
+
+            $fname =strtr(sprintf( '%s-%s-%s-%s', 
+                $room, str_replace( ':', "", $p['time_from'] ), $pcode, $presenter ), ' ', '_' );
 
             $rows[$i] =[
-                'Order' =>empty($status[$pcode]) && !empty($status_slide[$pcode]) ? sprintf( "<a href='%s?pid=%d&download=%s'>%02d</a>", $_SERVER['PHP_SELF'], $p['id'], $fname, $i ) : sprintf( '%02d', $i ),
-                'Time' =>$p['time_from'],
+                'Room' =>$room,
+                'Time' =>empty($status[$pcode]) && !empty($status_slide[$pcode]) ? sprintf( "<a href='%s?pid=%d&download=%s'>%s</a>", $_SERVER['PHP_SELF'], $p['id'], $fname, $p['time_from'] ) : $p['time_from'],
                 'Code' =>$pcode,
-                'Room' =>$s['room'],
                 'Type' =>$s['type'],
                 'Title' =>$p['title'],
                 'Presenter' =>$p['presenter'],
@@ -287,7 +319,7 @@ $(document).ready(function() {
     $('#talks').DataTable({
         dom: \"<'row'<'col-sm-6'i><'col-sm-6'f>><'row'<'col-sm-12'tr>>\",
         paging: false,
-		order: [[0, 'asc']]
+		order: [[0, 'asc'],[1, 'asc']]
     });
 
     $('#nav_day$day_active').addClass( 'active' );

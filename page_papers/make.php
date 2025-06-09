@@ -120,10 +120,15 @@ foreach ($Indico->data['papers'] as $pcode =>$p) {
             $fail =true;
             $errors[$pcode][] ="no info about page size";
 
-        } else if ($info['page_size'] != '595 x 792 pts') {
-            $Indico->verbose_next( "\n\tERROR (wrong page size $info[page_size]) ", false );
-            $fail =true;
-            $errors[$pcode][] ="wrong page size ($info[page_size])";
+        } else {
+            list( $psw, $t, $psh ) =explode( ' ', $info['page_size'] );
+                        
+            // if ($info['page_size'] != '595 x 792 pts') {
+            if (round($psw,0) != 595 || round($psh,0) != 792) {
+                $Indico->verbose_next( "\n\tERROR (wrong page size $info[page_size]) ", false );
+                $fail =true;
+                $errors[$pcode][] ="wrong page size ($info[page_size])";
+            }
         }
         
         $page_limit =$p['poster'] ? 5 : 6;
