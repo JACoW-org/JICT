@@ -290,6 +290,7 @@ div.stats {
 	color: white; /* Colore del testo all'interno, se vuoi mettere un numero */
 	font-size: 0.2em;
 	font-weight: bold;
+	font-style: normal;
 	}
 
 #loadingSpinner {

@@ -571,7 +571,10 @@ class PosterPolice extends JICT_OBJ {
 
 	$posters_with_pictures =[];
 	foreach ($pictures_list as $pid =>$fname) {
-		if (preg_match( "/$sid(\\d+)-*/", $fname, $matches )) $posters_with_pictures[ $matches[1] ] =true;
+		if (preg_match( "/$sid(\\d+)-*/", $fname, $matches )) {
+			if (empty($posters_with_pictures[ $matches[1] ])) $posters_with_pictures[ $matches[1] ] =1;
+			else $posters_with_pictures[ $matches[1] ] ++;
+		}
 	} 
 
 	foreach ($posters as $code =>$po) {
@@ -581,8 +584,15 @@ class PosterPolice extends JICT_OBJ {
 		else if (!$s[0] && $s[1] && $s[2]) $xclass =' unmanned';
 		else $xclass =$s[0] && $s[1] && $s[2] ? ' ok' : ' warning';
 
+		$have_pictures =false;
+		if (!empty($posters_with_pictures[ $code ])) {
+			$n =$posters_with_pictures[ $code ];
+			$have_pictures =sprintf( "<div class='bullet'>%s</div>", ($n > 1 ? $n : ""));
+		}
+
 		echo "<div class='poster${xclass}' onClick='select_poster(\"$code\")'>$code" 
-            .(!empty($posters_with_pictures[ $code ]) ? "<div class='bullet'></div>" : false)
+            // .(!empty($posters_with_pictures[ $code ]) ? sprintf( "<div class='bullet'>%s</div>", $posters_with_pictures[ $code ]) : false)
+			.$have_pictures
             ."</div>\n";
 	}
 
