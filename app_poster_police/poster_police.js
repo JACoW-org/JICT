@@ -211,3 +211,97 @@ async function upload_picture( _blob ) {
 		loadingSpinner.style.display = 'none';
     }
 }
+
+
+
+const MAX_WIDTH = 1200;  // Larghezza massima desiderata per l'immagine ridimensionata
+const MAX_HEIGHT = 1200; // Altezza massima desiderata, per esempio
+const QUALITY = 0.8;    // Qualità del JPG (da 0.0 a 1.0)
+
+let acquiredFile = null;
+let last_picture_ts =null;
+
+
+//-----------------------------------------------------------------------------
+function init_pictures() {
+	const cameraInput = document.getElementById('cameraInput');
+	const canvas = document.getElementById('canvas');
+	const photoPreview = document.getElementById('photoPreview');
+	const pic0 = document.getElementById('pic0');
+	const loadingSpinner = document.getElementById('loadingSpinner');
+
+	const ctx = canvas.getContext('2d');
+
+	cameraInput.addEventListener('change', (event) => {
+		const files =event.target.files;
+
+		if (files.length > 0) {
+			acquiredFile =files[0];
+
+			const img =new Image();
+			const reader =new FileReader();
+
+			reader.onload = (e) => {
+				img.src =e.target.result;
+				//photoPreview.src =e.target.result;
+				console.log( "Picture ready for upload:", acquiredFile.name, acquiredFile.type, acquiredFile.size);
+				};
+
+			img.onload = () => {
+				// Calcola le nuove dimensioni mantenendo le proporzioni
+				let width = img.width;
+				let height = img.height;
+
+				console.log( `Immagine size: ${width.toFixed(0)} x ${height.toFixed(0)}` );
+
+				if (width > height) {
+					if (width > MAX_WIDTH) {
+						height *= MAX_WIDTH / width;
+						width = MAX_WIDTH;
+					}
+				} else {
+					if (height > MAX_HEIGHT) {
+						width *= MAX_HEIGHT / height;
+						height = MAX_HEIGHT;
+					}
+				}
+
+				// Imposta le dimensioni del canvas alle nuove dimensioni
+				canvas.width = width;
+				canvas.height = height;
+
+				// Disegna l'immagine sul canvas con le nuove dimensioni
+				ctx.drawImage( img, 0, 0, width, height );
+
+				// Ottieni l'immagine ridimensionata come Blob
+				canvas.toBlob((blob) => {
+					if (blob) {
+						// resizedBlob =blob;
+						photoPreview.src =URL.createObjectURL( blob ); // Mostra l'anteprima
+						photoPreview.style.display ='block';
+						console.log( `Immagine ridimensionata a ${width.toFixed(0)} x ${height.toFixed(0)} pixel. Pronta per l'invio.` );
+
+						upload_picture( blob );
+
+					} else {
+						console.log( 'Errore nella creazione del Blob ridimensionato.' );
+					}
+
+				}, 'image/jpeg', QUALITY); // Formato e qualità dell'output
+
+
+			};
+
+			reader.readAsDataURL( acquiredFile );
+
+		} else {
+			acquiredFile = null; // Nessun file selezionato
+			pic0.style.display = 'none';
+		}
+	});
+}
+
+function take_picture() {
+	if (last_picture_ts == null) $("#cameraInput").click();
+	else alert( "Please delete last picture taken before upload a new one" );
+}

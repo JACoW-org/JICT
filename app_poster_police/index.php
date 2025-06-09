@@ -83,7 +83,7 @@ class PosterPolice extends JICT_OBJ {
 	<title>Poster Police - " .CONF_NAME ."</title>
 
 	<link href='https://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
-	<link href='style.css?20250604a' rel='stylesheet' type='text/css' />	
+	<link href='style.css?20250609' rel='stylesheet' type='text/css' />	
 
 	<script src='../dist/jquery-3.4.1/jquery.min.js'></script>
 	
@@ -96,7 +96,7 @@ class PosterPolice extends JICT_OBJ {
 	$poster_vars
 	</script>
 	
-	<script src='poster_police.js?20250605b'></script>
+	<script src='poster_police.js?20250609'></script>
 </head>
 
 <body>
@@ -147,7 +147,7 @@ class PosterPolice extends JICT_OBJ {
 
 			$fileExt = pathinfo($fileName, PATHINFO_EXTENSION);
 			$newFileName =sprintf( "%s%s-%s.%s", $this->session, $this->poster, $ts, $fileExt );
-			$uploadPath = $this->cfg['data_path'] .'/pictures/' .$newFileName;
+			$uploadPath = $this->cfg['pictures_path'] .'/' .$newFileName;
 
 			if (move_uploaded_file($fileTmpName, $uploadPath)) {
 				$response['success'] = true;
@@ -185,7 +185,7 @@ class PosterPolice extends JICT_OBJ {
 
 	if (!empty($_POST['picture_ts'])) {
 		$ts =(int)trim($_POST['picture_ts']);
-		exec( sprintf( "ls -1 ./pictures/%s%s-%s*.jpg", $this->session, $this->poster, $ts ), $pictures_list );
+		exec( sprintf( "ls -1 %s/%s%s-%s*.jpg", $this->cfg['pictures_path'], $this->session, $this->poster, $ts ), $pictures_list );
 
 		if (empty($pictures_list)) $response['message'] ='Files note found';
 		else {
@@ -193,7 +193,7 @@ class PosterPolice extends JICT_OBJ {
 
 			foreach ($pictures_list as $f) {
 				$fname = basename($f);
-				$safe_path = realpath( './pictures/' .$fname );
+				$safe_path = realpath( $this->cfg['pictures_path'] .'/' .$fname );
 
 				$response['file_to_delete'][] =$safe_path;
 				unlink( $safe_path );
@@ -244,7 +244,7 @@ class PosterPolice extends JICT_OBJ {
 		$this->save_status( $_GET['status0'], $_GET['status1'], $_GET['status2'], $_GET['status3'], $_GET['comment'] );
 		if (!empty($_GET['next'])) {
 			$this->poster =$_GET['next'];
-//			$this->poster =str_pad( ++$this->poster, 3, '0', STR_PAD_LEFT );
+
 		} else {
 			$this->poster =0;
 		}
@@ -471,8 +471,6 @@ class PosterPolice extends JICT_OBJ {
 
         $pictures =false;
 
-        // $pictures_list =scandir( $this->cfg['data_path'] .'/pictures/', SCANDIR_SORT_DESCENDING );
-		// exec( sprintf( "ls -1 ./pictures/%s*small*", $id ), $pictures_list );
 		exec( sprintf( "ls -1 %s/%s*small*", $this->cfg['pictures_path'], $id ), $pictures_list );
 
 		foreach ($pictures_list as $pid =>$fname) {
@@ -529,93 +527,9 @@ class PosterPolice extends JICT_OBJ {
 		</div>
 
         <script>
-            const cameraInput = document.getElementById('cameraInput');
-			const canvas = document.getElementById('canvas');
-            const photoPreview = document.getElementById('photoPreview');
-            const pic0 = document.getElementById('pic0');
-			const loadingSpinner = document.getElementById('loadingSpinner');
-
-            const ctx = canvas.getContext('2d');
-			
-        	const MAX_WIDTH = 1200;  // Larghezza massima desiderata per l'immagine ridimensionata
-        	const MAX_HEIGHT = 1200; // Altezza massima desiderata, per esempio
-        	const QUALITY = 0.8;    // Qualità del JPG (da 0.0 a 1.0)
-			
-			let acquiredFile = null;
-			let last_picture_ts =null;
-
-            cameraInput.addEventListener('change', (event) => {
-                const files =event.target.files;
-
-                if (files.length > 0) {
-                    acquiredFile =files[0];
-
-					const img =new Image();
-                    const reader =new FileReader();
-
-                    reader.onload = (e) => {
-						img.src =e.target.result;
-                        //photoPreview.src =e.target.result;
-                        console.log( \"Picture ready for upload:\", acquiredFile.name, acquiredFile.type, acquiredFile.size);
-                        };
-
-					img.onload = () => {
-						// Calcola le nuove dimensioni mantenendo le proporzioni
-						let width = img.width;
-						let height = img.height;
-
-						console.log( `Immagine size: \${width.toFixed(0)} x \${height.toFixed(0)}` );
-
-						if (width > height) {
-							if (width > MAX_WIDTH) {
-								height *= MAX_WIDTH / width;
-								width = MAX_WIDTH;
-							}
-						} else {
-							if (height > MAX_HEIGHT) {
-								width *= MAX_HEIGHT / height;
-								height = MAX_HEIGHT;
-							}
-						}
-
-						// Imposta le dimensioni del canvas alle nuove dimensioni
-						canvas.width = width;
-						canvas.height = height;
-
-						// Disegna l'immagine sul canvas con le nuove dimensioni
-						ctx.drawImage( img, 0, 0, width, height );
-
-						// Ottieni l'immagine ridimensionata come Blob
-						canvas.toBlob((blob) => {
-							if (blob) {
-								// resizedBlob =blob;
-								photoPreview.src =URL.createObjectURL( blob ); // Mostra l'anteprima
-								photoPreview.style.display ='block';
-								console.log( `Immagine ridimensionata a \${width.toFixed(0)} x \${height.toFixed(0)} pixel. Pronta per l'invio.` );
-
-								upload_picture( blob );
-
-							} else {
-								console.log( 'Errore nella creazione del Blob ridimensionato.' );
-							}
-
-						}, 'image/jpeg', QUALITY); // Formato e qualità dell'output
-
-
-					};
-
-                    reader.readAsDataURL( acquiredFile );
-
-                } else {
-                    acquiredFile = null; // Nessun file selezionato
-                    pic0.style.display = 'none';
-                }
-            });
-
-			function take_picture() {
-				if (last_picture_ts == null) $(\"#cameraInput\").click();
-				else alert( \"Please delete last picture taken before upload a new one\" );
-			}
+		\$(document).ready(function() {
+			init_pictures();
+			});
         </script>";
         
 		echo "<div class='poster_selected'>
@@ -752,18 +666,6 @@ if (!need_file( APP_IN_POSTERS )) {
 	echo_error( "\n\nTry to run spms_importer/make.php!" );
 	die;
 }
-
-/* if (!APP_PASSWORD) {
-	echo_error( "\n\nSet the login password in the config file!" );
-	die;
-}
-
-if (!APP_PP_MANAGER) {
-	echo_error( "\n\nSet the PosterPolice PersonID (pp_manager) in the config file!" );
-	die;
-} */
-
-//$APP->check_auth();
 
 $APP->load();
 
