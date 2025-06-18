@@ -836,6 +836,8 @@ class API_REQUEST {
 
 	//-----------------------------------------------------------------------------
 	function request( $_name =false, $_method ='GET', $_data =false ) {
+        global $http_response_header;
+
         $content =false;
         if (!empty($_data)) {
             if ($this->cfg['header_content_type'] == 'application/json') $content =json_encode( $_data );

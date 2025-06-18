@@ -225,6 +225,8 @@ class INDICO extends JICT_OBJ {
 			if ($verbose) $this->verbose( "# $_method ($cache_time) $req... ", 2 );
 			
 			$this->data[$req] =$this->api->request( $req, $_method, $_data_request );
+
+			// print_r( $this->api ); die;
 			
 			if ($verbose) {
 				$this->verbose_status( empty($this->data[$req]), "NO_DATA" );
@@ -467,6 +469,12 @@ class INDICO extends JICT_OBJ {
 			// sort( $this->data['stats']['papers_submission']['by_hours_to_deadline'] );
 		}
 
+		if ($this->data['last_nums']['total'] *0.5 > $nums['total']) {
+			echo sprintf( "\n\n*** Stop script, new paper count to low (%s > %s) ***\n\n", $this->data['last_nums']['total'], $nums['total'] );
+			die;
+		}
+
+
 		$nums['processed'] =$nums['g'] +$nums['y'] +$nums['r'];
 
 		if (json_encode($nums) != json_encode($this->data['last_nums'])) {
@@ -575,7 +583,7 @@ class INDICO extends JICT_OBJ {
 
 	//-------------------------------------------------------------------------
 	function editor_stats_inc( $_editor, $_var ) {
-		if (empty($this->editors_stats[$_editor])) $this->editors_stats[$_editor] =[ 'g' =>0, 'y' =>0, 'r' =>0, 'a' =>0, 'pending' =>0, 'waiting' =>0, 'revisions' =>0, 'qa_fail' =>0, 'qa_ok' =>0 ];
+		if (empty($this->editors_stats[$_editor])) $this->editors_stats[$_editor] =[ 'g' =>0, 'y' =>0, 'r' =>0, 'a' =>0, 'pending' =>0, 'waiting' =>0, 'revisions' =>0, 'qa_fail' =>0, 'qa_ok' =>0, 'x' =>0 ];
 		
 		$this->editors_stats[$_editor][$_var] ++;
 	}
@@ -1111,6 +1119,11 @@ class INDICO extends JICT_OBJ {
 
 		$this->verbose( "" );
 
+		if (count($prev_papers) *0.5 > count($papers)) {
+			echo sprintf( "\n\n*** Stop script, new paper count to low (%s > %s) ***\n\n", count($prev_papers), count($papers));
+			die;
+		}
+
 		$this->data['abstracts'] =$abstracts;	
 		$this->data['papers'] =$papers;
 		$this->data['programme'] =$programme;
@@ -1119,7 +1132,7 @@ class INDICO extends JICT_OBJ {
 		ksort( $authors_db );
 		$this->data['authors'] =$authors_db;
 
-		print_r( $programme['rooms'] );
+		// print_r( $programme['rooms'] );
 	}
 
 	//-----------------------------------------------------------------------------

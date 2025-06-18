@@ -60,6 +60,7 @@ $Indico->load();
 if (function_exists('import_stats_pre_f')) import_stats_pre_f( $Indico->data );
 
 $Indico->import_stats();
+
 if (empty($cfg['skip-abstracts'])) {
 	echo "\n";
 	$Indico->import_abstracts();
