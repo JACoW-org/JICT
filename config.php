@@ -120,7 +120,7 @@ $cws_config =[
 		// OUT
 		'out_papers'			=>'{app_data_path}/papers.json',
 		'out_abstracts'			=>'{app_data_path}/abstracts.json', // papers abstracts
-		'out_abstracts_sub'		=>'{app_data_path}/abstracts_sub.json', // abstracts submission
+		'out_abstracts_sub'		=>'{app_data_path}/abstracts_sub.json', // abstracts submission data
 		'out_persons'			=>'{app_data_path}/persons.json',
 		'out_affiliations'		=>'{app_data_path}/affiliations.json',		
 		'out_posters'			=>'{app_data_path}/posters.json',

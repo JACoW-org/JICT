@@ -674,7 +674,7 @@ class INDICO extends JICT_OBJ {
             $stats[$k] =[];
         }
 
-        $ts_deadline =strtotime($this->cfg['dates']['registration']['chart_to_deadline']);
+        $ts_deadline =strtotime($this->cfg['dates']['registration']['deadline']);
 
         foreach ($registrants as $x) {
             $x['by_dates'] =date( 'Y-m-d', $x['ts'] );

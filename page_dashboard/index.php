@@ -316,6 +316,49 @@ $country_values =json_encode( $Indico->data[$group]['stats'][$id] );
 
 
 
+
+if (!empty($_GET['export_data'])) {
+    $export =[
+        'conf_name' =>$cfg['conf_name'],
+        ];
+
+    if (!empty($Indico->data['abstracts_submission']['by_dates'])) $export['abstracts'] =[ 
+        'dates' =>$dates['abstracts_submission'],
+        'history' =>$Indico->data['abstracts_submission']['by_dates'],
+        'count' =>array_sum($Indico->data['abstracts_submission']['by_dates']),
+        'withdrawn' =>$Indico->data['abstracts_submission']['withdrawn']
+        ];
+    
+    if (!empty($Indico->data['registrants']['stats']['by_dates'])) $export['registrants'] =[ 
+        'dates' =>$dates['registration'],
+        'history' =>$Indico->data['registrants']['stats']['by_dates'],
+        'count' =>array_sum($Indico->data['registrants']['stats']['by_dates'])
+        ];
+    
+    if (!empty($Indico->data['stats']['papers_submission']['by_dates'])) $export['papers'] =[ 
+        'dates' =>$dates['papers_submission'],
+        'history' =>$Indico->data['stats']['papers_submission']['by_dates'],
+        'count' =>array_sum($Indico->data['stats']['papers_submission']['by_dates'])
+        ];
+    
+    $fname =str_replace( "'", "", $cfg['conf_name'] );
+
+    file_write_json( strtolower( sprintf( '../data/%s.json', $fname )), $export );    
+    file_write_json( strtolower( sprintf(  '%s/%s.json', $cfg['import_path'], $fname )), $export );   
+    
+    if ($_GET['export_data'] =='json') {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode( $export, true );
+        
+    } else {
+        echo sprintf( "<pre>%s</pre>", htmlspecialchars(json_encode( $export, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES )));
+    }
+    
+    exit;
+}
+
+
+
 // CHARTS -------------------------------------------------------------------
 
 make_charts( $charts );
@@ -370,35 +413,6 @@ $T->set( $vars );
 echo $T->get();
 
 
-if (!empty($_GET['export_data'])) {
-    $export =[
-        'conf_name' =>$cfg['conf_name'],
-        ];
-
-    if (!empty($Indico->data['stats']['abstracts_submission']['by_dates'])) $export['abstracts'] =[ 
-        'dates' =>$dates['abstracts_submission'],
-        'history' =>$Indico->data['abstracts_submission']['by_dates'],
-        'count' =>array_sum($Indico->data['abstracts_submission']['by_dates']),
-        'withdrawn' =>$Indico->data['abstracts_submission']['withdrawn']
-        ];
-    
-    if (!empty($Indico->data['stats']['registrants']['by_dates'])) $export['registrants'] =[ 
-        'dates' =>$dates['registration'],
-        'history' =>$Indico->data['registrants']['stats']['by_dates'],
-        'count' =>array_sum($Indico->data['registrants']['stats']['by_dates'])
-        ];
-    
-    if (!empty($Indico->data['stats']['papers_submission']['by_dates'])) $export['papers'] =[ 
-        'dates' =>$dates['papers_submission'],
-        'history' =>$Indico->data['stats']['papers_submission']['by_dates'],
-        'count' =>array_sum($Indico->data['stats']['papers_submission']['by_dates'])
-        ];
-    
-    $fname =str_replace( "'", "", $cfg['conf_name'] );
-
-    file_write_json( strtolower( sprintf( '../exports/%s.json', $fname )), $export );    
-    file_write_json( strtolower( sprintf(  '%s/%s.json', $cfg['import_path'], $fname )), $export );    
-}
 
 
 

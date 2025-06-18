@@ -165,6 +165,34 @@ if (empty($_GET['filter_by_type']) && empty($_GET['filter_by_code'])) {
 
 if (!empty($serie['source_type_rfr'])) arsort($serie['source_type_rfr']);
 
+if (!empty($_GET['export_data'])) {
+    $export =$serie;
+    
+    unset( $export['status_qa'] );
+    unset( $export['authors_check'] );
+    unset( $export['slides_check'] );
+    unset( $export['slides_qa'] );
+
+    $fname =str_replace( "'", "", $cfg['conf_name'] );
+
+    file_write_json( strtolower( sprintf( '../data/%s-proceedings-statistics.json', $fname )), $export ); 
+    
+    if ($_GET['export_data'] =='json') {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode( $export, true );
+        
+    } else {
+        echo sprintf( "<pre>%s</pre>", htmlspecialchars(json_encode($export, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES )));
+    }
+
+    exit;
+}
+
+
+
+
+
+
 $colors =$cfg['colors'];
 $sliceColors =[ $colors['g'], $colors['r'], $colors['y'], $colors['files'], $colors['a'], $colors['y2g'], $colors['removed'] ];
 
@@ -196,6 +224,9 @@ $T->set( 'content', $content .$debug );
 $T->set( 'js', $js );
 
 echo $T->get();
+
+
+
 
 
 //-----------------------------------------------------------------------------
