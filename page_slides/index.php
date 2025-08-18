@@ -181,8 +181,8 @@ foreach ($Indico->data['programme']['days'] as $day =>$x) {
 
 }
 
-if ($day_id <= 5) {
-    for (; $day_id <=5; $day_id ++) {
+if ($day_id <= 6) {
+    for (; $day_id <=6; $day_id ++) {
         $T->set( "day$day_id", "" );
     }
 }

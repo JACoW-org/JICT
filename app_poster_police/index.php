@@ -416,7 +416,7 @@ class PosterPolice extends JICT_OBJ {
             $sync_button =($sync_pending ? 'Finish sync' : 'Sync')
                 .($last_sync ? "<div class='last_sync'>last sync: $last_sync</div>" : false);
 
-            echo "<div class='session' onClick='select_session(\"$code\")' style='$style'>$co[location] ($code)" 
+            echo "<div class='session' onClick='select_session(\"$code\")' style='$style'>" .(!empty($co['location']) ? $co['location'] : $co['title']) ." ($code)" 
                 .($percent >= 100 ? "<div class='syncbutton' onClick='session_sync(\"$code\"); event.stopPropagation();'>$sync_button</div>" : false) 
                 ."</div>\n";
 

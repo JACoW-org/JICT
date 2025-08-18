@@ -995,7 +995,8 @@ class INDICO extends JICT_OBJ {
 				$s_to =new DateTime( $sb['endDate']['date'] .' ' .$sb['endDate']['time'], new DateTimeZone($sb['endDate']['tz']));
 				$s_to->setTimezone(new DateTimeZone($this->cfg['timezone']));
 	
-				$day =$s['startDate']['date'];
+				// $day =$s['startDate']['date'];
+				$day =$s_from->format( 'Y-m-d' );
 	
 				$this->verbose( "$day - $sb[code] ($sb[room] | $s[room]) - $sb[title]" );
 	
@@ -1119,7 +1120,7 @@ class INDICO extends JICT_OBJ {
 
 		$this->verbose( "" );
 
-		if (count($prev_papers) *0.5 > count($papers)) {
+		if ($prev_papers && count($prev_papers) *0.5 > count($papers)) {
 			echo sprintf( "\n\n*** Stop script, new paper count to low (%s > %s) ***\n\n", count($prev_papers), count($papers));
 			die;
 		}
