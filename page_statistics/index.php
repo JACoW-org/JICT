@@ -70,6 +70,9 @@ foreach ($vars as $var =>$vcfg) {
     }
 }
 
+$last_nums =end($Indico->data['stats']);
+$papers_processed =$last_nums['processed'];
+
 $posters =false;
 
 $types =[];
@@ -146,16 +149,22 @@ if (empty($_GET['filter_by_type']) && empty($_GET['filter_by_code'])) {
     
     // $serie['slides_check'] =$Indico->data['team']['stats']['slides']['check'];
 
-    foreach ($Indico->data['team']['stats']['slides']['check'] as $key =>$value) {
-        $serie['slides_check'][$key] =$value;
+    if (!empty($Indico->data['team']['stats']['slides']['check'])) {
+        foreach ($Indico->data['team']['stats']['slides']['check'] as $key =>$value) {
+            $serie['slides_check'][$key] =$value;
+        }
     }
 
-    foreach ($Indico->data['team']['stats']['slides']['qa_status'] as $key =>$value) {
-        $serie['slides_qa'][$key] =$value;
+    if (!empty($Indico->data['team']['stats']['slides']['qa_status'])) {
+        foreach ($Indico->data['team']['stats']['slides']['qa_status'] as $key =>$value) {
+            $serie['slides_qa'][$key] =$value;
+        }
     }
 
-    foreach ($Indico->data['team']['stats']['slides']['editing_status'] as $key =>$value) {
-        $serie['slides_status'][$key] =$value;
+    if (!empty($Indico->data['team']['stats']['slides']['editing_status'])) {
+        foreach ($Indico->data['team']['stats']['slides']['editing_status'] as $key =>$value) {
+            $serie['slides_status'][$key] =$value;
+        }
     }
 
 } else {
@@ -183,6 +192,10 @@ if (!empty($_GET['export_data'])) {
         
     } else {
         echo sprintf( "<pre>%s</pre>", htmlspecialchars(json_encode($export, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES )));
+
+        if (me() && function_exists('sync_statistics_with_jacoworg')) {
+            sync_statistics_with_jacoworg( $export );
+        }
     }
 
     exit;
@@ -196,8 +209,7 @@ if (!empty($_GET['export_data'])) {
 $colors =$cfg['colors'];
 $sliceColors =[ $colors['g'], $colors['r'], $colors['y'], $colors['files'], $colors['a'], $colors['y2g'], $colors['removed'] ];
 
-$last_nums =end($Indico->data['stats']);
-$papers_processed =$last_nums['processed'];
+
 
 $content ="<div class='filter_bar'><a href='$_SERVER[PHP_SELF]'>All</a> ";
 foreach ($types as $name =>$t) {

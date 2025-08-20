@@ -56,6 +56,8 @@ foreach ($cws_config as $app =>$x) {
             else $links[$x['name']] ="$x[name]" .(substr($app,0,4) == 'make' ? "<br /><small>(run $app/make.php)</small>" : false);
     
             if (!empty($x['allow_roles']) && empty($user['public'])) $links[$x['name']] .=sprintf( ' <i class="fa-solid fa-lock" title="roles allowed: %s"></i>', implode( ',', $x['allow_roles'] ));
+            
+            if (!empty($x['export_data']) && me()) $links[$x['name']] .=sprintf( ' <a href="%s?export_data=json" target="_blank"><i class="fa-solid fa-file-export" title="export data"></i></a>', $href );
         }
     }
 }

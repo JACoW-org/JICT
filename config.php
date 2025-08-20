@@ -190,6 +190,8 @@ $cws_config =[
 
 		'template'			    =>'template.html',
 
+		'export_data'			=>false,
+
 		// out
 		'default_page'		    =>'{app}/index.php'        
 		],
@@ -235,6 +237,8 @@ $cws_config =[
         'in_posters_status' =>'{data_path}/posters-status.json',
 
 		'template'			=>'template.html',
+
+		'export_data'		=>false,
 
 		// out
 		'default_page'		=>'{app}/index.php'
