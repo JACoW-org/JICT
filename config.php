@@ -53,7 +53,7 @@ $cws_config =[
 		'chart_width'		=>800,
 		'chart_height'		=>300,
 	
-		'logo'				=>'logo.png',
+		'logo'				=>'favicon.ico',
 
         'colors' =>[
             'primary'		=>'#0062a3',

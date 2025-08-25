@@ -66,7 +66,7 @@ ksort( $links );
 
 $gcfg =$cws_config['global'];
 
-$logo =file_exists( $gcfg['logo'] ) ? "<img src='$gcfg[logo]' style='border:0; width:200px;' /><br />" : false;
+$logo =!empty($gcfg['logo']) && file_exists( $gcfg['logo'] ) && substr( $gcfg['logo'], -3 ) != 'ico' ? "<img src='$gcfg[logo]' style='border:0; width:200px;' /><br />" : false;
 $logo2 =sprintf( "<a href='%s' target='blank'>%s%s</a>", $gcfg['conf_url'], $logo, substr( $gcfg['conf_url'], 8 ) );
 
 $dates_c =$gcfg['dates']['conference'];
