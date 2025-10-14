@@ -169,6 +169,8 @@ echo "<BR/>here loop<BR/>";
 echo "<BR/>here loop<BR/>"; 
 */
 
+$nregistrations_checked=0;
+$nerrors_found=0;
 for ($imatch=0;$imatch<count($start_matches[1]);$imatch++){
     $this_entry=substr($req["html"],$start_matches[1][$imatch][1],$end_matches[0][$imatch+1][1]-$start_matches[1][$imatch][1]);
     $entry_matches=null;
@@ -181,6 +183,7 @@ for ($imatch=0;$imatch<count($start_matches[1]);$imatch++){
         $entry_data[$icol]=trim(preg_replace("/ data-text=\"(.*)\"/", '\1',$entry_data[$icol]));
     }
     $entry_name =  " $imatch ". $entry_data[array_search("First Name", $cols_title)]." " .  $entry_data[array_search("Last Name", $cols_title)] ;
+    $nregistrations_checked=$nregistrations_checked+1;
     $show_all_answers=False;
     if ($show_all_answers){
         for ($ival=0;$ival<count($entry_data);$ival++){
@@ -214,6 +217,7 @@ for ($imatch=0;$imatch<count($start_matches[1]);$imatch++){
             $content .= " </BR>";
             $content .= $choice_text; 
             $content .= " </BR>";
+            $nerrors_found=$nerrors_found+1;
         }
         
         
@@ -275,6 +279,15 @@ for ($imatch=0;$imatch<count($start_matches[1]);$imatch++){
     echo "********";    
     */
 } //for each entry
+
+if ($nerrors_found==0){
+    $content .= "No incompatibilities found.". "<BR/>";
+} else {
+    $content .= $nerrors_found. " incompatibilities found.". "<BR/>";
+}
+$content .= $nregistrations_checked ." registrations have been checked.</BR>";
+
+
 
 $content .= "<HR>". "Conditions checked: <BR/>";
 foreach ($incompatibilities as $incompatibility){
