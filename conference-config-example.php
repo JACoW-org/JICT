@@ -115,5 +115,6 @@ $cws_config['page_edots']['board_rows'] ='21';
 
 $cws_config['page_dashboard']['order'] =[ 'papers', 'abstracts', 'registrants', 'country' ];
 
+if ((empty($cws_config['global']['indico_token']))||(empty($cws_config['global']['indico_oauth']))) require( 'conference-secrets.php' );
 
 ?>
