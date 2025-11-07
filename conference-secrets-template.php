@@ -1,5 +1,5 @@
 <?php
-$cws_config['global']['indico_token']	    =''; //Get it from the indico.jacow.org page 
+$cws_config['global']['indico_token']	    =''; //Get it from the indico.jacow.org page: https://indico.jacow.org/user/tokens/
 $cws_config['global']['indico_oauth'] =[
 			'client_id'		=>"", // ask the Indico Team
 			'client_secret' =>"", // ask the Indico Team

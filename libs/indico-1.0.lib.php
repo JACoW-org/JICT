@@ -722,7 +722,8 @@ class INDICO extends JICT_OBJ {
 
 		$this->data['affiliations'] =[];
         $affiliations =&$this->data['affiliations'];
-
+        $this->verbose( count($this->data[$data_key]['abstracts']) ." abstracts found");
+        
         foreach ($this->data[$data_key]['abstracts'] as $x) {
 			if ($x['state'] != 'withdrawn') {
 				$pabs =&$this->data['abstracts_sub'][$x['id']]; // previous abstracts
@@ -741,7 +742,7 @@ class INDICO extends JICT_OBJ {
 					'ts' =>$pabs['ts'] ?? strtotime( $x['submitted_dt'] ),
 					'ts0' =>strtotime( $x['submitted_dt'] )
 					];
-
+                
 				$abs =&$abstracts[ $x['id'] ];
 
 				if (!empty($pabs) && strtotime( $x['modified_dt'] ) != $pabs['ts']) {
@@ -1156,7 +1157,7 @@ class INDICO extends JICT_OBJ {
 
 	//-----------------------------------------------------------------------------
 	function save_all( $_cfg =false ) {
-		foreach ($this->cfg as $c =>$fname ) {
+        foreach ($this->cfg as $c =>$fname ) {
 			if ($c != 'out_path' && substr( $c, 0, 4 ) == 'out_') {
 				$this->save_file( substr( $c, 4 ), $c, false, $_cfg );
 			}
@@ -1180,10 +1181,11 @@ class INDICO extends JICT_OBJ {
 
 		$fname =$this->cfg[$_file_id];
 		$this->verbose( "# Save $_label Data ($fname)... ", 2, false );
-
         if (empty($this->data[$_data_id]) && empty($cfg['save_empty'])) {
             $this->verbose_next( "NO_DATA" );
             return;
+        } else {
+            $this->verbose( "Array ".$_data_id." has ".count($this->data[$_data_id])." entries");
         }
 
 		$counter =false;
