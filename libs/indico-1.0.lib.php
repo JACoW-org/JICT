@@ -2,6 +2,7 @@
 
 /* by Stefano.Deiuri@Elettra.Eu
 
+2025.11.10 - fix problem related to $_server [PWD] being empty (nicolas.delerue@ijclab.in2p3.fr)
 2025.06.05 - fix statistics
 2024.07.16 - updates
 2023.11.27 - handle public access mode
@@ -633,6 +634,9 @@ class INDICO extends JICT_OBJ {
 		$data_key =$this->request( '/api/events/{id}/registrants' );
 		
         foreach ($this->data[$data_key]['registrants'] as $r) {
+                        echo "Registrant \n";
+                        var_dump($r);
+
 			$rid =$r['registrant_id'];
             $p =$r['personal_data'];
 
@@ -655,6 +659,7 @@ class INDICO extends JICT_OBJ {
                     'surname' =>$p['surname'],
                     'name' =>$p['firstName'],
                     'email' =>$p['email'],
+                    'gender' =>$p['gender'],
                     'inst' =>$p['affiliation'],
                     'nation' =>$p['country'],
                     'country' =>$p['country'],
@@ -673,12 +678,12 @@ class INDICO extends JICT_OBJ {
                     }
                 }
                 
-                if (empty($stats['by_type'][$type])) $stats['by_type'][$type] =1;
-                else $stats['by_type'][$type] ++;
+                if (empty($stats['gender'][$type])) $stats['gender'][$type] =1;
+                else $stats['gender'][$type] ++;
             }         
         }
 
-        foreach ([ 'by_dates', 'by_days_to_deadline', 'country', 'country_code'] as $k) {
+        foreach ([ 'by_dates', 'by_days_to_deadline', 'country', 'country_code' , 'gender'] as $k) {
             $stats[$k] =[];
         }
 
@@ -688,7 +693,7 @@ class INDICO extends JICT_OBJ {
             $x['by_dates'] =date( 'Y-m-d', $x['ts'] );
             $x['by_days_to_deadline'] =-floor( ($ts_deadline -$x['ts']) /86400 );
 
-            foreach ([ 'by_dates', 'by_days_to_deadline', 'country', 'country_code'] as $k) {
+            foreach ([ 'by_dates', 'by_days_to_deadline', 'country', 'country_code' , 'gender'] as $k) {
                 if (empty($stats[$k][$x[$k]])) $stats[$k][$x[$k]] =1;
                 else $stats[$k][$x[$k]] ++;  
             }            
@@ -697,13 +702,16 @@ class INDICO extends JICT_OBJ {
         ksort( $stats['by_dates'] );
         ksort( $stats['by_days_to_deadline'] );
         arsort( $stats['country'] );
+        arsort( $stats['gender'] );
 
         $this->data['registrants'] =array( 
             'registrants' =>$registrants,
             'stats' =>$stats
             ); 
 
-        //print_r( $stats );
+        echo "print stats\n";
+        print_r( $stats );
+        var_dump($stats);
     }
 
 
