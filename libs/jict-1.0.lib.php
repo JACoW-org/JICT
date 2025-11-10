@@ -200,20 +200,8 @@ function config( $_app =false, $_check_in_file_exit =false, $_check_in_file =tru
     	$p =pathinfo( $_SERVER['PWD'] );
     	$_app =$p['basename'];
     } else {  
-        /*
-        echo $_SERVER['REQUEST_URI']."\n";
-        var_dump(pathinfo($_SERVER['REQUEST_URI']));
-        echo pathinfo($_SERVER['REQUEST_URI'])['dirname']."\n";
-        */
         $basedir=pathinfo($_SERVER['REQUEST_URI'])['dirname'];
-        /*
-        echo "basedir $basedir \n";
-        var_dump(explode("/",$basedir));
-        */
         $dirvals=explode("/",$basedir);
-        //echo $dirvals."\n";
-        var_dump($dirvals);
-        echo $dirvals[count($dirvals)-1]."\n";
         $_app=$dirvals[count($dirvals)-1];
 	}
 	echo "Read config for $_app\n\n";
