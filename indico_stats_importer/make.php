@@ -1,4 +1,8 @@
-#!/usr/bin/php
+<?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+?>
 <?php
 
 /* by Stefano.Deiuri@Elettra.Eu
@@ -15,42 +19,44 @@ require_lib( 'indico', '1.0' );
 
 $cfg =config( false, false, false );
 
-for ($i =1; $i <count($argv); $i ++) {
-	switch ($argv[$i]) {
-		case '-verbose': 
-			$cfg['verbose'] =$argv[++$i]; 
-			break;
-
-		case '-quiet': 
-			$cfg['verbose'] =0;
-			break;
-
-		case '-refresh': 
-			$cfg['cache_time'] =0; 
-			break;
-
- 		case '-cleanup':
-			$Indico =new INDICO( $cfg );
-			return $Indico->cleanup( );
-			break;
-
-		case '-skip-abstracts':
-			$cfg['skip-abstracts'] =true;
-			break;
-
-		case '-skip-registrants':
-			$cfg['skip-registrants'] =true;
-			break;
-
-
-        case '-help':
-			echo "Program options:\n"
-				."\t-cleanup: clear cached data\n"
-				."\t-verbose n: set verbose level to n\n"
-				."\n";
-			break;
-		}
-}
+if (!is_null($argv)){ 
+    for ($i =1; $i <count($argv); $i ++) {
+    	switch ($argv[$i]) {
+    		case '-verbose': 
+    			$cfg['verbose'] =$argv[++$i]; 
+    			break;
+    
+    		case '-quiet': 
+    			$cfg['verbose'] =0;
+    			break;
+    
+    		case '-refresh': 
+    			$cfg['cache_time'] =0; 
+    			break;
+    
+     		case '-cleanup':
+    			$Indico =new INDICO( $cfg );
+    			return $Indico->cleanup( );
+    			break;
+    
+    		case '-skip-abstracts':
+    			$cfg['skip-abstracts'] =true;
+    			break;
+    
+    		case '-skip-registrants':
+    			$cfg['skip-registrants'] =true;
+    			break;
+    
+    
+            case '-help':
+    			echo "Program options:\n"
+    				."\t-cleanup: clear cached data\n"
+    				."\t-verbose n: set verbose level to n\n"
+    				."\n";
+    			break;
+    		}
+    } // for loop
+}// argv is not null
 
 
 $Indico =new INDICO( $cfg );

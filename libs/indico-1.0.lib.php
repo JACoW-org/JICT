@@ -1181,9 +1181,11 @@ class INDICO extends JICT_OBJ {
 
 		$fname =$this->cfg[$_file_id];
 		$this->verbose( "# Save $_label Data ($fname)... ", 2, false );
-        if (empty($this->data[$_data_id]) && empty($cfg['save_empty'])) {
+        if (empty($this->data[$_data_id])){
             $this->verbose_next( "NO_DATA" );
-            return;
+            if  (empty($cfg['save_empty'])) {
+                return;
+            } 
         } else {
             $this->verbose( "Array ".$_data_id." has ".count($this->data[$_data_id])." entries");
         }
