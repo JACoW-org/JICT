@@ -49,6 +49,17 @@ function need_file() {
 }
 
 
+function get_region($country_code){
+        $Asia_list=[ "CN", "JP", "KR", "TH", "TW" ];
+        $Americas_list=[ "CA", "US" ];
+        $EMEAS_list=[ "BE", "CH", "DE", "ES", "FR" , "GB", "IL", "IR", "IT", "NL",  "SE", "TN", "UK" ];
+        if (in_array($country_code,$Asia_list)) return "Asia";
+        if (in_array($country_code,$Americas_list)) return "Americas";
+        if (in_array($country_code,$EMEAS_list)) return "EMEA";
+        echo( "Unknown country code: ".$country_code."<BR/>\n" );
+    
+        return "Unknown";
+} //get_region
 
 
 
@@ -929,6 +940,8 @@ class API_REQUEST {
 		
 		return $head;
 	}
+	//-----------------------------------------------------------------------------
 }
+
 
 ?>

@@ -98,6 +98,8 @@ $cws_config['hidden_sessions']
 $cws_config['indico_importer']['refs_final'] =false;
 
 $cws_config['indico_stats_importer']['registrants_form_id'] =70;
+$cws_config['indico_stats_importer']['registrants_load_extra_data']=1;
+
 
 $cws_config['page_authors_check']['filter'] =[ 'key' =>'status', 'value' =>'g' ];
 
