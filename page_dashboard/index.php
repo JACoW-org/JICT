@@ -53,6 +53,17 @@ $colors =[
     '255,126,0', // arancio
     ];
 
+$registrants_extra_stats=0;
+$registrants_extra_part='<div class="row">';
+foreach ($cws_config['indico_stats_importer']['registrants_extra'] as $statitem){
+    $registrants_extra_part.='<div class="col-md-6">
+    <canvas id="registrants_extra_'.strval($registrants_extra_stats).'" class="chart"></canvas>
+</div>';
+    $registrants_extra_stats++;
+
+} //foreach statitem
+$registrants_extra_part.='</div>';
+
 $main_parts =[ 
     'papers' =>
 '<div class="row">
@@ -77,6 +88,7 @@ $main_parts =[
     <canvas id="registrants_by_days_to_deadline" class="chart"></canvas>
 </div>
 </div>',
+    'registrants_extra' => $registrants_extra_part,
 
     'payments' =>
 '<div class="row">
@@ -150,6 +162,7 @@ $main_parts =[
 </div>
 </div>'
 ];
+
 
 $main =false;
 foreach ($cfg['order'] as $order) {
@@ -470,6 +483,8 @@ $vars['tag_status_n'] =count( $Indico->data[$group]['stats'][$id] );
 $tag_status_values =json_encode( $Indico->data[$group]['stats'][$id] );
 
 
+
+
 // COUNTRIES -------------------------------------------------------------------
 $id ='country';
 $chart_id ="${group}_${id}";
@@ -498,6 +513,21 @@ $charts[$chart_id] =[
 
 $charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group]['stats'][$id] );
 
+
+//Registrants extra
+$registrants_extra_stats=0;
+foreach ($cws_config['indico_stats_importer']['registrants_extra'] as $statitem){
+    $chart_id ="registrants_extra_".strval($registrants_extra_stats);
+    $charts[$chart_id] =[
+        'title' => $statitem["name"],
+        'type' =>'bar',
+        'series' =>false
+        ];
+    //'y_label' =>'registrants',
+    
+    $charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group]['stats']['registrants_extra_stats_'.strval($registrants_extra_stats)] );
+    $registrants_extra_stats++;
+} //foreach statitem
 
 
 
@@ -665,12 +695,11 @@ function make_charts( $_def ) {
         foreach ($chart['series'] as $sid =>$serie) {
             $color1 ="rgba( " .$cfg['colors'][$s] .", 1 )";
             $color2 ="rgba( " .$cfg['colors'][$s] .", 0.5 )";
-
             $datasets[$s] =[ 
 //                'label' =>"$chart[y_label] $sid", 
                 'label' =>$sid, 
                 'lineTension' =>0.5,
-                'borderWidth' =>2,
+                'borderWidth' =>$border,
                 'pointRadius' =>0,
                 'borderColor' =>$color1,
                 'backgroundColor' =>$color2,
@@ -678,6 +707,8 @@ function make_charts( $_def ) {
                 'fill' =>true,
                 'showLine' =>true 
                 ];
+                //                'borderWidth' =>2,
+
 
             if ($chart['type'] == 'scatter') {
                 $datasets[$s]['pointRadius'] =count( $serie ) > 25 ? 0 : 1;
@@ -836,7 +867,6 @@ function get_chart_serie( $_serie_name, $_data, $_cfg =[]) {
     if (!isset($_cfg['x_upper_limit'])) $_cfg['x_upper_limit'] =false;    
 
     $ldate_ts =false;
-
     foreach ($_data as $x =>$y) {
         if (!empty($_cfg['by_dates_show_zero'])) {
             $date_ts =strtotime($x);
@@ -861,7 +891,7 @@ function get_chart_serie( $_serie_name, $_data, $_cfg =[]) {
 
         } else {
             if (($_cfg['x_low_limit'] === false || $x >= $_cfg['x_low_limit'])
-                && ($_cfg['x_upper_limit'] === false || $x <= $_cfg['x_upper_limit'])) $serie[] =[ 'x' =>$x, 'y' =>$val_y ];
+                && ($_cfg['x_upper_limit'] === false || $x <= $_cfg['x_upper_limit'])) $serie[] =[ 'x' =>$x, 'y' =>$val_y ];        
         }
 
     }

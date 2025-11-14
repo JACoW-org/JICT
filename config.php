@@ -179,7 +179,7 @@ $cws_config =[
 
 		'name'				    =>'Dashboard',
 
-		'order'					=>[ 'abstracts', 'registrants', 'delegates', 'paid_status', 'country', 'payments', 'papers' ],
+		'order'					=>[ 'abstracts', 'registrants', 'country', 'payments', 'papers' ],
 
 		'import_path'			=>'../data',
 		'import_past_conferences' =>[],

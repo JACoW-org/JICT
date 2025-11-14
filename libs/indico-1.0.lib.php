@@ -700,7 +700,57 @@ class INDICO extends JICT_OBJ {
                 //Get extra info on registrant
                 if ((!empty($cws_config['indico_stats_importer']['registrants_load_extra_data']))&&($cws_config['indico_stats_importer']['registrants_load_extra_data']==1)){
                     $data_extra_key =$this->request( sprintf('/api/checkin/event/{id}/forms/%s/registrations/%s' ,  $cws_config['indico_stats_importer']['registrants_form_id'], $rid));
-
+                    echo "stats on extra key\n";
+                    $registrants_extra_stats=0;
+                    foreach ($cws_config['indico_stats_importer']['registrants_extra'] as $statitem){
+                        //$stats['registrants_extra_stats_'.strval($registrants_extra_stats)]["name"]=$statitem["name"];
+                        //var_dump($this->data[$data_extra_key]);
+                        foreach ($this->data[$data_extra_key]["registration_data"] as $part){
+                            echo 'part title: '.$part["title"]."\n"; 
+                            foreach($part["fields"] as $formentry) {
+                                echo "      formentry: ".$formentry["title"]."  ".$formentry["data"]."\n";
+                                if (($statitem["type"]=="count")&&($formentry["title"]==$statitem["field"])){
+                                    if (gettype($formentry["data"])=="boolean"){
+                                        if ($formentry["data"]) {
+                                            $value="Yes";
+                                        } else {
+                                            $value="No";
+                                        }
+                                    } else {
+                                        $value=$formentry["data"];
+                                    }
+                                    if (empty($stats['registrants_extra_stats_'.strval($registrants_extra_stats)][strval($value)])) $stats['registrants_extra_stats_'.strval($registrants_extra_stats)][strval($value)] =1;
+                                    else $stats['registrants_extra_stats_'.strval($registrants_extra_stats)][strval($value)] ++;
+                                } else if (($statitem["type"]=="choice")&&($formentry["title"]==$statitem["field"])){
+                                    echo "match ".$formentry["data"]." choice \n";
+                                    var_dump($formentry);
+                                    if (count($formentry["data"])==0){
+                                        $value="None";
+                                    } else {
+                                        foreach($formentry["choices"] as $choice){
+                                            if ($choice["id"]==array_keys($formentry["data"])[0]){
+                                                $value=$choice["caption"];
+                                            }
+                                        }
+                                    }
+                                    echo "value $value \n";
+                                    if (empty($stats['registrants_extra_stats_'.strval($registrants_extra_stats)][strval($value)])) $stats['registrants_extra_stats_'.strval($registrants_extra_stats)][strval($value)] =1;
+                                    else $stats['registrants_extra_stats_'.strval($registrants_extra_stats)][strval($value)] ++;
+                                } else if ($statitem["type"]=="multiple"){
+                                    foreach ($statitem["fields"] as $statfield){
+                                        if ($formentry["title"]==$statfield){
+                                            echo "match multiple".$formentry["data"]." \n";
+                                            if ($formentry["data"]){
+                                                if (empty($stats['registrants_extra_stats_'.strval($registrants_extra_stats)][$statfield])) $stats['registrants_extra_stats_'.strval($registrants_extra_stats)][$statfield] =1;
+                                                else $stats['registrants_extra_stats_'.strval($registrants_extra_stats)][$statfield] ++;
+                                            } //data==1
+                                        } //match
+                                    } //foreach statfield
+                                } //multiple
+                            } //foreach formentry
+                        } //foreach part 
+                        $registrants_extra_stats++;
+                    } //foreach statitem
                     //is paid
                     $registrants[$rid]['is_paid']=$this->data[$data_extra_key]["is_paid"];
                     array_push($stats_fields,'is_paid');
@@ -718,12 +768,8 @@ class INDICO extends JICT_OBJ {
                     }
                     $registrants[$rid]['gender']=$gender_codes[array_keys($this->data[$data_extra_key]["registration_data"][0]["fields"][$gender_field]["data"])[0]];
                     array_push($stats_fields,'gender');
-                    if (empty($stats['gender'][$type])) $stats['gender'][$type] =1;
-                    else $stats['gender'][$type] ++;
                 } // get extra info on registrant 
                 
-                if (empty($stats['paid'][$type])) $stats['paid'][$type] =1;
-                else $stats['paid'][$type] ++;
             }         
         }
         foreach ($stats_fields as $k) {
@@ -753,8 +799,8 @@ class INDICO extends JICT_OBJ {
             'stats' =>$stats
             ); 
 
-        //echo "print stats\n";
-        //print_r( $stats );
+        echo "print stats\n";
+        print_r( $stats );
     }
 
 
