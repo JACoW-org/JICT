@@ -38,7 +38,7 @@ if (!$user) exit;
 $old_confs =[];
 
 if (!empty($cfg['import_past_conferences'])) {
-    foreach ($cfg['import_past_conferences'] as $conf_name) {
+    foreach ($cfg['import_past_conferences'] as $conf_name) {        
         $old_confs[$conf_name] =import_data_conf( $conf_name );
     }
 }
@@ -360,6 +360,12 @@ $x_upper_limit =7;
 $charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group][$id],  [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit ] );
 $vars['abstracts_n'] =number_format( $sum, 0, ',', '.' );
 
+foreach ($old_confs as $cname =>$cdata) {
+    $old_group ='abstracts';
+    $charts[$chart_id]['series'][$cname] =get_chart_serie( $cname, $cdata[$old_group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit  ] );
+}
+
+
 $group ='abstracts_submission';
 $id ='mc';
 $chart_id ="${group}_${id}";
@@ -409,12 +415,6 @@ $charts[$chart_id] =[
 $charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'] ."-$group", $Indico->data[$group]['stats'][$id] );
 
 
-$group ='abstracts';
-foreach ($old_confs as $cname =>$cdata) {
-    $charts[$chart_id]['series'][$cname] =get_chart_serie( $cname, $cdata[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit  ] );
-}
-
-
 // REGISTRANTS -------------------------------------------------------------------
 $group ='registrants';
 $id ='by_dates';
@@ -448,11 +448,6 @@ foreach ($old_confs as $cname =>$cdata) {
     $charts[$chart_id]['series'][$cname] =get_chart_serie( $cname, $cdata[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit ] );
 }
 
-/* $year =17;
-$charts[$chart_id]['series']['IPAC'.$year] =import_data( "${group}-ipac${year}.txt" ); */
-
-// is_paid
-// 'gender', 'tag_status',
 
 //Gender -------------------------------------------------------------------
 $id ='gender';
@@ -699,7 +694,7 @@ function make_charts( $_def ) {
 //                'label' =>"$chart[y_label] $sid", 
                 'label' =>$sid, 
                 'lineTension' =>0.5,
-                'borderWidth' =>$border,
+                'borderWidth' =>2,
                 'pointRadius' =>0,
                 'borderColor' =>$color1,
                 'backgroundColor' =>$color2,
@@ -707,7 +702,6 @@ function make_charts( $_def ) {
                 'fill' =>true,
                 'showLine' =>true 
                 ];
-                //                'borderWidth' =>2,
 
 
             if ($chart['type'] == 'scatter') {
