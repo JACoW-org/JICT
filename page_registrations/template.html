@@ -90,8 +90,6 @@
     }
 
     button {
-        float: right;
-        display: none;
         width: 6em;
         text-align: center;;
         border: none;
@@ -209,10 +207,9 @@
 </nav>
 <nav class="navbar navbar-dark fixed-bottom bg-dark flex-md-nowrap p-0 shadow">
     <div class="navbar-values col-6 col-md-2"></div>
-    <div class="navbar-values col-6 col-md-2" id='todo'>{todo_n} <small><a href='index.php?show=todo'>to do</a></small></div>
-    <div class="navbar-values col-6 col-md-2" id='done'>{done_n} <small><a href='index.php?show=done'>done</a></small></div>
-    <div class="navbar-values col-6 col-md-2" id='undone'>{undone_n} <small>undone</small></div>
-    <div class="navbar-values col-6 col-md-2" id='all'>{all_n} <small>all</small></div>
+    <div class="navbar-values col-6 col-md-2" id='incompatible'>{incompatible} <small>incompatibilities</small></div>
+    <div class="navbar-values col-6 col-md-2" id='ignored'>{ignored} <small>ignored</small></div>
+    <div class="navbar-values col-6 col-md-2" id='now'>{now} <small></small></div>
     <div class="navbar-values col-6 col-md-2"></div>
 </nav>
 <div class="container-fluid">
