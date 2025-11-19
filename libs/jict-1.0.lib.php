@@ -49,6 +49,17 @@ function need_file() {
 }
 
 
+function get_region($country_code){
+        $Asia_list=[ "CN", "JP", "KR", "TH", "TW" ];
+        $Americas_list=[ "CA", "US" ];
+        $EMEAS_list=[ "BE", "CH", "DE", "ES", "FR" , "GB", "IL", "IR", "IT", "NL",  "SE", "TN", "UK" ];
+        if (in_array($country_code,$Asia_list)) return "Asia";
+        if (in_array($country_code,$Americas_list)) return "Americas";
+        if (in_array($country_code,$EMEAS_list)) return "EMEA";
+        echo( "Unknown country code: ".$country_code."<BR/>\n" );
+    
+        return "Unknown";
+} //get_region
 
 
 
@@ -143,8 +154,11 @@ class JICT_OBJ {
 
                 $this->verbose( "# LOAD $obj_name ($val)... " );
 
-                if (file_exists($val)) $this->data[$obj_name] =file_read_json( $val, true );
-                else $this->data[$obj_name] =false;
+                if (file_exists($val)) {
+                     $this->data[$obj_name] =file_read_json( $val, true );
+                } else {
+                    $this->data[$obj_name] =false;
+                }
 
                 $this->verbose_status( empty($this->data[$obj_name] ));
             }
@@ -196,9 +210,14 @@ function config( $_app =false, $_check_in_file_exit =false, $_check_in_file =tru
  }
 
  if (!$_app) {
-	$p =pathinfo( $_SERVER['PWD'] );
-	$_app =$p['basename'];
-	
+    if ((!is_null($_SERVER['PWD']))&&(strlen($_SERVER['PWD'])>0)){
+    	$p =pathinfo( $_SERVER['PWD'] );
+    	$_app =$p['basename'];
+    } else {  
+        $basedir=pathinfo($_SERVER['REQUEST_URI'])['dirname'];
+        $dirvals=explode("/",$basedir);
+        $_app=$dirvals[count($dirvals)-1];
+	}
 	echo "Read config for $_app\n\n";
  }
  
@@ -439,14 +458,39 @@ function file_read( $_filename, $_verbose =false, $_verbose_message =false ) {
 
 //----------------------------------------------------------------------------
 function file_write_json( $_filename, &$_obj ) {
-    $json =json_encode( $_obj, JSON_INVALID_UTF8_IGNORE );
-
-    if (!empty($_obj) && empty($json)) {
-        echo sprintf( "ERROR: %s! (%s)\n", json_last_error_msg(), $_filename );
+    if (empty($_obj)) {
+        echo "ERROR in file_write_json: empty obj ";
         return false;
+    } else {
+        $json =json_encode( $_obj, JSON_INVALID_UTF8_IGNORE );
+        //$json =json_encode( $_obj);
+        //$json =json_encode( $_obj, JSON_THROW_ON_ERROR);
+        //$json =json_encode( $_obj, JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_IGNORE  );
+        //echo "file_write_json len json [0]".strlen($json)."\n";
+        if ((!$json)||(empty($json))||(strlen($json)==0)) {
+            echo "Json data size after 1st attempt: ".strlen($json)."\n";
+            echo "Error with json conversion\n";
+            echo "Second attempt...\n";
+            $json =json_encode( $_obj,  JSON_THROW_ON_ERROR | JSON_THROW_ON_ERROR );
+            echo "Json data size after 2nd attempt: ".strlen($json)."\n";
+        }
+        if ((!$json)||(empty($json))||(strlen($json)==0)) {
+            echo "Third attempt...\n";
+            $json =json_encode( $_obj);
+            echo "Json data size after 3rd attempt: ".strlen($json)."\n";
+        }
+        if ((!$json)||(empty($json))||(strlen($json)==0)) {
+            echo "ERROR in file_write_json: non existent or empty json ";
+            return false;
+        } else {
+            //json OK
+            if (!empty($_obj) && empty($json)) {
+                echo sprintf( "ERROR: %s! (%s)\n", json_last_error_msg(), $_filename );
+                return false;
+            }
+        } //json OK
+        return file_write( $_filename, $json );
     }
-
-    return file_write( $_filename, $json );
 }
 
 //----------------------------------------------------------------------------
@@ -899,6 +943,8 @@ class API_REQUEST {
 		
 		return $head;
 	}
+	//-----------------------------------------------------------------------------
 }
+
 
 ?>

@@ -2,6 +2,7 @@
 
 /* by Stefano.Deiuri@Elettra.Eu
 
+2025.11.10 - fix problem related to $_server [PWD] being empty (nicolas.delerue@ijclab.in2p3.fr)
 2025.06.05 - fix statistics
 2024.07.16 - updates
 2023.11.27 - handle public access mode
@@ -619,6 +620,9 @@ class INDICO extends JICT_OBJ {
 		$conf_registrants =[];
         $registrants =[];
         $stats =[];
+        $gender_field=-1;
+        $gender_codes=[];
+
 
         $this->cfg['cache_time'] =3600*24;
 
@@ -631,7 +635,7 @@ class INDICO extends JICT_OBJ {
 		}
 
 		$data_key =$this->request( '/api/events/{id}/registrants' );
-		
+				
         foreach ($this->data[$data_key]['registrants'] as $r) {
 			$rid =$r['registrant_id'];
             $p =$r['personal_data'];
@@ -659,6 +663,7 @@ class INDICO extends JICT_OBJ {
                     'nation' =>$p['country'],
                     'country' =>$p['country'],
                     'country_code' =>$p['country_code'],
+                    'region' => get_region($p['country_code']),
                     'type' =>$type,
                     'tags' =>$r['tags'],
                     'present' =>$r['checked_in'],
@@ -672,13 +677,56 @@ class INDICO extends JICT_OBJ {
                         else $stats['by_tag'][$tag] ++;
                     }
                 }
+
+                //status
+                $tag_status="";
+                $status_tags=[ "Student registration","EPS member","LOC team member","PCO team member","Exhibitor registration"];
+                foreach ($registrants[$rid]['tags'] as $tag){
+                    if (in_array($tag,$status_tags)){
+                        if (empty($tag_status)){
+                            $tag_status=$tag;
+                        } else {
+                            $tag_status="Multiple status";
+                        }
+                    }
+                }//foreach tag
+                if (empty($tag_status)){
+                    $tag_status="Normal";
+                }
+                $registrants[$rid]["tag_status"]=$tag_status;
                 
-                if (empty($stats['by_type'][$type])) $stats['by_type'][$type] =1;
-                else $stats['by_type'][$type] ++;
+                $stats_fields=[ 'by_dates', 'by_days_to_deadline', 'country', 'country_code' , 'region',  'paid', "tag_status"];
+                
+                //Get extra info on registrant
+                if ((!empty($cws_config['indico_stats_importer']['registrants_load_extra_data']))&&($cws_config['indico_stats_importer']['registrants_load_extra_data']==1)){
+                    $data_extra_key =$this->request( sprintf('/api/checkin/event/{id}/forms/%s/registrations/%s' ,  $cws_config['indico_stats_importer']['registrants_form_id'], $rid));
+
+                    //is paid
+                    $registrants[$rid]['is_paid']=$this->data[$data_extra_key]["is_paid"];
+                    array_push($stats_fields,'is_paid');
+                    //gender
+                    if ($gender_field==-1){
+                        for ($iloop=0;$iloop<count($this->data[$data_extra_key]["registration_data"][0]["fields"]);$iloop++){
+                            if (strtolower($this->data[$data_extra_key]["registration_data"][0]["fields"][$iloop]["title"])=="gender"){
+                                $gender_field=$iloop;
+                            }
+                        }
+                        //populating gender_codes
+                        for ($iloop=0;$iloop<count($this->data[$data_extra_key]["registration_data"][0]["fields"][$gender_field]["choices"]);$iloop++){
+                            $gender_codes[$this->data[$data_extra_key]["registration_data"][0]["fields"][$gender_field]["choices"][$iloop]["id"]]=$this->data[$data_extra_key]["registration_data"][0]["fields"][$gender_field]["choices"][$iloop]["caption"];                            
+                        }
+                    }
+                    $registrants[$rid]['gender']=$gender_codes[array_keys($this->data[$data_extra_key]["registration_data"][0]["fields"][$gender_field]["data"])[0]];
+                    array_push($stats_fields,'gender');
+                    if (empty($stats['gender'][$type])) $stats['gender'][$type] =1;
+                    else $stats['gender'][$type] ++;
+                } // get extra info on registrant 
+                
+                if (empty($stats['paid'][$type])) $stats['paid'][$type] =1;
+                else $stats['paid'][$type] ++;
             }         
         }
-
-        foreach ([ 'by_dates', 'by_days_to_deadline', 'country', 'country_code'] as $k) {
+        foreach ($stats_fields as $k) {
             $stats[$k] =[];
         }
 
@@ -688,21 +736,24 @@ class INDICO extends JICT_OBJ {
             $x['by_dates'] =date( 'Y-m-d', $x['ts'] );
             $x['by_days_to_deadline'] =-floor( ($ts_deadline -$x['ts']) /86400 );
 
-            foreach ([ 'by_dates', 'by_days_to_deadline', 'country', 'country_code'] as $k) {
+            foreach ($stats_fields as $k) {
                 if (empty($stats[$k][$x[$k]])) $stats[$k][$x[$k]] =1;
                 else $stats[$k][$x[$k]] ++;  
             }            
         }
 
-        ksort( $stats['by_dates'] );
-        ksort( $stats['by_days_to_deadline'] );
-        arsort( $stats['country'] );
+        if (!is_null($stats['by_dates'])) ksort( $stats['by_dates'] );
+        if (!is_null($stats['by_days_to_deadline']))  ksort( $stats['by_days_to_deadline'] );
+        if (!is_null($stats['country']))  arsort( $stats['country'] );
+        if (!is_null($stats['gender']))  arsort( $stats['gender'] );
+        if (!is_null($stats['paid']))  Arrayksort( $stats['paid'] );
 
         $this->data['registrants'] =array( 
             'registrants' =>$registrants,
             'stats' =>$stats
             ); 
 
+        //echo "print stats\n";
         //print_r( $stats );
     }
 
@@ -722,11 +773,11 @@ class INDICO extends JICT_OBJ {
 
 		$this->data['affiliations'] =[];
         $affiliations =&$this->data['affiliations'];
-
+        $this->verbose( count($this->data[$data_key]['abstracts']) ." abstracts found");
+        
         foreach ($this->data[$data_key]['abstracts'] as $x) {
 			if ($x['state'] != 'withdrawn') {
 				$pabs =&$this->data['abstracts_sub'][$x['id']]; // previous abstracts
-
 				$cf =[];
 				foreach ($x['custom_fields'] as $cfa) {
 					$cf[$cfa['name']] =$cfa['value'];
@@ -739,9 +790,13 @@ class INDICO extends JICT_OBJ {
 					'content_bak' =>$pabs['content_bak'] ?? false,					
 					'stype' =>$x['submitted_contrib_type']['name'],
 					'ts' =>$pabs['ts'] ?? strtotime( $x['submitted_dt'] ),
-					'ts0' =>strtotime( $x['submitted_dt'] )
+					'ts0' =>strtotime( $x['submitted_dt'] ),
+					'mc'=>substr($x["submitted_for_tracks"][0]["code"],0,3),
+					'track'=> substr($x["submitted_for_tracks"][0]["code"],4,3),
+					'submitter_country'=> $x["submitter"]["affiliation_meta"]["country_name"],
+					'submitter_region'=> get_region($x["submitter"]["affiliation_meta"]["country_code"])
 					];
-
+                      
 				$abs =&$abstracts[ $x['id'] ];
 
 				if (!empty($pabs) && strtotime( $x['modified_dt'] ) != $pabs['ts']) {
@@ -786,32 +841,54 @@ class INDICO extends JICT_OBJ {
         $this->data['abstracts_sub'] =$abstracts;
         $this->data['persons'] =$persons;
 
-        ksort( $affiliations );		
+        if (!(is_null($affiliations))) ksort( $affiliations );		
 
         $chart_by_dates =[];
         $chart_by_days_to_deadline =[];
 
         $ts_deadline =strtotime($this->cfg['dates']['abstracts_submission']['deadline']);
 
+        $stats_fields=[ 'mc', 'track', 'submitter_country', 'submitter_region'];
+                            
+        foreach ($stats_fields as $k) {
+            $stats[$k] =[];
+        }
+
+
+
         foreach ($abstracts as $x) {
             $date =date( 'Y-m-d', $x['ts'] );
             if (empty($chart_by_dates[$date])) $chart_by_dates[$date] =1;
             else $chart_by_dates[$date] ++;        
-
             $days_to_deadline =-floor( ($ts_deadline -$x['ts']) /86400 );
             if (empty($chart_by_days_to_deadline[$days_to_deadline])) $chart_by_days_to_deadline[$days_to_deadline] =1;
             else $chart_by_days_to_deadline[$days_to_deadline] ++;                
+            foreach ($stats_fields as $k) {
+                if (empty($stats[$k][$x[$k]])) $stats[$k][$x[$k]] =1;
+                else $stats[$k][$x[$k]] ++;  
+            }            
         }
     
         ksort( $chart_by_dates );
         ksort( $chart_by_days_to_deadline );
 
+        foreach ($stats_fields as $k) {
+            if (!(is_null($stats[$k]))) ksort( $stats[$k] );
+        }
+        /*
+        echo "stats\n";
+        print_r($stats);
+        */
+
         $this->data['abstracts_submission'] =[
 			'by_dates' =>$chart_by_dates,
         	'by_days_to_deadline' =>$chart_by_days_to_deadline,
         	'count' =>count( $abstracts ),
-        	'withdrawn' =>$withdrawn
+        	'withdrawn' =>$withdrawn,
+            'stats' =>$stats
 			];
+			
+			
     }
 
 	//-------------------------------------------------------------------------
@@ -1156,7 +1233,7 @@ class INDICO extends JICT_OBJ {
 
 	//-----------------------------------------------------------------------------
 	function save_all( $_cfg =false ) {
-		foreach ($this->cfg as $c =>$fname ) {
+        foreach ($this->cfg as $c =>$fname ) {
 			if ($c != 'out_path' && substr( $c, 0, 4 ) == 'out_') {
 				$this->save_file( substr( $c, 4 ), $c, false, $_cfg );
 			}
@@ -1180,10 +1257,13 @@ class INDICO extends JICT_OBJ {
 
 		$fname =$this->cfg[$_file_id];
 		$this->verbose( "# Save $_label Data ($fname)... ", 2, false );
-
-        if (empty($this->data[$_data_id]) && empty($cfg['save_empty'])) {
+        if (empty($this->data[$_data_id])){
             $this->verbose_next( "NO_DATA" );
-            return;
+            if  (empty($cfg['save_empty'])) {
+                return;
+            } 
+        } else {
+            $this->verbose( "Array ".$_data_id." has ".count($this->data[$_data_id])." entries");
         }
 
 		$counter =false;
