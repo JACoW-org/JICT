@@ -179,7 +179,7 @@ foreach ($Indico->data[$data_key]['abstracts'] as $abstract) {
                 $abstract["vote"].="\n<form><input type=\"button\" onclick=\"vote(".$vote_value.",".$abstract["id"].",".$review_id.",".$review["track"]["id"].")\" value=\"Vote ".$vote_value_text."\"></button></form>\n";
             }
         }
-        //$abstract["vote"].="\n<form><input type=\"button\" onclick=\"color_abstract(".$abstract["id"].",'#F7DC6F')\" value=\"Color abstract\"></button></form>\n";
+        $abstract["vote"].="\n<form><input type=\"button\" onclick=\"color_abstract(".$abstract["id"].",'#F7DC6F')\" value=\"Color abstract\"></button></form>\n";
         if ($current_vote=="1"){
             $abstract["vote"]="1st choice\n".$abstract["vote"];
         } else if ($current_vote=="2") {

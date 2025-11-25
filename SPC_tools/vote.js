@@ -27,7 +27,6 @@ var cellsVote = voteTable.querySelectorAll("tr");
 
 var the_document = document;
 var dataTable = document.getElementById('abstracts_table');
-var thecell = document.getElementById('TR-113');
 var cells = dataTable.querySelectorAll("TR");    
 
 //Load the abstracts
@@ -58,22 +57,24 @@ function recreate_abstract_dict(){
 
 function color_abstract(abstract_id,thecolor){    
     //For colors see https://htmlcolorcodes.com/color-chart/
+    document.getElementById('info').innerText += "Coloring "+abstract_id;
     var irow=abstracts_ids.get(""+abstract_id);
     for (icol=0;icol<cells[irow].cells.length;icol++){
          cells[irow].cells[icol].style.backgroundColor=thecolor;
     } //for each col
+    document.getElementById('info').innerText += "; Done.";
 }//color_abstract
 
 
 function update_abstract(abstract_id){
             console.log("update_abstract "+abstract_id);
-            document.getElementById('info').innerText = "Loading abstract"+abstract_id;
+            document.getElementById('info').innerText += "Loading abstract"+abstract_id;
             color_abstract(abstract_id, '#82E0AA')
             var abstract_http = new XMLHttpRequest();
             abstract_http.onreadystatechange = function() {
                 var irow=abstracts_ids.get(""+abstract_id);
                 if (this.readyState == 4){                    
-                    document.getElementById('info').innerText = "Abstract "+abstract_id+" status "+this.status+" irow="+irow;
+                    document.getElementById('info').innerText += " status "+this.status+";";
                     if (this.status == 200) {
                         //console.log("Abstract received:",abstract_id);
                         //console.log(JSON.parse(this.response)["abstracts"][0]["id"]);
@@ -87,6 +88,7 @@ function update_abstract(abstract_id){
                             }
                         }
                         if (review_found==true){
+                            document.getElementById('info').innerText += "Got review;";
                             //console.log(thereview["ratings"]);
                             if (thereview["ratings"][0]["value"]==true){
                                 current_vote="1";
@@ -116,9 +118,10 @@ function update_abstract(abstract_id){
                                 }
                             } //for iloop                            
                             cells[irow].cells[vote_mc_column].innerHTML=cells[irow].cells[MC_column].innerHTML+"_"+current_vote;
+                            document.getElementById('info').innerText += "Done updating abstract;";
                         } //review found
                         else {
-                            cells[irow].cells[vote_column].innerHTML="Error, please reload page\n";
+                            cells[irow].cells[vote_column].innerHTML="Error: review not found in the abstract. Please reload page\n";
                         }
                    }//status == 200
                    
@@ -129,7 +132,7 @@ function update_abstract(abstract_id){
                 
                    sleep(500).then(() => { count_votes(); });
                }//readyState
-                document.getElementById('info').innerText = "";        
+               // document.getElementById('info').innerText = "";        
             }; //function
             abstract_http.timeout = function() {
                     console.log("timeout");
@@ -143,6 +146,7 @@ function update_abstract(abstract_id){
 }//function update_abstract
 
 function count_votes(){
+            document.getElementById('info').innerText += "Counting votes;";
             var dataTable = document.getElementById("abstracts_table");
             var cells = dataTable.querySelectorAll("tr");
             //for each row
@@ -155,11 +159,13 @@ function count_votes(){
             for (var irow = 1; irow < cells.length; irow++){
                 MCval=parseInt(cells[irow].cells[vote_mc_column].innerText.substring(2,3));
                 vote_value=parseInt(cells[irow].cells[vote_mc_column].innerText.substring(4,5));
+                /*
                 if (irow<10){
                     console.log(cells[irow].cells[vote_mc_column].innerText);
                     console.log("MCval",MCval);
                     console.log("vote_value",vote_value);
                 }
+                */
                 if (vote_value==1){
                     firstVotes[MCval-1]+=1;
                 }
@@ -170,7 +176,6 @@ function count_votes(){
             
             var first_choices_row=document.getElementById('votes').querySelectorAll("tr")[1];
             var second_choices_row=document.getElementById('votes').querySelectorAll("tr")[2];
-            console.log(second_choices_row);
             for (var imc = 0; imc < 8; imc++){
                 first_choices_row.cells[imc+1].innerText =firstVotes[imc];
                 if (firstVotes[imc]<5){
@@ -201,12 +206,14 @@ function count_votes(){
                 }
                 navbar_mc.style.color= '#000000'; //black
             }
+    document.getElementById('info').innerText += "Counted;";
 }//count_votes
 
 
 function vote(vote_value,abstract_id,review_id,track_id){
     //console.log("voting");
     console.log("voting",abstract_id);
+    document.getElementById('info').innerText = "Voting on abstract "+abstract_id+";";
     color_abstract(abstract_id, '#F7DC6F');
     var vote_request = new XMLHttpRequest();
     vote_request.onreadystatechange = function() {
@@ -215,9 +222,19 @@ function vote(vote_value,abstract_id,review_id,track_id){
             //console.log(this.status);
             //document.getElementById('info').innerText = "Status "+this.status;
             if (this.status == 200) {
-               //console.log("vote_request 200");
-               //console.log(this.responseText);
-               document.getElementById('info').innerText = "Vote recorded";               
+               console.log("vote_request 200");
+               document.getElementById('info').innerText += "Vote sent";
+               if (this.responseText.includes("bool(false)")){     
+                    //document.getElementById('info').innerText += "; Error recording vote";
+                    console.log("false received"); 
+                    console.log(this.responseText); 
+               } else if (this.responseText.includes("bool(true)")){ 
+                    document.getElementById('info').innerText += " OK;";
+               } else {
+                    document.getElementById('info').innerText += "; Unexpected response: "+this.responseText;
+                    console.log("No bool received"); 
+                    console.log(this.responseText); 
+               }
                //console.log("update",abstract_id);
                update_abstract(abstract_id);
            }//status
@@ -233,8 +250,13 @@ function vote(vote_value,abstract_id,review_id,track_id){
     vote_request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
     vote_request.send(post_data);
     //console.log("voted");
-    document.getElementById('info').innerText = "Vote on abstract "+abstract_id+" recorded.";
-    update_abstract(abstract_id);
+    //document.getElementById('info').innerText += "Vote on "+abstract_id+" recorded.";
+    //update_abstract(abstract_id);
+    document.getElementById('info').innerText += "Voting done";
+
 } //vote
 
 document.getElementById('info').innerText = "Loaded. Javascript OK.";
+document.getElementById('info').innerText += "..";
+sleep(1000).then(() => { count_votes(); });
+sleep(1500).then(() => { document.getElementById('info').innerText += "+++"; });
