@@ -58,9 +58,30 @@ $content ="<BR/>";
 $content .="<BR/>";
 $content .="<BR/>";
 
-
-$fields_to_display=[ "id", "friendly_id", "MC" , "track" , "title",  "primary_author_name" , "content" , "vote", "vote_by_MC" , "all_comments" ];
+//Foramt: ["indico field name" => "display name" ]
+$fields_to_display=[ "id" => "id", "friendly_id" => "Conf id", "MC_track"=> "MC and track"  , "title" => "Title",  "primary_author_name" => "Main author", "content" => "Abstract" , "vote" => "Vote", "vote_by_MC" => "Vote by MC" , "all_comments" => "Comments"  ];
 $num_fields=[  "id", "friendly_id" ];
+$link_fields=[ "id", "title" ];
+
+
+$js_variables .="
+<script>
+";
+
+    
+    
+$content .="<form>";
+$content .="<input type='button' id='btnHideAbs' value='Hide abstracts'>\n";
+$content .="<input type='button' id='btnShowAbs' value='Show abstracts'>\n";
+$content .="<input type='button' id='btnHideComments' value='Hide comments'>\n";
+$content .="<input type='button' id='btnShowComments' value='Show comments'>\n";
+
+/*
+for ($imc=1; $imc<=8; $imc++){
+    $content .="<input type='button' id='toggle_mc_".$imc."' value='Hide ".$imc."' onClick='toggle_visibility_mc(".$imc.")'>\n";
+}
+*/
+$content .="</form>\n";
 
 $content .="
 <div class=\"table-wrap\"><table id='abstracts_table' class=\"sortable\" width=\"95%\">
@@ -70,12 +91,10 @@ $content .="
   <thead>
     <tr>";
     
-    
-    
 //Table headers
 $column_width="";
 $icol=0;
-foreach ($fields_to_display as $field){        
+foreach ($fields_to_display as $field => $display){        
     //echo "$field: ".$abstract[$field]." <BR/>\n"; 
      $content .="<TH ";
      if (in_array($field,$num_fields)){
@@ -83,13 +102,24 @@ foreach ($fields_to_display as $field){
      }
      $content .=" aria-sort=\"ascending\" ";
      $content .="> ";
-     $content .="<button data-column-index=\"$icol\">\n";     
-     $content .="$field \n";
+     $content .="<button data-column-index=\"$icol\">\n";  
+     $content .="$display \n";
      $content .="<span aria-hidden=\"true\"></span>\n ";
-
      $content .="</button>\n";
+     if ($field=="id"){
+         $js_variables .="abstract_id_column=$icol;\n";
+     } else if ($field=="MC_track"){
+         $js_variables .="MC_column=$icol;\n";
+     } else if ($field=="vote"){
+         $js_variables .="vote_column=$icol;\n";
+     } else if ($field=="vote_by_MC"){
+         $js_variables .="vote_mc_column=$icol;\n";
+     } else if ($field=="content"){
+         $js_variables .="col_abstracts=$icol;\n";
+        } else if ($field=="all_comments"){
+         $js_variables .="col_comments=$icol;\n";
+        }
      $content .="</TH>\n"; 
-     
 
      $icol++;
      $column_width.="table.sortable th:nth-child($icol) {\n";
@@ -99,6 +129,7 @@ foreach ($fields_to_display as $field){
         $column_width.="  width: 8em;\n";
      } else if (($field=="content")||($field=="all_comments")){
         $column_width.="  width: 20em;\n";
+        $js_variables .="col_content_width='20em';\n";
      } else {
         $column_width.="  width: 1em;\n";
      }
@@ -109,6 +140,11 @@ $content .="</TR>\n";
 $content .="</THEAD>\n"; 
 $content .="<TBODY>\n"; 
 
+$js_variables .="   
+</script>
+";
+
+$content .=$js_variables;
  
 $_rqst_cfg=[];
 $_rqst_cfg['disable_cache'] =true;
@@ -123,6 +159,7 @@ foreach ($Indico->data[$data_key]['abstracts'] as $abstract) {
     if ($abstract["state"]=="submitted"){
         $abstract["MC"]=substr($abstract["submitted_for_tracks"][0]["code"],0,3);
         $abstract["track"]=$abstract["submitted_for_tracks"][0]["code"];
+        $abstract["MC_track"]=$abstract["MC"]." - ".$abstract["submitted_for_tracks"][0]["code"];
         $abstract["primary_author_name"]="";
         foreach($abstract["persons"] as $pers){
             if ($pers["author_type"]=="primary"){
@@ -179,7 +216,7 @@ foreach ($Indico->data[$data_key]['abstracts'] as $abstract) {
                 $abstract["vote"].="\n<form><input type=\"button\" onclick=\"vote(".$vote_value.",".$abstract["id"].",".$review_id.",".$review["track"]["id"].")\" value=\"Vote ".$vote_value_text."\"></button></form>\n";
             }
         }
-        $abstract["vote"].="\n<form><input type=\"button\" onclick=\"color_abstract(".$abstract["id"].",'#F7DC6F')\" value=\"Color abstract\"></button></form>\n";
+        //$abstract["vote"].="\n<form><input type=\"button\" onclick=\"color_abstract(".$abstract["id"].",'#F7DC6F')\" value=\"Color abstract\"></button></form>\n";
         if ($current_vote=="1"){
             $abstract["vote"]="1st choice\n".$abstract["vote"];
         } else if ($current_vote=="2") {
@@ -192,12 +229,17 @@ foreach ($Indico->data[$data_key]['abstracts'] as $abstract) {
         //deal with comments
         $abstract["all_comments"] ="";
         foreach($abstract["comments"] as $comment){
-            $abstract["all_comments"] .=$comment["user"]["full_name"]." ".$comment["text"]."<BR/>\n";
+            $abstract["all_comments"] .=$comment["user"]["full_name"].": ".$comment["text"]."<BR/>\n";
         }
+        $abstract["all_comments"] .="<BR/><form>\n
+        <INPUT type='hidden' name='abstract_id' value='".$abstract["id"]."'>\n
+        <INPUT type='text' name='comment_".$abstract["id"]."' id='comment_".$abstract["id"]."' size='10'>\n
+        <INPUT type=button value='Add comment' onclick=\"add_comment(".$abstract["id"].")\">
+        </form>";
 
 
         $content .="<TR id=\"TR-".$abstract["id"]."\">\n"; 
-        foreach ($fields_to_display as $field){        
+        foreach ($fields_to_display as $field => $display){       
             //echo "$field: ".$abstract[$field]." <BR/>\n"; 
             $content .="<TD ";
             if ($current_vote=="1"){
@@ -206,14 +248,14 @@ foreach ($Indico->data[$data_key]['abstracts'] as $abstract) {
                 $content .="style=\"background-color: #a9cce3 ;\""; 
             }
             $content .=">";
-            if ($field=="id"){
+            if (in_array($field,$link_fields)){
                 $content .="<A HREF='https://indico.jacow.org/event/".$cfg['indico_event_id']."/abstracts/". $abstract[$field]."/' >";
+            }
                 $content .="". $abstract[$field];
+            if (in_array($field,$link_fields)){
                 $content .="</A>";
                 //<button type=button onClick='vote(1,"+'"'+this.responseURL+'"'+',"'+review_code+'"'+',"'+csrf_token+'"'+',"'+track_id+'"'+")'>Vote 1st</button>";
-            } else {
-                $content .="". $abstract[$field];
-            }
+            } 
             $content .= "</TD>\n"; 
         } //for each field
         $content .="</TR>\n"; 

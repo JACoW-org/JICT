@@ -73,7 +73,8 @@ if (count($_POST)==0){
     $vote_value= $_POST['vote_value'];
     $review_id= $_POST['review_id'];
     $track_id= $_POST['track_id'];
-    $csrf_token= $_POST['csrf_token'];}
+    $csrf_token= $_POST['csrf_token'];
+}
 if ($code_testing==1) {
     echo "abstract_id $abstract_id \n";
     echo "vote_value $vote_value \n";

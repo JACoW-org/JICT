@@ -16,12 +16,6 @@ function sleep(ms) {
 };
 
 var abstracts_ids = new Map();
-abstract_id_column=0;
-MC_column=2;
-vote_column=7;
-vote_mc_column=8;
-
-
 var voteTable = document.getElementById("votes");
 var cellsVote = voteTable.querySelectorAll("tr");
 
@@ -57,12 +51,12 @@ function recreate_abstract_dict(){
 
 function color_abstract(abstract_id,thecolor){    
     //For colors see https://htmlcolorcodes.com/color-chart/
-    document.getElementById('info').innerText += "Coloring "+abstract_id;
+    //document.getElementById('info').innerText += "Coloring "+abstract_id;
     var irow=abstracts_ids.get(""+abstract_id);
     for (icol=0;icol<cells[irow].cells.length;icol++){
          cells[irow].cells[icol].style.backgroundColor=thecolor;
     } //for each col
-    document.getElementById('info').innerText += "; Done.";
+    //document.getElementById('info').innerText += "; Done.";
 }//color_abstract
 
 
@@ -74,10 +68,15 @@ function update_abstract(abstract_id){
             abstract_http.onreadystatechange = function() {
                 var irow=abstracts_ids.get(""+abstract_id);
                 if (this.readyState == 4){                    
-                    document.getElementById('info').innerText += " status "+this.status+";";
+                    //document.getElementById('info').innerText += " status "+this.status+";";
                     if (this.status == 200) {
                         //console.log("Abstract received:",abstract_id);
                         //console.log(JSON.parse(this.response)["abstracts"][0]["id"]);
+                        //console.log(JSON.parse(this.response)["abstracts"][0]["comments"]);                        
+                        //console.log(JSON.parse(this.response)["abstracts"][0]["comments"].length);     
+                        if (JSON.parse(this.response)["abstracts"][0]["comments"].length>0){
+                            cells[irow].cells[col_comments].innerHTML+="Latest: "+JSON.parse(this.response)["abstracts"][0]["comments"][JSON.parse(this.response)["abstracts"][0]["comments"].length-1]["text"];
+                        }
                         review_found=false;
                         thereview={};
                         for (iloop=0; iloop<JSON.parse(this.response)["abstracts"][0]["reviews"].length; iloop++){
@@ -117,8 +116,8 @@ function update_abstract(abstract_id){
                                     cells[irow].cells[vote_column].innerHTML+=vote_btn;
                                 }
                             } //for iloop                            
-                            cells[irow].cells[vote_mc_column].innerHTML=cells[irow].cells[MC_column].innerHTML+"_"+current_vote;
-                            document.getElementById('info').innerText += "Done updating abstract;";
+                            cells[irow].cells[vote_mc_column].innerHTML=cells[irow].cells[MC_column].innerHTML.substring(0,3)+"_"+current_vote;
+                            //document.getElementById('info').innerText += "Done updating abstract;";
                         } //review found
                         else {
                             cells[irow].cells[vote_column].innerHTML="Error: review not found in the abstract. Please reload page\n";
@@ -146,7 +145,7 @@ function update_abstract(abstract_id){
 }//function update_abstract
 
 function count_votes(){
-            document.getElementById('info').innerText += "Counting votes;";
+            document.getElementById('info').innerText += "Counting votes";
             var dataTable = document.getElementById("abstracts_table");
             var cells = dataTable.querySelectorAll("tr");
             //for each row
@@ -206,7 +205,7 @@ function count_votes(){
                 }
                 navbar_mc.style.color= '#000000'; //black
             }
-    document.getElementById('info').innerText += "Counted;";
+    //document.getElementById('info').innerText += "Counted;";
 }//count_votes
 
 
@@ -252,11 +251,95 @@ function vote(vote_value,abstract_id,review_id,track_id){
     //console.log("voted");
     //document.getElementById('info').innerText += "Vote on "+abstract_id+" recorded.";
     //update_abstract(abstract_id);
-    document.getElementById('info').innerText += "Voting done";
+    //document.getElementById('info').innerText += "Voting done";
 
 } //vote
 
-document.getElementById('info').innerText = "Loaded. Javascript OK.";
-document.getElementById('info').innerText += "..";
+function add_comment(abstract_id){
+    //console.log("voting");
+    console.log("commenting",abstract_id);
+    document.getElementById('info').innerText = "Commenting on abstract "+abstract_id+";";
+    comment=document.getElementById('comment_'+abstract_id).value;
+    color_abstract(abstract_id, '#F7F7F7');
+    var comment_request = new XMLHttpRequest();
+    comment_request.onreadystatechange = function() {
+        if (this.readyState == 4){
+            //console.log("vote_request");
+            //console.log(this.status);
+            //document.getElementById('info').innerText = "Status "+this.status;
+            if (this.status == 200) {
+               document.getElementById('info').innerText += "Comment sent";
+               //console.log("update",abstract_id);
+               update_abstract(abstract_id);
+           }//status
+           else {
+               console.log("comment_request error",this.status);
+               document.getElementById('info').innerText = "Error recording comment: "+this.status;
+           }
+        }//readyState
+    };
+    query_url="record_comment.php";
+    post_data="abstract_id="+abstract_id+"&comment="+comment;
+    comment_request.open("POST", query_url, true);
+    comment_request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+    comment_request.send(post_data);
+    //document.getElementById('info').innerText += "Comment done";
+} //add_comment
+
+function show_hide_column(col_no, do_show) {
+    var tbl = document.getElementById('abstracts_table');
+    var rows = tbl.getElementsByTagName('tr');
+    //document.getElementById('info').innerText += "Hide/show "+col_no+" "+do_show+";";
+
+    for (var row = 0; row < rows.length; row++) {
+        var cols = rows[row].children;
+        if (col_no >= 0 && col_no < cols.length) {
+            var cell = cols[col_no];
+            
+            if ((cell.tagName == 'TH')||(cell.tagName == 'TD')) {
+                //console.log(cell.tagName,cell);
+                cell.style.display = do_show ? 'block' : 'none';
+                cell.style.width =  col_content_width;
+                //cell.draw();
+            } 
+            //if ((cell.tagName == 'TH')||(cell.tagName == 'TD')) cell.visibility = do_show ? 'hidden' : 'visible';            
+        }
+    }
+    if (col_no==col_abstracts){
+        if (do_show){
+            document.getElementById('btnHideAbs').style.visibility = 'visible';
+            document.getElementById('btnShowAbs').style.visibility = 'hidden';
+        } else {
+            document.getElementById('btnHideAbs').style.visibility = 'hidden';
+            document.getElementById('btnShowAbs').style.visibility = 'visible';
+        }
+    } else if (col_no==col_comments){
+        if (do_show){
+            document.getElementById('btnHideComments').style.visibility = 'visible';
+            document.getElementById('btnShowComments').style.visibility = 'hidden';
+        } else {
+            document.getElementById('btnHideComments').style.visibility = 'hidden';
+            document.getElementById('btnShowComments').style.visibility = 'visible';
+        }
+    } 
+} // show_hide_column
+
+const btnHideAbs = document.getElementById( 'btnHideAbs' )
+btnHideAbs.addEventListener( "click", () => show_hide_column( col_abstracts, false ))
+
+const btnShowAbs = document.getElementById( 'btnShowAbs' )
+btnShowAbs.addEventListener( "click", () => show_hide_column( col_abstracts, true ))
+
+const btnHideComments = document.getElementById( 'btnHideComments' )
+btnHideComments.addEventListener( "click", () => show_hide_column( col_comments, false ))
+
+const btnShowComments = document.getElementById( 'btnShowComments' )
+btnShowComments.addEventListener( "click", () => show_hide_column( col_comments, true ))
+
+document.getElementById('btnShowAbs').style.visibility = 'hidden';
+document.getElementById('btnShowComments').style.visibility = 'hidden';
+
+document.getElementById('info').innerText = "Javascript OK.";
+document.getElementById('info').innerText += ".";
 sleep(1000).then(() => { count_votes(); });
-sleep(1500).then(() => { document.getElementById('info').innerText += "+++"; });
+sleep(1500).then(() => { document.getElementById('info').innerText += "."; });
