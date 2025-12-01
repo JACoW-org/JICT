@@ -714,6 +714,10 @@ class INDICO extends JICT_OBJ {
                             echo 'part title: '.$part["title"]."\n"; 
                             foreach($part["fields"] as $formentry) {
                                 echo "      formentry: ".$formentry["title"]."  ".$formentry["data"]."\n";
+								if (strlen($formentry["title"])>60){
+									$formentry["title"]=substr($formentry["title"],0,25)."...".substr($formentry["title"],strlen($formentry["title"])-25,25);
+									print("Shortened title: ". $formentry["title"]);
+								}
                                 if (($statitem["type"]=="count")&&($formentry["title"]==$statitem["field"])){
                                     if (gettype($formentry["data"])=="boolean"){
                                         if ($formentry["data"]) {
@@ -743,6 +747,11 @@ class INDICO extends JICT_OBJ {
                                     else $stats['registrants_extra_stats_'.strval($registrants_extra_stats)][strval($value)] ++;
                                 } else if ($statitem["type"]=="multiple"){
                                     foreach ($statitem["fields"] as $statfield){
+										if (strlen($statfield)>60){
+											$statfield=substr($statfield,0,25)."...".substr($statfield,strlen($statfield)-25,25);
+											print("Shortened field: ". $statfield);
+										}
+
                                         if ($formentry["title"]==$statfield){
                                             echo "match multiple".$formentry["data"]." \n";
                                             if ($formentry["data"]){
@@ -752,7 +761,7 @@ class INDICO extends JICT_OBJ {
                                         } //match
                                     } //foreach statfield
                                 } //multiple
-                            } //foreach formentry
+                            } //foreach part formentry
                         } //foreach part 
                         $registrants_extra_stats++;
                     } //foreach statitem
