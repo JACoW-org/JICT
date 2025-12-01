@@ -699,6 +699,7 @@ class INDICO extends JICT_OBJ {
                     $tag_status="Normal";
                 }
                 $registrants[$rid]["tag_status"]=$tag_status;
+<<<<<<< HEAD
                 
                 $stats_fields=[ 'by_dates', 'by_days_to_deadline', 'country', 'country_code' , 'region',  'paid', "tag_status"];
                 
@@ -784,6 +785,38 @@ class INDICO extends JICT_OBJ {
                     array_push($stats_fields,'gender');
                 } // get extra info on registrant 
                 
+=======
+                
+                $stats_fields=[ 'by_dates', 'by_days_to_deadline', 'country', 'country_code' , 'region',  'paid', "tag_status"];
+                
+                //Get extra info on registrant
+                if ((!empty($cws_config['indico_stats_importer']['registrants_load_extra_data']))&&($cws_config['indico_stats_importer']['registrants_load_extra_data']==1)){
+                    $data_extra_key =$this->request( sprintf('/api/checkin/event/{id}/forms/%s/registrations/%s' ,  $cws_config['indico_stats_importer']['registrants_form_id'], $rid));
+
+                    //is paid
+                    $registrants[$rid]['is_paid']=$this->data[$data_extra_key]["is_paid"];
+                    array_push($stats_fields,'is_paid');
+                    //gender
+                    if ($gender_field==-1){
+                        for ($iloop=0;$iloop<count($this->data[$data_extra_key]["registration_data"][0]["fields"]);$iloop++){
+                            if (strtolower($this->data[$data_extra_key]["registration_data"][0]["fields"][$iloop]["title"])=="gender"){
+                                $gender_field=$iloop;
+                            }
+                        }
+                        //populating gender_codes
+                        for ($iloop=0;$iloop<count($this->data[$data_extra_key]["registration_data"][0]["fields"][$gender_field]["choices"]);$iloop++){
+                            $gender_codes[$this->data[$data_extra_key]["registration_data"][0]["fields"][$gender_field]["choices"][$iloop]["id"]]=$this->data[$data_extra_key]["registration_data"][0]["fields"][$gender_field]["choices"][$iloop]["caption"];                            
+                        }
+                    }
+                    $registrants[$rid]['gender']=$gender_codes[array_keys($this->data[$data_extra_key]["registration_data"][0]["fields"][$gender_field]["data"])[0]];
+                    array_push($stats_fields,'gender');
+                    if (empty($stats['gender'][$type])) $stats['gender'][$type] =1;
+                    else $stats['gender'][$type] ++;
+                } // get extra info on registrant 
+                
+                if (empty($stats['paid'][$type])) $stats['paid'][$type] =1;
+                else $stats['paid'][$type] ++;
+>>>>>>> origin/LightPeerReview
             }         
         }
         foreach ($stats_fields as $k) {
@@ -802,19 +835,32 @@ class INDICO extends JICT_OBJ {
             }            
         }
 
+<<<<<<< HEAD
         ksort( $stats['by_dates'] );
         ksort( $stats['by_days_to_deadline'] );
         arsort( $stats['country'] );
         arsort( $stats['gender'] );
         ksort( $stats['paid'] );
+=======
+        if (!is_null($stats['by_dates'])) ksort( $stats['by_dates'] );
+        if (!is_null($stats['by_days_to_deadline']))  ksort( $stats['by_days_to_deadline'] );
+        if (!is_null($stats['country']))  arsort( $stats['country'] );
+        if (!is_null($stats['gender']))  arsort( $stats['gender'] );
+        if (!is_null($stats['paid']))  Arrayksort( $stats['paid'] );
+>>>>>>> origin/LightPeerReview
 
         $this->data['registrants'] =array( 
             'registrants' =>$registrants,
             'stats' =>$stats
             ); 
 
+<<<<<<< HEAD
         echo "print stats\n";
         print_r( $stats );
+=======
+        //echo "print stats\n";
+        //print_r( $stats );
+>>>>>>> origin/LightPeerReview
     }
 
 
@@ -901,7 +947,7 @@ class INDICO extends JICT_OBJ {
         $this->data['abstracts_sub'] =$abstracts;
         $this->data['persons'] =$persons;
 
-        ksort( $affiliations );		
+        if (!(is_null($affiliations))) ksort( $affiliations );		
 
         $chart_by_dates =[];
         $chart_by_days_to_deadline =[];
@@ -933,7 +979,11 @@ class INDICO extends JICT_OBJ {
         ksort( $chart_by_days_to_deadline );
 
         foreach ($stats_fields as $k) {
+<<<<<<< HEAD
             ksort( $stats[$k] );
+=======
+            if (!(is_null($stats[$k]))) ksort( $stats[$k] );
+>>>>>>> origin/LightPeerReview
         }
         /*
         echo "stats\n";

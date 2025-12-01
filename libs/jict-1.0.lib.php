@@ -154,8 +154,11 @@ class JICT_OBJ {
 
                 $this->verbose( "# LOAD $obj_name ($val)... " );
 
-                if (file_exists($val)) $this->data[$obj_name] =file_read_json( $val, true );
-                else $this->data[$obj_name] =false;
+                if (file_exists($val)) {
+                     $this->data[$obj_name] =file_read_json( $val, true );
+                } else {
+                    $this->data[$obj_name] =false;
+                }
 
                 $this->verbose_status( empty($this->data[$obj_name] ));
             }
