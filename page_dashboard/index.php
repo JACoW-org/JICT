@@ -1,14 +1,15 @@
 <?php
-/*
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-*/
+if (str_contains($_SERVER["QUERY_STRING"],"debug")){
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+} //if debug on
 ?>
 <?php
 
 /* by Stefano.Deiuri@Elettra.Eu
 
+2025.11.15 - add extra stats by Nicolas.Delerue@ijclab.in2p3.fr
 2024.05.08 - add export
 2024.05.08 - update
 2023.03.20 - Papers charts
@@ -52,6 +53,7 @@ $colors =[
     '114,135,206', // azzurro
     '255,126,0', // arancio
     ];
+$ratio_groups = [ 'registrants', 'abstracts_submission' , 'papers' ];
 
 $registrants_extra_stats=0;
 $registrants_extra_part='<div class="row">';
@@ -64,6 +66,20 @@ foreach ($cws_config['indico_stats_importer']['registrants_extra'] as $statitem)
 } //foreach statitem
 $registrants_extra_part.='</div>';
 
+
+$ratios_charts='<div class="row">';
+foreach ($ratio_groups as $group){
+    $id ='by_days_to_deadline';
+    $chart_base_id ="${group}_${id}";
+    //var_dump($charts[$chart_base_id]['series'][$cfg['conf_name']]);
+    foreach ($old_confs as $cname =>$cdata) {
+        $chart_id="ratio_".$chart_base_id."_".$cname;
+        $ratios_charts.='<div class="col-md-6">
+    <canvas id="'.$chart_id.'" class="chart"></canvas>
+</div>';
+    } // for each old conf
+} //foreach ratio group
+$ratios_charts.='</div>';
 $main_parts =[ 
     'papers' =>
 '<div class="row">
@@ -89,7 +105,7 @@ $main_parts =[
 </div>
 </div>',
     'registrants_extra' => $registrants_extra_part,
-
+    'ratios' => $ratios_charts,
     'payments' =>
 '<div class="row">
 <div class="col-md-6">
@@ -328,8 +344,6 @@ if (!empty($Indico->data[$group])) {
     $vars[$group.'_n'] =number_format( $sum, 0, ',', '.' );
 }
 
-
-
 // ABSTRACTS -------------------------------------------------------------------
 $group ='abstracts_submission';
 $id ='by_dates';
@@ -522,9 +536,49 @@ foreach ($cws_config['indico_stats_importer']['registrants_extra'] as $statitem)
     
     $charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group]['stats']['registrants_extra_stats_'.strval($registrants_extra_stats)] );
     $registrants_extra_stats++;
+    //var_dump($Indico->data[$group]['stats']['registrants_extra_stats_'.strval($registrants_extra_stats)]);
 } //foreach statitem
 
+//Ratio
+$ratios=[];
+foreach ($ratio_groups as $group){
+    $id ='by_days_to_deadline';
+    $chart_base_id ="${group}_${id}";
+    //var_dump($charts[$chart_base_id]['series'][$cfg['conf_name']]);
+    foreach ($old_confs as $cname =>$cdata) {
+        $chart_id="ratio_".$chart_base_id."_".$cname;
+        //echo("Calculating ratio chart $chart_id\n");
+        $ratios[$chart_id]=[];
+        foreach ($charts[$chart_base_id]['series'][$cfg['conf_name']] as $day){
+            $day_found=false;
+            foreach ($charts[$chart_base_id]['series'][$cname] as $old_day) {
+                if (($day['x']>=$old_day['x'])&&($day['y']>1)){    
+                    if (!($day_found)){
+                        $ratios[$chart_id][]=[];
+                        $day_found=true;           
+                    }
+                    //echo("day ".$day['x']." old_day ".$old_day['x']."\n");
+                    $ratios[$chart_id][array_key_last($ratios[$chart_id])]=['x'=>$day['x'], 'y'=> (floatval($day['y']) / floatval($old_day['y'])) ];
+                }
+            }
+        }
+        $vars['ratio_26_23_'.$group.'_n'] =$ratios[$chart_id][count($ratios[$chart_id])-2]['y'];
+        $vars['percent_26_23_'.$group.'_n'] =intval(($ratios[$chart_id][count($ratios[$chart_id])-2]['y'])*100);
+        //echo("Ratio chart $chart_id\n");
+        //var_dump($ratios[$chart_id]);
+        $charts[$chart_id] =[
+                'title' =>'Ratio: (IPAC26/'.$cname.") for ".$group,
+                'type' =>'scatter',
+                'y_label' =>'registrants',
+                'series' =>false
+        ];
 
+        //$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $ratios[$chart_id], [ 'sum' =>false, 'x_low_limit' =>-200, 'x_upper_limit' =>7] );
+        $charts[$chart_id]['series'][$cfg['conf_name']] = $ratios[$chart_id];
+        //echo("charts");
+        //var_dump($charts[$chart_id]['series'][$cfg['conf_name']]);
+    } // for each old conf
+} //calculate ratios
 
 if (!empty($_GET['export_data'])) {
     $export =[
