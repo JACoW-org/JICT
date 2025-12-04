@@ -59,7 +59,7 @@ if (count($_POST)==0){
     $comment= $_POST['comment'];
 }
 
-$req =$Indico->request( "/event/{id}/abstracts/".$abstract_id."/comment", 'POST', array( 'text' => $comment , 'visibility' => "reviewers" ) , array( 'return_data' =>true, 'quiet' =>true ) );
+$req =$Indico->request( "/event/{id}/abstracts/".$abstract_id."/comment", 'POST', array( 'text' => $comment , 'visibility' => "reviewers" ) , array( 'return_data' =>true, 'quiet' =>true, 'use_session_token' => true ) );
 var_dump($req);
 
 ?>
