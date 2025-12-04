@@ -1,11 +1,4 @@
 <?php
-/*
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-*/
-?>
-<?php
 
 /* by Nicolas Delerue
 
@@ -13,6 +6,12 @@ error_reporting(E_ALL);
 2025.11.14 Update. Note: this page uses HTML parsing instead of json data. This should be fixed/rewritten at some point.
 
 */
+if (str_contains($_SERVER["QUERY_STRING"],"debug")){
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+} //if debug on
+
 
 require( '../config.php' );
 require_lib( 'jict', '1.0' );
@@ -108,7 +107,7 @@ if (count($start_matches[1])==0){
 
 $incompatibilities_found=0;
 $incompatibilities_ignored=0;
-
+$total_registrations=0;
 for ($imatch=0;$imatch<count($start_matches[1]);$imatch++){
     $regid=$start_matches[1][$imatch][0];
     $this_entry=substr($req["html"],$start_matches[1][$imatch][1],$end_matches[0][$imatch+1][1]-$start_matches[1][$imatch][1]);
@@ -124,6 +123,7 @@ for ($imatch=0;$imatch<count($start_matches[1]);$imatch++){
     $idx=array_search($criteria, $cols_title);
     
     if (!(str_contains($entry_data[$idx],"Withdrawn"))){
+        $total_registrations+=1;
         for($icol=0;$icol<count($entry_data);$icol++){
             $entry_data[$icol]=trim(preg_replace("/ data-text=\"(.*)\"/", '\1',$entry_data[$icol]));
         }
@@ -338,6 +338,7 @@ $T->set( 'content', $content );
 $T->set( 'now', $now_show );
 $T->set( 'incompatible', $incompatibilities_found  );
 $T->set( 'ignored', $incompatibilities_ignored );
+$T->set( 'total_registrations', $total_registrations );
 
 echo $T->get();
 

@@ -1,12 +1,8 @@
 <?php
 
-/* by Stefano.Deiuri@Elettra.Eu
+/* by nicolas.delerue@ijclab.in2p3.fr based on a page created by Stefano.Deiuri@Elettra.Eu
 
-2024.05.17 - update
-2023.05.11 - update
-2022.08.25 - filter function
-2022.08.22 - refresh function
-2022.08.20 - 1st version
+2025.11.01 - Created by nicolas.delerue@ijclab.in2p3.fr
 
 */
 

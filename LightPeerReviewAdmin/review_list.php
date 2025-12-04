@@ -1,14 +1,16 @@
 <?php
+/* by nicolas.delerue@ijclab.in2p3.fr based on a page created by Stefano.Deiuri@Elettra.Eu
 
-/* by Stefano.Deiuri@Elettra.Eu
-
-2024.05.17 - update
-2023.05.11 - update
-2022.08.25 - filter function
-2022.08.22 - refresh function
-2022.08.20 - 1st version
+2025.09.01 - Created by nicolas.delerue@ijclab.in2p3.fr
 
 */
+
+if (str_contains($_SERVER["QUERY_STRING"],"debug")){
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+} //if debug on
+
 
 require( '../config.php' );
 require_lib( 'jict', '1.0' );
@@ -49,6 +51,7 @@ $req =$Indico->request( "/event/{id}/papers/reviewing/", 'GET', false, array( 'r
 $doc = new DOMDocument();
 $doc->loadHTML($req);
 
+
 /*
 echo "<BR/>here trl<BR/>"; 
 var_dump($doc->getElementById("to-review-list"));
@@ -67,14 +70,27 @@ echo "<BR/>here cn<BR/>";
 var_dump($doc->getElementById("to-review-list")->childNodes);
 echo "<BR/>here cn1<BR/>"; 
 var_dump($doc->getElementById("to-review-list")->childNodes[1]);
-echo "<BR/>here cn1<BR/>"; 
+echo "<BR/>here cn2<BR/>"; 
+var_dump($doc->getElementById("to-review-list")->childNodes[2]);
+echo "<BR/>here cn1-cns<BR/>"; 
 var_dump($doc->getElementById("to-review-list")->childNodes[1]->childNodes);
 echo "<BR/>here cn1-0<BR/>"; 
 var_dump($doc->getElementById("to-review-list")->childNodes[1]->childNodes[0]);
+echo "<BR/>here cn1-0-cns<BR/>"; 
+var_dump($doc->getElementById("to-review-list")->childNodes[1]->childNodes[0]->childNodes);
+echo "<BR/>here cn1-0-0<BR/>"; 
+var_dump($doc->getElementById("to-review-list")->childNodes[1]->childNodes[0]->childNode[0]);
+echo "<BR/>here cn1-0-1<BR/>"; 
+var_dump($doc->getElementById("to-review-list")->childNodes[1]->childNodes[0]->childNode[1]);
+echo "<BR/>here cn1-1-1<BR/>"; 
+var_dump($doc->getElementById("to-review-list")->childNodes[1]->childNodes[1]->childNode[1]);
+echo "<BR/>here cn1-0-2<BR/>"; 
+var_dump($doc->getElementById("to-review-list")->childNodes[1]->childNodes[0]->childNode[0]);
 echo "<BR/>here cn1-1<BR/>"; 
 var_dump($doc->getElementById("to-review-list")->childNodes[1]->childNodes[1]);
 echo "<BR/>here cn1-2<BR/>"; 
 var_dump($doc->getElementById("to-review-list")->childNodes[1]->childNodes[2]);
+*/
 /*
 echo "<BR/>here cn0<BR/>"; 
 var_dump($doc->getElementById("to-review-list")->childNodes[0]);
@@ -88,20 +104,89 @@ var_dump($doc->getElementById("to-review-list")->childNodes[1]->childNodes);
 echo "<BR/>here<BR/>"; 
 */
 
+/*
+echo "cfg \n";
+var_dump($cfg);
+echo "cfg path\n";
+var_dump($cfg['root_path']);
+*/
 
-$content =false;
 $content ="";
 
+//Read table header
+$content.= file_get_contents($cfg['LPRadmin_path'].'/sortable-table_header.html');
 
 $iitem=0;
 foreach ($doc->getElementById("to-review-list")->childNodes[1]->childNodes as $item) {
     if ($item->nodeName=="div"){
-        $content.="<BR><BR>item:".$iitem."</BR>";
+        //$content.="<BR><BR>item:".$iitem."</BR>";
         //echo "<BR><BR>item:".$iitem."</BR>";
         //echo $item->nodeName."</BR>";
-        $content .=$item->nodeValue."</BR>";
+        /*
+        $cn="cn";
+        foreach (array( 1 ) as $val1) {
+            $cn1=$cn.$val1;
+            echo "scan Cn: $cn1\n";
+            if ($val1==-1){
+                var_dump($item->attributes);
+            } else {
+                var_dump($item->childNodes[$val1]);
+                foreach (array( 3) as $val2) {
+                    echo "scan Cn: $cn$val1$val2\n";
+                    if ($val2==-1){
+                        var_dump($item->childNodes[$val1]->attributes);
+                    } else {
+                        var_dump($item->childNodes[$val1]->childNodes[$val2]);
+                        foreach (array(1) as $val3) {
+                            echo "scan Cn: $cn$val1$val2$val3\n";
+                            if ($val3==-1){
+                                var_dump($item->childNodes[$val1]->childNodes[$val2]->attributes);
+                            } else {
+                                var_dump($item->childNodes[$val1]->childNodes[$val2]->childNodes[$val3]);
+                            }
+                            foreach (array(-1, 0, 1, 2) as $val4) {
+                                echo "scan Cn: $cn$val1$val2$val3$val4\n";
+                                if ($val3==-1){
+                                    var_dump($item->childNodes[$val1]->childNodes[$val2]->childNodes[$val3]->attributes);
+                                } else {
+                                    var_dump($item->childNodes[$val1]->childNodes[$val2]->childNodes[$val3]->childNodes[$val4]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        */
         /*
         var_dump($item);
+        echo "<BR/>here cn12<BR/>";
+        var_dump($item->childNodes[1]->childNodes[2]);
+        echo "<BR/>here cn13<BR/>";
+        var_dump($item->childNodes[1]->childNodes[3]);
+        echo "<BR/>here cn13a<BR/>";
+        var_dump($item->childNodes[1]->childNodes[3]->attributes);
+        echo "<BR/>here cn120<BR/>";
+        var_dump($item->childNodes[1]->childNodes[2]->childNodes[0]);
+        echo "<BR/>here cn130<BR/>";
+        var_dump($item->childNodes[1]->childNodes[3]->childNodes[0]);
+        echo "<BR/>here cn131<BR/>";
+        var_dump($item->childNodes[1]->childNodes[3]->childNodes[1]);
+        echo "<BR/>here cn132<BR/>";
+        var_dump($item->childNodes[1]->childNodes[3]->childNodes[2]);
+        echo "<BR/>here cn1310<BR/>";
+        var_dump($item->childNodes[1]->childNodes[3]->childNodes[1]->childNodes[0]);
+        echo "<BR/>here cn1311<BR/>";
+        var_dump($item->childNodes[1]->childNodes[3]->childNodes[1]->childNodes[0]);
+        echo "<BR/>here cn1300a<BR/>";
+        var_dump($item->childNodes[1]->childNodes[3]->childNodes[1]->childNodes[0]->attributes);
+        */
+        /*
+        echo "<BR/>here cn1311<BR/>";
+        var_dump($item->childNodes[1]->childNodes[3]->childNodes[1]->childNodes[1]);
+        var_dump($item->childNodes[1]->childNodes[3]->childNodes[1]->childNodes[1]->nodeValue);
+        */
+        /*
         echo "<BR/>here cn 0<BR/>";         
         var_dump($item->childNodes[0]);
         var_dump($item->childNodes[0]->childNodes[0]);
@@ -133,13 +218,17 @@ foreach ($doc->getElementById("to-review-list")->childNodes[1]->childNodes as $i
         var_dump($item->childNodes[3]);
         echo "<BR/>here<BR/>";         
         */
-        echo $item->nodeValue."<BR/>";
+        //        echo "dumped\n";
+
+        $submitter=$item->childNodes[1]->childNodes[3]->childNodes[1]->childNodes[1]->nodeValue;
+        //echo "submitter $submitter\n";
+        echo $item->nodeValue."<BR/>\n";
         if ($item->childNodes[1]->childNodes[1]->childNodes[1]->attributes[0]->name == "href"){
             $link=$item->childNodes[1]->childNodes[1]->childNodes[1]->attributes[0]->value;
-            echo "link: ".$link;
+            //echo "link: ".$link;
         } else {
             $link="";
-            echo "No link";
+            //echo "No link";
 
         }
         
@@ -156,7 +245,7 @@ foreach ($doc->getElementById("to-review-list")->childNodes[1]->childNodes as $i
         echo strtok(substr(trim($item->nodeValue),1),":")."<BR/>";      
         */
         $contrib_id=explode("/",$link)[4];
-        echo "contrib_id:".$contrib_id."<BR/>";
+        //echo "contrib_id:".$contrib_id."<BR/>";
         /*
         $contrib =$Indico->request( "/event/{id}/contributions/". $contrib_id.".json", 'GET', false, array( 'return_data' =>true, 'quiet' =>true ) );        
         echo "contrib: ".'http://indico.jacow.org/event/'.$cfg['indico_event_id']."/contributions/$contrib_id.json <BR/> ";
@@ -165,23 +254,68 @@ foreach ($doc->getElementById("to-review-list")->childNodes[1]->childNodes as $i
         */
         $paper =$Indico->request( "/event/{id}/papers/api/".$contrib_id, 'GET', false, array( 'return_data' =>true, 'quiet' =>true ) );        
         //var_dump($item->nodeName);
-        /*
+        
+        echo "dump paper\n";
         var_dump($paper);
+        /*
+        echo "dumped paper\n";
+        echo "dump paper contrib\n";
+        var_dump($paper["contribution"]);
+        echo "dumped paper contrib\n";
+        echo "dump paper contrib title\n";
+        var_dump($paper["contribution"]["title"]);
+        echo "dumped paper contrib title\n";
+        */
+        /*
         echo "<BR><BR> contrib: ";
         var_dump($paper["contribution"]);
         echo "<BR><BR> timeline: ";
         var_dump($paper['last_revision']["timeline"]);
         */
-        $content .="<BR> title: ";
-        $content .="<A HREF='http://indico.jacow.org/$link'>".$paper["contribution"]["title"]."</A><BR/>";
-        $content .="<BR> timeline: ";
-        foreach ($paper['last_revision']["timeline"] as $itime) {
-            $content .="=>".$itime["created_dt"]." --- ".$itime["text"]."</BR>";        
+        $content .="<TR>";
+        $content .="<TD>";
+        $content .="<A HREF='http://indico.jacow.org$link'>".$paper["contribution"]["id"]."</A>";
+        $content .="</TD>\n";
+        $content .="<TD>";
+        $content .=$paper["contribution"]["friendly_id"];
+        $content .="</TD>\n";
+        $content .="<TD>";
+        $content .=$paper["contribution"]["code"];
+        $content .="</TD>\n";
+        $content .="<TD>";
+        $content .=" ";
+        $content .="</TD>\n";
+        $content .="<TD>";
+        $content .=$submitter."<BR/>\n".$paper["contribution"]["title"]."\n";;
+        $content .="</TD>\n";
+        $content .="<TD>";
+        $content .=" ";
+        $content .="</TD>\n";
+        $content .="<TD>";
+        $content .=" ";
+        $content .="</TD>\n";
+        $content .="<TD>";
+        //$content .="<A HREF='http://indico.jacow.org/$link'>".$paper["contribution"]["title"]."</A><BR/>";
+        $itime=0;
+        foreach ($paper['last_revision']["timeline"] as $itimeitem) {
+            if ($itime<3){
+                $content .="=>".$itimeitem["created_dt"]." --- ".$itimeitem["text"]."</BR>";        
+            }
+            $itime=$itime+1;
         }
+        $content .="</TD>\n";
+        $content .="</TR>\n\n";
+
+        //$content .=$item->nodeValue;
 
         $iitem=$iitem+1;
     }
 } // foreach
+$content .="</tbody>";
+$content .="</TABLE>";
+$content .="<BR/>";
+$content .="<BR/>";
+$content .="<BR/>";
 
 $done_n =$iitem;
 $todo_n =0;

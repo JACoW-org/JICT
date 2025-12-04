@@ -1,7 +1,8 @@
 <?php
 
-/* bY Stefano.Deiuri@Elettra.Eu
+/* Initial version by Stefano.Deiuri@Elettra.Eu
 
+2025.11.15 - nicolas.delerue@ijclab.in2p3.fr: Add get region
 2022.08.30 - update
 
 */
@@ -50,9 +51,9 @@ function need_file() {
 
 
 function get_region($country_code){
-        $Asia_list=[ "CN", "JP", "KR", "TH", "TW" ];
-        $Americas_list=[ "CA", "US" ];
-        $EMEAS_list=[ "BE", "CH", "DE", "ES", "FR" , "GB", "IL", "IR", "IT", "NL",  "SE", "TN", "UK" ];
+        $Asia_list=[ "AU", "CN", "IN", "JP", "KR", "KZ", "TH", "TW" ];
+        $Americas_list=[ "BR", "CA", "MX", "US" ];
+        $EMEAS_list=[ "AM", "AT", "BE", "CH", "CZ", "DE", "ES", "FR" , "GB", "HU", "IL", "IR", "IT", "JO", "LT", "MT", "NL", "PL", "RO", "RU", "SE", "SI", "TN", "TR",  "UA",  "UK", "ZA" ];
         if (in_array($country_code,$Asia_list)) return "Asia";
         if (in_array($country_code,$Americas_list)) return "Americas";
         if (in_array($country_code,$EMEAS_list)) return "EMEA";

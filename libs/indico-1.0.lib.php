@@ -1,8 +1,9 @@
 <?php
 
-/* by Stefano.Deiuri@Elettra.Eu
+/* Initial version by Stefano.Deiuri@Elettra.Eu
 
-2025.11.10 - fix problem related to $_server [PWD] being empty (nicolas.delerue@ijclab.in2p3.fr)
+2025.11.20 - nicolas.delerue@ijclab.in2p3.fr: improve statistics
+2025.11.10 - nicolas.delerue@ijclab.in2p3.fr: fix problem related to $_server [PWD] being empty
 2025.06.05 - fix statistics
 2024.07.16 - updates
 2023.11.27 - handle public access mode
@@ -226,7 +227,7 @@ class INDICO extends JICT_OBJ {
 			if ($verbose) $this->verbose( "# $_method ($cache_time) $req... ", 2 );
 			if ($_rqst_cfg['use_session_token']) {
 				//Without that the request's auther will be the app oauth token's owner
-				print("Overriding authorization header with session token\n"); 
+				//print("Overriding authorization header with session token\n"); 
 			    $this->api->config( 'authorization_header', 'Bearer ' .$_SESSION['indico_oauth']['token'] );	
 			}
 			
@@ -676,6 +677,17 @@ class INDICO extends JICT_OBJ {
 					'paid' =>$conf_registrants[$rid]['paid'],
 					];
     
+					//print($registrants[$rid]['region']);
+					//print($p['country_code']);
+					//print(get_region($p['country_code']));
+					if ($registrants[$rid]['region']=="Unknown"){
+						print("registrant ".$rid.": country unknown");
+					}
+					if (get_region($p['country_code'])=="Unknown"){
+						print("regstrant ".$rid.": country unknown");
+					}
+					
+
                 if (!empty($r['tags'])) {
                     foreach ($r['tags'] as $tag) {
                         if (empty($stats['by_tag'][$tag])) $stats['by_tag'][$tag] =1;
@@ -699,7 +711,6 @@ class INDICO extends JICT_OBJ {
                     $tag_status="Normal";
                 }
                 $registrants[$rid]["tag_status"]=$tag_status;
-<<<<<<< HEAD
                 
                 $stats_fields=[ 'by_dates', 'by_days_to_deadline', 'country', 'country_code' , 'region',  'paid', "tag_status"];
                 
@@ -712,12 +723,12 @@ class INDICO extends JICT_OBJ {
                         //$stats['registrants_extra_stats_'.strval($registrants_extra_stats)]["name"]=$statitem["name"];
                         //var_dump($this->data[$data_extra_key]);
                         foreach ($this->data[$data_extra_key]["registration_data"] as $part){
-                            echo 'part title: '.$part["title"]."\n"; 
+                            //echo 'part title: '.$part["title"]."\n"; 
                             foreach($part["fields"] as $formentry) {
-                                echo "      formentry: ".$formentry["title"]."  ".$formentry["data"]."\n";
+                                //echo "      formentry: ".$formentry["title"]."  ".$formentry["data"]."\n";
 								if (strlen($formentry["title"])>60){
 									$formentry["title"]=substr($formentry["title"],0,25)."...".substr($formentry["title"],strlen($formentry["title"])-25,25);
-									print("Shortened title: ". $formentry["title"]);
+									//print("Shortened title: ". $formentry["title"]);
 								}
                                 if (($statitem["type"]=="count")&&($formentry["title"]==$statitem["field"])){
                                     if (gettype($formentry["data"])=="boolean"){
@@ -732,8 +743,8 @@ class INDICO extends JICT_OBJ {
                                     if (empty($stats['registrants_extra_stats_'.strval($registrants_extra_stats)][strval($value)])) $stats['registrants_extra_stats_'.strval($registrants_extra_stats)][strval($value)] =1;
                                     else $stats['registrants_extra_stats_'.strval($registrants_extra_stats)][strval($value)] ++;
                                 } else if (($statitem["type"]=="choice")&&($formentry["title"]==$statitem["field"])){
-                                    echo "match ".$formentry["data"]." choice \n";
-                                    var_dump($formentry);
+                                    //echo "match ".$formentry["data"]." choice \n";
+                                    //var_dump($formentry);
                                     if (count($formentry["data"])==0){
                                         $value="None";
                                     } else {
@@ -743,18 +754,18 @@ class INDICO extends JICT_OBJ {
                                             }
                                         }
                                     }
-                                    echo "value $value \n";
+                                    //echo "value $value \n";
                                     if (empty($stats['registrants_extra_stats_'.strval($registrants_extra_stats)][strval($value)])) $stats['registrants_extra_stats_'.strval($registrants_extra_stats)][strval($value)] =1;
                                     else $stats['registrants_extra_stats_'.strval($registrants_extra_stats)][strval($value)] ++;
                                 } else if ($statitem["type"]=="multiple"){
                                     foreach ($statitem["fields"] as $statfield){
 										if (strlen($statfield)>60){
 											$statfield=substr($statfield,0,25)."...".substr($statfield,strlen($statfield)-25,25);
-											print("Shortened field: ". $statfield);
+											//print("Shortened field: ". $statfield);
 										}
 
                                         if ($formentry["title"]==$statfield){
-                                            echo "match multiple".$formentry["data"]." \n";
+                                            //echo "match multiple".$formentry["data"]." \n";
                                             if ($formentry["data"]){
                                                 if (empty($stats['registrants_extra_stats_'.strval($registrants_extra_stats)][$statfield])) $stats['registrants_extra_stats_'.strval($registrants_extra_stats)][$statfield] =1;
                                                 else $stats['registrants_extra_stats_'.strval($registrants_extra_stats)][$statfield] ++;
@@ -785,38 +796,6 @@ class INDICO extends JICT_OBJ {
                     array_push($stats_fields,'gender');
                 } // get extra info on registrant 
                 
-=======
-                
-                $stats_fields=[ 'by_dates', 'by_days_to_deadline', 'country', 'country_code' , 'region',  'paid', "tag_status"];
-                
-                //Get extra info on registrant
-                if ((!empty($cws_config['indico_stats_importer']['registrants_load_extra_data']))&&($cws_config['indico_stats_importer']['registrants_load_extra_data']==1)){
-                    $data_extra_key =$this->request( sprintf('/api/checkin/event/{id}/forms/%s/registrations/%s' ,  $cws_config['indico_stats_importer']['registrants_form_id'], $rid));
-
-                    //is paid
-                    $registrants[$rid]['is_paid']=$this->data[$data_extra_key]["is_paid"];
-                    array_push($stats_fields,'is_paid');
-                    //gender
-                    if ($gender_field==-1){
-                        for ($iloop=0;$iloop<count($this->data[$data_extra_key]["registration_data"][0]["fields"]);$iloop++){
-                            if (strtolower($this->data[$data_extra_key]["registration_data"][0]["fields"][$iloop]["title"])=="gender"){
-                                $gender_field=$iloop;
-                            }
-                        }
-                        //populating gender_codes
-                        for ($iloop=0;$iloop<count($this->data[$data_extra_key]["registration_data"][0]["fields"][$gender_field]["choices"]);$iloop++){
-                            $gender_codes[$this->data[$data_extra_key]["registration_data"][0]["fields"][$gender_field]["choices"][$iloop]["id"]]=$this->data[$data_extra_key]["registration_data"][0]["fields"][$gender_field]["choices"][$iloop]["caption"];                            
-                        }
-                    }
-                    $registrants[$rid]['gender']=$gender_codes[array_keys($this->data[$data_extra_key]["registration_data"][0]["fields"][$gender_field]["data"])[0]];
-                    array_push($stats_fields,'gender');
-                    if (empty($stats['gender'][$type])) $stats['gender'][$type] =1;
-                    else $stats['gender'][$type] ++;
-                } // get extra info on registrant 
-                
-                if (empty($stats['paid'][$type])) $stats['paid'][$type] =1;
-                else $stats['paid'][$type] ++;
->>>>>>> origin/LightPeerReview
             }         
         }
         foreach ($stats_fields as $k) {
@@ -835,32 +814,19 @@ class INDICO extends JICT_OBJ {
             }            
         }
 
-<<<<<<< HEAD
         ksort( $stats['by_dates'] );
         ksort( $stats['by_days_to_deadline'] );
         arsort( $stats['country'] );
         arsort( $stats['gender'] );
         ksort( $stats['paid'] );
-=======
-        if (!is_null($stats['by_dates'])) ksort( $stats['by_dates'] );
-        if (!is_null($stats['by_days_to_deadline']))  ksort( $stats['by_days_to_deadline'] );
-        if (!is_null($stats['country']))  arsort( $stats['country'] );
-        if (!is_null($stats['gender']))  arsort( $stats['gender'] );
-        if (!is_null($stats['paid']))  Arrayksort( $stats['paid'] );
->>>>>>> origin/LightPeerReview
 
         $this->data['registrants'] =array( 
             'registrants' =>$registrants,
             'stats' =>$stats
             ); 
 
-<<<<<<< HEAD
-        echo "print stats\n";
-        print_r( $stats );
-=======
         //echo "print stats\n";
         //print_r( $stats );
->>>>>>> origin/LightPeerReview
     }
 
 
@@ -889,6 +855,20 @@ class INDICO extends JICT_OBJ {
 					$cf[$cfa['name']] =$cfa['value'];
 				}
 
+				if (!$x["submitter"]["affiliation_meta"]){
+					$metadata=[];
+					foreach($x['persons'] as $person){
+						if ($person['affiliation_link']){
+							$metadata=$person['affiliation_link'];
+						}
+						if ($person['author_type']=="primary"){
+							$x["submitter"]["affiliation_meta"]=$person['affiliation_link'];
+						}
+					} 						
+					if (!$x["submitter"]["affiliation_meta"]){
+						$x["submitter"]["affiliation_meta"]=$metadata;
+					}
+				}
 				$abstracts[ $x['id'] ] =[			
 					'title' =>$x['title'],
 					'title_bak' =>$pabs['title_bak'] ?? false,
@@ -902,7 +882,21 @@ class INDICO extends JICT_OBJ {
 					'submitter_country'=> $x["submitter"]["affiliation_meta"]["country_name"],
 					'submitter_region'=> get_region($x["submitter"]["affiliation_meta"]["country_code"])
 					];
-                      
+                /*      
+				if (get_region($x["submitter"]["affiliation_meta"]["country_code"])=="Unknown"){
+					print("submitter: country unknown");
+					print("<BR/>");
+					print_r($x['id']);
+					print("<BR/>");
+					print("Submitter: ");
+					print_r($x["submitter"]["affiliation_meta"]);
+					print("<BR/>");
+					print_r($x["submitter"]);
+					print("<BR/>");
+					//print_r($x);
+					print("<BR/>");
+				}
+				*/
 				$abs =&$abstracts[ $x['id'] ];
 
 				if (!empty($pabs) && strtotime( $x['modified_dt'] ) != $pabs['ts']) {
@@ -979,11 +973,7 @@ class INDICO extends JICT_OBJ {
         ksort( $chart_by_days_to_deadline );
 
         foreach ($stats_fields as $k) {
-<<<<<<< HEAD
             ksort( $stats[$k] );
-=======
-            if (!(is_null($stats[$k]))) ksort( $stats[$k] );
->>>>>>> origin/LightPeerReview
         }
         /*
         echo "stats\n";
