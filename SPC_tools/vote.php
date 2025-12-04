@@ -127,9 +127,12 @@ foreach ($fields_to_display as $field => $display){
         $column_width.="  width: 12em;\n";
      } else if ($field=="primary_author_name"){
         $column_width.="  width: 8em;\n";
-     } else if (($field=="content")||($field=="all_comments")){
+     } else if ($field=="content"){
+        $column_width.="  width: 40em;\n";
+        $js_variables .="col_content_width='40em';\n";
+     } else if ($field=="all_comments"){
         $column_width.="  width: 20em;\n";
-        $js_variables .="col_content_width='20em';\n";
+        $js_variables .="col_conmments_width='20em';\n";
      } else {
         $column_width.="  width: 1em;\n";
      }
