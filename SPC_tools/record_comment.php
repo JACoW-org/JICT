@@ -24,7 +24,9 @@ echo "<BR/>here<BR/>";
 
 $Indico->load();
 
-echo("indico loaded<BR/>");
+//echo("indico loaded<BR/>");
+require( 'autoconfig.php' );
+
 
 //$req =$Indico->request( "/event/{id}/manage/abstracts/abstracts.json", 'GET', false, array( 'return_data' =>true, 'quiet' =>true ) );
 
