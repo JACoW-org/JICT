@@ -52,7 +52,10 @@ function recreate_abstract_dict(){
 function color_abstract(abstract_id,thecolor){    
     //For colors see https://htmlcolorcodes.com/color-chart/
     //document.getElementById('info').innerText += "Coloring "+abstract_id;
-    var irow=abstracts_ids.get(""+abstract_id);
+    var irow=abstracts_ids.get(""+abstract_id); 
+    //console.log(cells[irow]);
+    //console.log("colrow");
+    cells[irow].style.backgroundColor=thecolor; 
     for (icol=0;icol<cells[irow].cells.length;icol++){
          cells[irow].cells[icol].style.backgroundColor=thecolor;
     } //for each col
@@ -75,7 +78,17 @@ function update_abstract(abstract_id){
                         //console.log(JSON.parse(this.response)["abstracts"][0]["comments"]);                        
                         //console.log(JSON.parse(this.response)["abstracts"][0]["comments"].length);     
                         if (JSON.parse(this.response)["abstracts"][0]["comments"].length>0){
-                            cells[irow].cells[col_comments].innerHTML+="Latest: "+JSON.parse(this.response)["abstracts"][0]["comments"][JSON.parse(this.response)["abstracts"][0]["comments"].length-1]["text"];
+                            cells[irow].cells[col_comments].innerHTML="";
+                            for (iloop=0; iloop<JSON.parse(this.response)["abstracts"][0]["comments"].length; iloop++){
+                                cells[irow].cells[col_comments].innerHTML+=JSON.parse(this.response)["abstracts"][0]["comments"][iloop]["user"]["first_name"]+" ";
+                                cells[irow].cells[col_comments].innerHTML+=JSON.parse(this.response)["abstracts"][0]["comments"][iloop]["user"]["last_name"]+":";
+                                cells[irow].cells[col_comments].innerHTML+=JSON.parse(this.response)["abstracts"][0]["comments"][iloop]["text"]+"<BR/>\n";
+                            }
+                            cells[irow].cells[col_comments].innerHTML+="<BR/><form>\n";
+                            cells[irow].cells[col_comments].innerHTML+="<INPUT type='hidden' name='abstract_id' value='"+abstract_id+"'>\n";
+                            cells[irow].cells[col_comments].innerHTML+="<INPUT type='text' name='comment_"+abstract_id+"' id='comment_"+abstract_id+"' size='10'>\n";
+                            cells[irow].cells[col_comments].innerHTML+="<INPUT type=button value='Add comment' onclick=\"add_comment("+abstract_id+")\">\n";
+                            cells[irow].cells[col_comments].innerHTML+="</form>";
                         }
                         review_found=false;
                         thereview={};
@@ -102,7 +115,13 @@ function update_abstract(abstract_id){
                                 current_vote_text="No vote";
                                 color_abstract(abstract_id, '#ffffff');
                             }
+                            document.getElementById('abstract_'+abstract_id+'_review_id').value=thereview["id"];
                             cells[irow].cells[vote_column].innerHTML=current_vote_text;
+                            new_track_id=0;
+                            if (thereview["proposed_action"]=="change_tracks"){
+                                new_track_id=thereview["proposed_tracks"][0]["id"];
+                                new_track_code=thereview["proposed_tracks"][0]["code"];
+                            }
                             for (iloop=1;iloop<=3;iloop++){
                                 if (iloop==1){
                                     btn_text="1st choice";
@@ -111,16 +130,22 @@ function update_abstract(abstract_id){
                                 } else {
                                     btn_text="Cancel vote";
                                 }
-                                vote_btn="<form><input type=\"button\" onclick=\"vote("+iloop+","+abstract_id+","+thereview["id"]+","+thereview["track"]["id"]+")\" value=\"Vote "+btn_text+"\"></button></form>\n";
+                                vote_btn="<form><input type=\"button\" onclick=\"vote("+iloop+","+abstract_id+","+thereview["id"]+","+thereview["track"]["id"]+","+new_track_id+")\" value=\"Vote "+btn_text+"\"></button></form>\n";
                                 if (iloop!=parseInt(current_vote)){
                                     cells[irow].cells[vote_column].innerHTML+=vote_btn;
                                 }
                             } //for iloop                            
                             cells[irow].cells[vote_mc_column].innerHTML=cells[irow].cells[MC_column].innerHTML.substring(0,3)+"_"+current_vote;
+                            if (thereview["proposed_action"]=="change_tracks"){
+                                cells[irow].cells[vote_column].innerHTML+="\n<BR/>Track change to "+new_track_code+" proposed\n";
+                                cells[irow].cells[MC_column].innerHTML+="\n<BR/>Track change to "+new_track_code+" proposed\n";
+                            }
                             //document.getElementById('info').innerText += "Done updating abstract;";
                         } //review found
                         else {
-                            cells[irow].cells[vote_column].innerHTML="Error: review not found in the abstract. Please reload page\n";
+                            if (JSON.parse(this.response)["abstracts"][0]["comments"].length==0){
+                                cells[irow].cells[vote_column].innerHTML="Error: review not found in the abstract. Please reload page\n";
+                            }
                         }
                    }//status == 200
                    
@@ -209,7 +234,7 @@ function count_votes(){
 }//count_votes
 
 
-function vote(vote_value,abstract_id,review_id,track_id){
+function vote(vote_value,abstract_id,review_id,track_id,new_track_id){
     //console.log("voting");
     console.log("voting",abstract_id);
     document.getElementById('info').innerText = "Voting on abstract "+abstract_id+";";
@@ -244,7 +269,7 @@ function vote(vote_value,abstract_id,review_id,track_id){
         }//readyState
     };
     query_url="record_vote.php";
-    post_data="abstract_id="+abstract_id+"&review_id="+review_id+"&track_id="+track_id+"&vote_value="+vote_value;
+    post_data="abstract_id="+abstract_id+"&review_id="+review_id+"&track_id="+track_id+"&vote_value="+vote_value+"+&new_track_id="+new_track_id;
     vote_request.open("POST", query_url, true);
     vote_request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
     vote_request.send(post_data);
@@ -252,11 +277,9 @@ function vote(vote_value,abstract_id,review_id,track_id){
     //document.getElementById('info').innerText += "Vote on "+abstract_id+" recorded.";
     //update_abstract(abstract_id);
     //document.getElementById('info').innerText += "Voting done";
-
 } //vote
 
 function add_comment(abstract_id){
-    //console.log("voting");
     console.log("commenting",abstract_id);
     document.getElementById('info').innerText = "Commenting on abstract "+abstract_id+";";
     comment=document.getElementById('comment_'+abstract_id).value;
@@ -286,10 +309,26 @@ function add_comment(abstract_id){
     //document.getElementById('info').innerText += "Comment done";
 } //add_comment
 
+function change_track(abstract_id){
+    document.getElementById('info').innerText = "Changing track on "+abstract_id+";";
+    console.log("change track");
+    //console.log(document.getElementById('change_track_'+abstract_id).value);
+    var irow=abstracts_ids.get(""+abstract_id); 
+    vote_value=parseInt(cells[irow].cells[vote_mc_column].innerText.substring(4,5));
+    new_track_id=document.getElementById('change_track_'+abstract_id).value;
+    review_id=document.getElementById('abstract_'+abstract_id+'_review_id').value;
+    //console.log("review_id "+review_id);
+    track_id=document.getElementById('abstract_'+abstract_id+'_track_id').value;
+    //console.log("track_id "+track_id);
+    vote(vote_value,abstract_id,review_id,track_id,new_track_id);
+} //change_track
+
 function show_hide_column(col_no, do_show) {
+    console.log("show/hide");
     var tbl = document.getElementById('abstracts_table');
     var rows = tbl.getElementsByTagName('tr');
     //document.getElementById('info').innerText += "Hide/show "+col_no+" "+do_show+";";
+
 
     for (var row = 0; row < rows.length; row++) {
         var cols = rows[row].children;
@@ -297,9 +336,12 @@ function show_hide_column(col_no, do_show) {
             var cell = cols[col_no];
             
             if ((cell.tagName == 'TH')||(cell.tagName == 'TD')) {
-                //console.log(cell.tagName,cell);
                 cell.style.display = do_show ? 'block' : 'none';
                 cell.style.width =  col_content_width;
+                cell.style.height =  cols[0].clientHeight;
+                cell.height =  cols[0].clientHeight;
+                cell.style.height =  cols[0].clientHeight+" px";
+                //cell.style.height =  "";
                 //cell.draw();
             } 
             //if ((cell.tagName == 'TH')||(cell.tagName == 'TD')) cell.visibility = do_show ? 'hidden' : 'visible';            
@@ -322,6 +364,19 @@ function show_hide_column(col_no, do_show) {
             document.getElementById('btnShowComments').style.visibility = 'visible';
         }
     } 
+    /*
+    //Refresh the full table
+    if (do_show){
+        sleep(5000).then(() => { 
+            console.log("hide table");
+            document.getElementById('abstracts_table').style.display = do_show ? 'none': 'block'; 
+            sleep(5000).then(() => { 
+                console.log("show table");
+                document.getElementById('abstracts_table').style.display = do_show ? 'block' : 'none'; 
+            });
+        });
+    }
+    */
 } // show_hide_column
 
 const btnHideAbs = document.getElementById( 'btnHideAbs' )
@@ -343,3 +398,4 @@ document.getElementById('info').innerText = "Javascript OK.";
 document.getElementById('info').innerText += ".";
 sleep(1000).then(() => { count_votes(); });
 sleep(1500).then(() => { document.getElementById('info').innerText += "."; });
+console.log("Page loaded");

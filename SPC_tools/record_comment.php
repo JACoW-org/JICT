@@ -24,7 +24,9 @@ echo "<BR/>here<BR/>";
 
 $Indico->load();
 
-echo("indico loaded<BR/>");
+//echo("indico loaded<BR/>");
+require( 'autoconfig.php' );
+
 
 //$req =$Indico->request( "/event/{id}/manage/abstracts/abstracts.json", 'GET', false, array( 'return_data' =>true, 'quiet' =>true ) );
 
@@ -59,7 +61,7 @@ if (count($_POST)==0){
     $comment= $_POST['comment'];
 }
 
-$req =$Indico->request( "/event/{id}/abstracts/".$abstract_id."/comment", 'POST', array( 'text' => $comment , 'visibility' => "reviewers" ) , array( 'return_data' =>true, 'quiet' =>true ) );
+$req =$Indico->request( "/event/{id}/abstracts/".$abstract_id."/comment", 'POST', array( 'text' => $comment , 'visibility' => "reviewers" ) , array( 'return_data' =>true, 'quiet' =>true, 'use_session_token' => true ) );
 var_dump($req);
 
 ?>

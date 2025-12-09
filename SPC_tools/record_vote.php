@@ -32,9 +32,13 @@ if (!$user) exit;
 
 $Indico->load();
 
+require( 'autoconfig.php' );
+
+
 $first_question_id=$cws_config['SPC_tools']['first_question_id'];
 $second_question_id=$cws_config['SPC_tools']['second_question_id'];
 
+print("first_question_id ".$first_question_id);
 
 if (count($_POST)==0){
     //die("No POST arguments passed, exiting\n");
@@ -50,6 +54,8 @@ if (count($_POST)==0){
         $vote_value= $_GET['vote_value'];
         $review_id= $_GET['review_id'];
         $track_id= $_GET['track_id'];
+        $new_track_id= $_GET['new_track_id'];
+        //$action= $_GET['action'];
         $csrf_token= $_GET['csrf_token'];
     } else {
         if ($code_testing==1) {
@@ -73,6 +79,8 @@ if (count($_POST)==0){
     $vote_value= $_POST['vote_value'];
     $review_id= $_POST['review_id'];
     $track_id= $_POST['track_id'];
+    $new_track_id= $_POST['new_track_id'];
+    //$action= $_POST['action'];
     $csrf_token= $_POST['csrf_token'];
 }
 if ($code_testing==1) {
@@ -82,47 +90,6 @@ if ($code_testing==1) {
     echo "track_id $track_id \n";
     echo "csrf_token $csrf_token \n";    
 }
-
-/*
-$abtracts_base_url="/event/".$cws_config['global']['indico_event_id']."/manage/abstracts/abstracts.json";
-echo "abtracts_base_url $abtracts_base_url \n";
-
-
-$post_data= array( 'abstract_id' =>  $abstract_id ); 
-$req =$Indico->request( $abtracts_base_url , 'POST', $post_data,  array(  'return_data' =>true, 'quiet' =>true));
-$track_id=$req["abstracts"][0]["submitted_for_tracks"][0]["id"];
-echo "sub track". $track_id."\n";
-
-//var_dump($req["abstracts"][count($req["abstracts"])-1]["submitted_for_tracks"]);
-var_dump($req["abstracts"][count($req["abstracts"])-1]);
-
-foreach ( $req["abstracts"][count($req["abstracts"])-1]["reviews"] as $review){    
-    echo "review id ". $review["id"]."\n";
-    echo "review id ". $review["track"]["id"]."\n";
-    echo "review id ". $review["user"]["full_name"]."\n";
-    var_dump($review);
-}
-*/
-//echo "Full req\n";
-//var_dump($req["abstracts"]);
-//var_dump($req);
-
-/*
-//post comment
-$post_data=array( 'text' => "test1711_1544" , 'visibility' => "judges" , "track" => 85 , "question_1" => "1" , "question_2" => "0" );
-
-$vote_base_url="/event/".$cws_config['global']['indico_event_id']."/abstracts/".$abstract_id."/comment";
-echo "vote_base_url $vote_base_url \n";
-$req =$Indico->request( $vote_base_url , 'POST', $post_data,  array(  'return_data' =>true, 'quiet' =>true));
-echo "Full req 2\n";
-var_dump($post_data);
-var_dump($req["success"]);
-*/
-/*
-    //post_data="track-"+track_id+"-csrf_token=025b2a88-7905-44c3-9ebc-be6926ef4ecc&track-"+track_id+"-question_67=1&track-"+track_id+"-question_68=0&track-"+track_id+"-contribution_type=__None&track-"+track_id+"-proposed_action=accept&track-"+track_id+"-comment=";
-    if (value==1){
-        post_data="track-"+track_id+"-csrf_token="+token+"&track-"+track_id+"-question_67=1&track-"+track_id+"-question_68=0&track-"+track_id+"-contribution_type=__None&track-"+track_id+"-proposed_action=accept&track-"+track_id+"-comment=";
-*/
 
 //syntax found using https://indico.jacow.org/event/37/abstracts/109/reviews/16835/edit
 if ($vote_value==1){
@@ -136,22 +103,33 @@ if ($vote_value==1){
     $question2=0;
 }
 
+$post_data=array();
+// "track" => $track_id , 
+$post_data["track-".$track_id."-question_".$first_question_id] = $question1;
+$post_data["track-".$track_id."-question_".$second_question_id] =  $question2;
+if ($new_track_id>0){
+$post_data["track-".$track_id."-proposed_tracks"] = $new_track_id;
+$post_data["track-".$track_id."-proposed_action"]= "change_tracks";
+} else {
+    $post_data["track-".$track_id."-proposed_action"]= "accept";
+}
 
 if ($review_id>0){
-    $post_data=array( "track" => $track_id , "track-".$track_id."-question_$first_question_id" => $question1, "track-".$track_id."-question_$second_question_id" =>  $question2 , "track-".$track_id."-proposed_action" => "accept"  );
+    //$post_data=array( "track" => $track_id , "track-".$track_id."-question_$first_question_id" => $question1, "track-".$track_id."-question_$second_question_id" =>  $question2 );
     //$post_data=array( "track-".$track_id."-csrf_token" => $csrf_token,  "track" => $track_id , "track-".$track_id."-question_$first_question_id" => $question1, "track-".$track_id."-question_$second_question_id" =>  $question2 , "track-".$track_id."-proposed_action" => "accept" , "track-".$track_id."-proposed_contribution_type" => "23" , "track-".$track_id."-comment" => "None...");
     //$post_data=array( 'track-'.$track_id.'-comment' => 'from PHP track 47' , "track" => $track_id , "track-".$track_id."-question_20" => 0 , "track-".$track_id."-question_19" => 0, "track-".$track_id."-proposed_action" => "accept");
     //$post_data=array( 'comment' => "test1711_1617r" , 'visibility' => "conveners", "track" => 47 , "question_1" => "1" , "question_2" => "1" , "question_19" => "1" , "question_20" => "1", "contribution_type" => "None" , "proposed_action" => "accept" );
     $vote_base_url="/event/".$cws_config['global']['indico_event_id']."/abstracts/".$abstract_id."/reviews/".$review_id."/edit";
     //$vote_base_url="/event/37/abstracts/109/reviews/16835/edit";
 } else {
-    $post_data=array(    "track" => $track_id , "track-".$track_id."-question_$first_question_id" => $question1, "track-".$track_id."-question_$second_question_id" =>  $question2 , "track-".$track_id."-proposed_action" => "accept" );
+    //$post_data=array(    "track" => $track_id , "track-".$track_id."-question_$first_question_id" => $question1, "track-".$track_id."-question_$second_question_id" =>  $question2 , "track-".$track_id."-proposed_action" => "accept" );
     //$post_data=array(  "track-".$track_id."-csrf_token" => $csrf_token,   "track" => $track_id , "track-".$track_id."-question_$first_question_id" => $question1, "track-".$track_id."-question_$second_question_id" =>  $question2 , "track-".$track_id."-proposed_action" => "accept" , "track-".$track_id."-proposed_contribution_type" => "23" , "track-".$track_id."-comment" => "None..." );
     //https://indico.jacow.org/event/37/abstracts/125/review/track/85
     $vote_base_url="/event/".$cws_config['global']['indico_event_id']."/abstracts/".$abstract_id."/review/track/".$track_id;
 }
 if ($code_testing==1) {
     echo "vote_base_url $vote_base_url \n";
+    print_r($post_data);
 }
 $req =$Indico->request( $vote_base_url , 'POST', $post_data,  array(  'return_data' =>true, 'quiet' =>true, 'use_session_token' => true));
 if ($code_testing==1) {
