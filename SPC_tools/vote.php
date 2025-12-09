@@ -28,6 +28,8 @@ if (!$user) exit;
 
 $Indico->load();
 
+require( 'autoconfig.php' );
+
 $first_question_id=$cws_config['SPC_tools']['first_question_id'];
 $second_question_id=$cws_config['SPC_tools']['second_question_id'];
 
@@ -161,8 +163,9 @@ for ($imc=1; $imc<=8; $imc++){
 foreach ($Indico->data[$data_key]['abstracts'] as $abstract) {
     if ($abstract["state"]=="submitted"){
         $abstract["MC"]=substr($abstract["submitted_for_tracks"][0]["code"],0,3);
-        $abstract["track"]=$abstract["submitted_for_tracks"][0]["code"];
-        $abstract["MC_track"]=$abstract["MC"]." - ".$abstract["submitted_for_tracks"][0]["code"];
+        $abstract["track"]=$abstract["submitted_for_tracks"][0]["code"]." - ".$abstract["submitted_for_tracks"][0]["title"];
+        //print_r($abstract["submitted_for_tracks"][0]);
+        $abstract["MC_track"]=$abstract["MC"]." - ".$abstract["submitted_for_tracks"][0]["code"].": ".$abstract["submitted_for_tracks"][0]["title"];
         $abstract["primary_author_name"]="";
         foreach($abstract["persons"] as $pers){
             if ($pers["author_type"]=="primary"){
@@ -176,7 +179,10 @@ foreach ($Indico->data[$data_key]['abstracts'] as $abstract) {
         }
 
         $current_vote="3";
+        $current_action="";
         $review_id=0;
+        $current_action="accept";
+        $new_track_id=0;
         foreach($abstract["reviews"] as $review){
             //echo "review\n"; 
             //var_dump($review);
@@ -184,7 +190,8 @@ foreach ($Indico->data[$data_key]['abstracts'] as $abstract) {
                 $review_id=$review["id"];
                 //echo "my review info\n";
                 //var_dump($review);
-                if ($review["proposed_action"]=="accept"){
+                if (($review["proposed_action"]=="accept")||($review["proposed_action"]=="change_tracks")){
+                    $current_action=$review["proposed_action"];
                     foreach($review["ratings"] as $rating){
                         if ($rating["question"]==$first_question_id){
                             if ($rating["value"]==true){
@@ -198,15 +205,20 @@ foreach ($Indico->data[$data_key]['abstracts'] as $abstract) {
                             }  
                         }                      
                     } //for each rating
+                    if ($review["proposed_action"]=="change_tracks"){
+                        //print_r($review);
+                        $new_track_id=$review["proposed_tracks"][0]["id"];
+                        $new_track_code=$review["proposed_tracks"][0]["code"];
+                    }
                     $votes_count[$abstract["MC"]][$current_vote] +=1;
                 } else {
+                    //print($review["proposed_action"]);
                     //$abstract["vote"]=$review["proposed_action"];
                     $current_vote="3";
                     continue;
                 }
             } // review by this user
         } //find vote
-        
         foreach (array(1,2,3) as $vote_value){
             if ($vote_value==1){
                 $vote_value_text="1st choice";
@@ -216,7 +228,7 @@ foreach ($Indico->data[$data_key]['abstracts'] as $abstract) {
                 $vote_value_text="Cancel";
             }
             if (!($current_vote==$vote_value)){
-                $abstract["vote"].="\n<form><input type=\"button\" onclick=\"vote(".$vote_value.",".$abstract["id"].",".$review_id.",".$review["track"]["id"].")\" value=\"Vote ".$vote_value_text."\"></button></form>\n";
+                $abstract["vote"].="\n<form><input type=\"button\" onclick=\"vote(".$vote_value.",".$abstract["id"].",".$review_id.",".$abstract["submitted_for_tracks"][0]["id"].",".$new_track_id.")\" value=\"Vote ".$vote_value_text."\"></button></form>\n";
             }
         }
         //$abstract["vote"].="\n<form><input type=\"button\" onclick=\"color_abstract(".$abstract["id"].",'#F7DC6F')\" value=\"Color abstract\"></button></form>\n";
@@ -240,6 +252,25 @@ foreach ($Indico->data[$data_key]['abstracts'] as $abstract) {
         <INPUT type=button value='Add comment' onclick=\"add_comment(".$abstract["id"].")\">
         </form>";
 
+        $abstract["MC_track"] .="<BR/><form>\n<select id=\"change_track_".$abstract["id"]."\" onchange=\"change_track(".$abstract["id"].")\">\n";
+        $abstract["MC_track"] .="<option value=\"no_change\">Change track</option>\n";    
+        //print_r($cws_config['SPC_tools']['tracks']);    
+        foreach($cws_config['SPC_tools']['tracks'] as $track){
+            $abstract["MC_track"] .="<option value=\"".$track['id']."\">".$track['code']."</option>\n";
+        }
+        $abstract["MC_track"] .="</select>\n";
+        $abstract["MC_track"] .="<INPUT type='hidden' id='abstract_".$abstract["id"]."_track_id' value=".$abstract["submitted_for_tracks"][0]["id"].">\n";
+        $abstract["MC_track"] .="<INPUT type='hidden' id='abstract_".$abstract["id"]."_review_id' value=".$review_id.">\n";
+        $abstract["MC_track"] .="</form>\n";
+
+        //<INPUT type=button value='A' onclick=\"change_track(".$abstract["id"].")\">
+
+
+        if ($new_track_id>0){
+            $abstract["vote"].="\n<BR/>Track change to ".$new_track_code." proposed\n";
+            $abstract["MC_track"].="\n<BR/>Track change to ".$new_track_code." proposed\n";
+        }
+
 
         $content .="<TR id=\"TR-".$abstract["id"]."\">\n"; 
         foreach ($fields_to_display as $field => $display){       
@@ -252,7 +283,7 @@ foreach ($Indico->data[$data_key]['abstracts'] as $abstract) {
             }
             $content .=">";
             if (in_array($field,$link_fields)){
-                $content .="<A HREF='https://indico.jacow.org/event/".$cfg['indico_event_id']."/abstracts/". $abstract[$field]."/' >";
+                $content .="<A HREF='https://indico.jacow.org/event/".$cfg['indico_event_id']."/abstracts/". $abstract['id']."/' >";
             }
                 $content .="". $abstract[$field];
             if (in_array($field,$link_fields)){
