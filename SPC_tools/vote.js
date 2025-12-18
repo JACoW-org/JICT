@@ -173,9 +173,11 @@ function count_votes(){
             document.getElementById('info').innerText += "Counting votes";
             var dataTable = document.getElementById("abstracts_table");
             var cells = dataTable.querySelectorAll("tr");
+
             //for each row
             firstVotes=new Array(8);
             secondVotes=new Array(8);
+            total_votes=0
             for (var imc = 0; imc < 8; imc++){
                 firstVotes[imc]=0;
                 secondVotes[imc]=0;
@@ -192,44 +194,57 @@ function count_votes(){
                 */
                 if (vote_value==1){
                     firstVotes[MCval-1]+=1;
+                    total_votes+=1;
                 }
                 else if (vote_value==2){
                     secondVotes[MCval-1]+=1;
+                    total_votes+=1;
                 }                
             } //for each row
-            
             var first_choices_row=document.getElementById('votes').querySelectorAll("tr")[1];
             var second_choices_row=document.getElementById('votes').querySelectorAll("tr")[2];
             for (var imc = 0; imc < 8; imc++){
                 first_choices_row.cells[imc+1].innerText =firstVotes[imc];
-                if (firstVotes[imc]<5){
+                if (firstVotes[imc]<votes_to_cast[imc]){
                     first_choices_row.cells[imc+1].style.backgroundColor= '#F7DC6F'; //yellow
-                } else if (firstVotes[imc]==5){
+                } else if (firstVotes[imc]==votes_to_cast[imc]){
                     first_choices_row.cells[imc+1].style.backgroundColor= '#82E0AA'; //green
                 } else {
                     first_choices_row.cells[imc+1].style.backgroundColor= '#F1948A'; //red
                 }
                 second_choices_row.cells[imc+1].innerText =secondVotes[imc];
-                if (secondVotes[imc]<5){
+                if (secondVotes[imc]<votes_to_cast[imc]){
                     second_choices_row.cells[imc+1].style.backgroundColor= '#F7DC6F'; //yellow
-                } else if (secondVotes[imc]==5){
+                } else if (secondVotes[imc]==votes_to_cast[imc]){
                     second_choices_row.cells[imc+1].style.backgroundColor= '#82E0AA'; //green
                 } else {
                     second_choices_row.cells[imc+1].style.backgroundColor= '#F1948A'; //red
                 }
             }
+            expected_sum=0;
             for (var imc = 0; imc < 8; imc++){
+                expected_sum=expected_sum+(2*votes_to_cast[imc]);
                 var navbar_mc=document.getElementById('MC'+(imc+1));
                 navbar_mc.innerText="MC"+(imc+1)+": "+firstVotes[imc]+"+"+secondVotes[imc]+" = "+(firstVotes[imc]+secondVotes[imc]);
-                if (firstVotes[imc]+secondVotes[imc]<10){
+                if (firstVotes[imc]+secondVotes[imc]<(2*votes_to_cast[imc])){
                     navbar_mc.style.backgroundColor= '#F7DC6F'; //yellow
-                } else if ((firstVotes[imc]+secondVotes[imc]==10)&&(firstVotes[imc]==5)&&(secondVotes[imc]==5)){
+                } else if ((firstVotes[imc]+secondVotes[imc]==(2*votes_to_cast[imc]))&&(firstVotes[imc]==votes_to_cast[imc])&&(secondVotes[imc]==votes_to_cast[imc])){
                     navbar_mc.style.backgroundColor= '#82E0AA'; //green
                 } else {
                     navbar_mc.style.backgroundColor= '#F1948A'; //red
                 }
                 navbar_mc.style.color= '#000000'; //black
             }
+            var navbar_total=document.getElementById('total_votes');   
+            navbar_total.innerText="Total= "+total_votes;
+            if (total_votes<expected_sum){
+                navbar_total.style.backgroundColor= '#F7DC6F'; //yellow
+            } else if (total_votes>expected_sum){
+                navbar_total.style.backgroundColor=  '#F1948A'; //red
+            } else {
+                navbar_total.style.backgroundColor= '#82E0AA'; //green
+            }
+            navbar_total.style.color= '#000000'; //black
     //document.getElementById('info').innerText += "Counted;";
 }//count_votes
 

@@ -61,20 +61,37 @@ $content .="<BR/>";
 $content .="<BR/>";
 
 //Foramt: ["indico field name" => "display name" ]
-$fields_to_display=[ "id" => "id", "friendly_id" => "Conf id", "MC_track"=> "MC and track"  , "title" => "Title",  "primary_author_name" => "Main author", "content" => "Abstract" , "vote" => "Vote", "vote_by_MC" => "Vote by MC" , "all_comments" => "Comments"  ];
+if (str_contains($_SERVER["QUERY_STRING"],"text=1")){
+    $fields_to_display=[ "id" => "id", "friendly_id" => "Conf id", "MC_track"=> "MC and track"  , "title" => "Title",  "primary_author_name" => "Main author", "content" => "Abstract" , "vote" => "Vote", "vote_by_MC" => "Vote by MC" , "all_comments" => "Comments"  ];
+} else {
+    $fields_to_display=[ "id" => "id", "friendly_id" => "Conf id", "MC_track"=> "MC and track"  , "title" => "Title",  "primary_author_name" => "Main author", "vote" => "Vote", "vote_by_MC" => "Vote by MC" , "all_comments" => "Comments"  ];
+}
 $num_fields=[  "id", "friendly_id" ];
 $link_fields=[ "id", "title" ];
 
 
 $js_variables ="
 <script>
+var votes_to_cast = Array ( 4 , 7, 3, 4, 6, 7, 7, 2);
 ";
 
-    
+$content .="<P>";
+if (str_contains($_SERVER["QUERY_STRING"],"text=1")){
+    $content .="<A HREF=?text=0>Click here to reload the page without the abstracts' text.</A><BR/>\n";
+} else {
+    $content .="<A HREF=?text=1>Click here to reload the page with the abstracts' text.</A><BR/>\n";
+}
+$content .="</P>";
     
 $content .="<form>";
 $content .="<input type='button' id='btnHideAbs' value='Hide abstracts'>\n";
 $content .="<input type='button' id='btnShowAbs' value='Show abstracts'>\n";
+if (str_contains($_SERVER["QUERY_STRING"],"text=0")){
+    $content .="<script>";
+    $content .="document.getElementById('btnShowAbs').style.visibility = 'hidden';\n";
+    $content .="document.getElementById('btnHideAbs').style.visibility = 'hidden';\n";
+    $content .="</script>";
+} 
 $content .="<input type='button' id='btnHideComments' value='Hide comments'>\n";
 $content .="<input type='button' id='btnShowComments' value='Show comments'>\n";
 

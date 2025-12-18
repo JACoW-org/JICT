@@ -91,6 +91,8 @@ if ($code_testing==1) {
     echo "csrf_token $csrf_token \n";    
 }
 
+$vote_value=intval(trim(str_replace("+","",$vote_value)));
+
 //syntax found using https://indico.jacow.org/event/37/abstracts/109/reviews/16835/edit
 if ($vote_value==1){
     $question1=1;

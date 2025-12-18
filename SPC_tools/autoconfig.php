@@ -15,11 +15,57 @@ if (str_contains($_SERVER["QUERY_STRING"],"debug")){
 //print('autoconfig');
 
 $tracksfile=$cws_config['global']['data_path']."/conference_tracks.json";
+$questionsfile=$cws_config['global']['data_path']."/questions_numbers.json";
+/*
+if ($cws_config['global']['indico_event_id']==37) {
+    $cws_config['SPC_tools']['first_question_id'] =19; //to find this value check an abstract on which you voted
+    $cws_config['SPC_tools']['second_question_id'] = 20;
+} else if ($cws_config['global']['indico_event_id']==95) {
+    $cws_config['SPC_tools']['first_question_id'] =67; //to find this value check an abstract on which you voted
+    $cws_config['SPC_tools']['second_question_id'] = 68;
+}
+*/
+//load questions file
+$questions=file_read_json( $questionsfile, true );
+if ((!($questions))||(str_contains($_SERVER["QUERY_STRING"],"reload_config"))){
 
-$cws_config['SPC_tools']['first_question_id'] =19; //to find this value check an abstract on which you voted
-$cws_config['SPC_tools']['second_question_id'] = 20;
-//parse the first abstract of asbtracts.json view-source:https://indico.jacow.org/event/37/abstracts/115/ and look for "question-index"
+    //Trying to get question ID:
 
+    $data_key= $Indico->request( '/event/{id}/manage/abstracts/abstracts.json', 'GET', false, false);
+    $qid=false;
+    while((!$qid)&&($abstract=next($Indico->data[$data_key]['abstracts']))){
+        $base_url='/event/{id}/abstracts/'.$abstract['id'].'/review/track/'.$abstract["submitted_for_tracks"][0]['id'];
+        print($base_url);
+        $abstract_key= $Indico->request( $base_url, 'GET', false, $_rqst_cfg);
+        //var_dump($abstract_key);
+        //var_dump($Indico->data[$abstract_key]);
+        print("<BR/>\n");
+        if ($Indico->data[$abstract_key]) {
+            $matches = null;
+            //$returnValue = preg_match_all("#<div id=\\\"track-".$abstract["submitted_for_tracks"][0]['id']."-question_(.*)\\\"#", $Indico->data[$abstract_key] , $matches);
+            $returnValue = preg_match_all("#track-".$abstract["submitted_for_tracks"][0]['id']."-question_([0-9]+)\"#", $Indico->data[$abstract_key]["html"] , $matches);
+            var_dump(array_unique($matches[1])); 
+            $cws_config['SPC_tools']['first_question_id'] =  current(array_unique($matches[1]));      
+            $cws_config['SPC_tools']['second_question_id'] = next(array_unique($matches[1]));
+            var_dump(array_unique($matches[1])); 
+            print('first_question_id= '.$cws_config['SPC_tools']['first_question_id']);  
+            print('second_question_id= '.$cws_config['SPC_tools']['second_question_id']);  
+            $questions=[];
+            $questions['first_question_id']=$cws_config['SPC_tools']['first_question_id'];
+            $questions['second_question_id']=$cws_config['SPC_tools']['second_question_id'];
+            $fwquestions=file_write_json($questionsfile,$questions);
+            $qid=true;
+        } // if match
+    } // while each abstract
+} else {
+    $cws_config['SPC_tools']['first_question_id']=$questions['first_question_id'];
+    $cws_config['SPC_tools']['second_question_id']=$questions['second_question_id'];
+}
+
+
+
+//parse the first abstract of asbtracts.json view-source:https://indico.jacow.org/event/37/abstracts/115/reviews/16839/edit and look for "-question_"
+// or view-source:https://indico.jacow.org/event/37/abstracts/183/review/track/86
 
 if (!(array_key_exists('tracks', $cws_config['SPC_tools']))){
     //load tracks file
