@@ -44,6 +44,9 @@ if (count($_POST)>0){
 $fwret=file_write_json( $cws_config['global']['data_path']."/known_incompatibilities.json",$known_incompatibilities);
 //echo "file write $fwret \n"; 
 
+
+//var_dump($known_incompatibilities);
+
 $T =new TMPL( $cfg['template'] );
 $T->set([
     'style' =>'main { font-size: 22px; } main ul { margin: 20px; }',
@@ -99,17 +102,34 @@ $returnValue = preg_match_all('#<tr id="registration-([[:alnum:]]*)"#', $req["ht
 $end_matches=null;
 $returnValue = preg_match_all('#</tr>#', $req["html"] , $end_matches , PREG_OFFSET_CAPTURE );
 
-
 if (count($start_matches[1])==0){
     $content .="<b>Please reload the page</b>\n"; 
     $content .="<script>window.location.reload();</script>\n";
 } //if data loading failed
+
+$incompatibility_error=false;
+foreach ($incompatibilities as $incompatibility){
+    foreach (array_keys($incompatibility) as $criteria){
+        $idx=array_search($criteria, $cols_title);
+        if (!($idx)){
+            $incompatibility_error=true;
+            $content.="Warning: criteria ".$criteria." was not found. <BR/>\n";
+            print("Warning: criteria ".$criteria." was not found. idx=".$idx."<BR/>\n");
+        }
+    }
+}
+if ($incompatibility_error){
+    var_dump($cols_title);
+}
+
+
 
 $incompatibilities_found=0;
 $incompatibilities_ignored=0;
 $total_registrations=0;
 for ($imatch=0;$imatch<count($start_matches[1]);$imatch++){
     $regid=$start_matches[1][$imatch][0];
+    //print("regid: ".$regid."\n");
     $this_entry=substr($req["html"],$start_matches[1][$imatch][1],$end_matches[0][$imatch+1][1]-$start_matches[1][$imatch][1]);
     $entry_matches=null;
     $returnValue = preg_match_all('#<td class=\"i-table\"(.*)>#', $this_entry , $entry_matches );   
@@ -126,15 +146,32 @@ for ($imatch=0;$imatch<count($start_matches[1]);$imatch++){
         $total_registrations+=1;
         for($icol=0;$icol<count($entry_data);$icol++){
             $entry_data[$icol]=trim(preg_replace("/ data-text=\"(.*)\"/", '\1',$entry_data[$icol]));
+            $entry_data[$icol]=trim(str_replace("></td","",$entry_data[$icol]));
         }
-        $entry_name =  "<A HREF='". sprintf("https://indico.jacow.org/event/%s/manage/registration/%s/registrations/%s", $cws_config['global']['indico_event_id'] , $cws_config['indico_stats_importer']['registrants_form_id'],$regid)."/'> $regid </A>". $entry_data[array_search("First Name", $cols_title)]." " .  $entry_data[array_search("Last Name", $cols_title)] ."\n";
+        $entry_name =  "<A HREF='". sprintf("https://indico.jacow.org/event/%s/manage/registration/%s/registrations/%s", $cws_config['global']['indico_event_id'] , $cws_config['indico_stats_importer']['registrants_form_id'],$regid)."/'> $regid </A>". $entry_data[array_search("First Name", $cols_title)]." " .  $entry_data[array_search("Last Name", $cols_title)] ." ("  . $entry_data[array_search("Email Address", $cols_title)].")\n";
         $show_all_answers=False;
         if ($show_all_answers){
             for ($ival=0;$ival<count($entry_data);$ival++){
                 echo $cols_title[$ival]." - ".$entry_data[$ival]." <BR/>\n"; 
             }
         }
-        
+        /*
+        if ($regid=="9481"){
+            $criteria="Date of birth";
+            var_dump($entry_data);
+            $idx=array_search($criteria, $cols_title);
+            print("idx ".$idx.": - ".$criteria." - ".$entry_data[$idx]."\n");
+            if (!($entry_data[$idx]==$incompatibility[$criteria])){
+                print("Not incompatible");
+            } else {
+                print("Incompatible");
+            }
+            print(" <BR/>\n");
+            for ($ival=0;$ival<count($entry_data);$ival++){
+                echo $cols_title[$ival]." - ".$entry_data[$ival]." <BR/>\n"; 
+            }
+        }
+        */             
         //Checking incomptibilities
         foreach ($incompatibilities as $incompatibility){
             $is_compatible=False;
@@ -144,12 +181,21 @@ for ($imatch=0;$imatch<count($start_matches[1]);$imatch++){
             foreach (array_keys($incompatibility) as $criteria){
                 //var_dump($incompatibility[$criteria]);
                 //var_dump($criteria);
-                $choice_text .= "$criteria = ";
+                $choice_text .= "$criteria= ";
                 $idx=array_search($criteria, $cols_title);
-                //$choice_text .= $idx ."  ". $entry_data[$idx] ." ". $incompatibility[$criteria] . "<BR/>";             
-                $choice_text .= $entry_data[$idx] . "<BR/>\n";             
-                if (!($entry_data[$idx]==$incompatibility[$criteria])){
-                    $is_compatible=True;
+                if (!($idx)){
+                    $content.="Warning: criteria ".$criteria." was not found. <BR/>\n";
+                    print("Warning: criteria ".$criteria." was not found. idx=".$idx."<BR/>\n");
+                    //var_dump($cols_title);
+                } else {
+                    //$choice_text .= $idx ."  ". $entry_data[$idx] ." ". $incompatibility[$criteria] . "<BR/>\n";             
+                    $choice_text .= $entry_data[$idx] . "<BR/>\n";             
+                    if (!($entry_data[$idx]==$incompatibility[$criteria])){
+                        $is_compatible=True;
+                        //print("Compatible ".$criteria);
+                    } else {
+                        //print("Incompatible ".$criteria.": ".$incompatibility[$criteria]." vs ".$entry_data[$idx] .";\n" );
+                    }
                 }
                 
             }
@@ -159,6 +205,7 @@ for ($imatch=0;$imatch<count($start_matches[1]);$imatch++){
                        if (($ki["type"]=="incompatibility")
                        &&($ki["user-id"]==$regid)
                        &&($ki["criteria"]==$criteria)){
+                           //print("To be ignored\n"); 
                            $to_be_ignored=True;
                            $incompatibilities_ignored++;
                        }
@@ -233,12 +280,28 @@ for ($imatch=0;$imatch<count($start_matches[1]);$imatch++){
                 if (($operator=="<")&&($date_entered>=$date_to_compare)){
                     $is_incorrect=True;
                 }
+                /*
+                if ($is_incorrect){
+                    print("incorrect date".$regid."\n");
+                }
+                */
                 if ($is_incorrect){
                     $to_be_ignored=False;
                     foreach ($known_incompatibilities as $ki){
+                        /*
+                        print("regid: ".$ki["user-id"]."=?=".$regid."\n");
+                        if ($ki["user-id"]==$regid){
+                            print("Yes\n");
+                        } else {
+                            print("No\n");
+                        }
+                        print_r($date_to_ckeck."\n");
+                        print($ki["criteria"]."=?=".$date_to_ckeck[0]."\n");
+                        */
                         if (($ki["type"]=="date")
                         &&($ki["user-id"]==$regid)
-                        &&($ki["date"]==$date_to_ckeck[0])){
+                        &&($ki["criteria"]==$date_to_ckeck[0])){
+                            //print("To be ignored \n");
                             $to_be_ignored=True;
                             $incompatibilities_ignored++;
                         }
