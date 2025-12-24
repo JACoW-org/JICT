@@ -225,7 +225,7 @@ function count_votes(){
             for (var imc = 0; imc < 8; imc++){
                 expected_sum=expected_sum+(2*votes_to_cast[imc]);
                 var navbar_mc=document.getElementById('MC'+(imc+1));
-                navbar_mc.innerText="MC"+(imc+1)+": "+firstVotes[imc]+"+"+secondVotes[imc]+" = "+(firstVotes[imc]+secondVotes[imc]);
+                navbar_mc.innerText="MC"+(imc+1)+": "+firstVotes[imc]+"+"+secondVotes[imc]+" = "+(firstVotes[imc]+secondVotes[imc])+"/"+(2*votes_to_cast[imc]);
                 if (firstVotes[imc]+secondVotes[imc]<(2*votes_to_cast[imc])){
                     navbar_mc.style.backgroundColor= '#F7DC6F'; //yellow
                 } else if ((firstVotes[imc]+secondVotes[imc]==(2*votes_to_cast[imc]))&&(firstVotes[imc]==votes_to_cast[imc])&&(secondVotes[imc]==votes_to_cast[imc])){

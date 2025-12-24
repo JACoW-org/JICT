@@ -13,7 +13,7 @@
 	
 	<link rel="shortcut icon" href="{path}{logo}" />	
 	    
-	<title>{title} {conf_name}</title>
+	<title>SPC votes - {title} {conf_name}</title>
 
     <!-- Bootstrap core CSS -->
 	<link href="{path}dist/bootstrap-4.3.1/css/bootstrap.min.css" rel="stylesheet">
@@ -457,11 +457,11 @@ class SortableTable {
     var dataCells = [];
 
     var rowNode = tbodyNode.firstElementChild;
-
+    console.log(rowNode);
     var index = 0;
     while (rowNode) {
       rowNodes.push(rowNode);
-      var rowCells = rowNode.querySelectorAll('th, td');
+      var rowCells = rowNode.querySelectorAll('th, td, TD');
       var dataCell = rowCells[columnIndex];
 
       var data = {};

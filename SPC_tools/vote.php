@@ -60,11 +60,12 @@ $content ="<BR/>";
 $content .="<BR/>";
 $content .="<BR/>";
 
-//Foramt: ["indico field name" => "display name" ]
+//Format: ["indico field name" => "display name" ]
+// "primary_author_name" => "Main author", 
 if (str_contains($_SERVER["QUERY_STRING"],"text=1")){
-    $fields_to_display=[ "id" => "id", "friendly_id" => "Conf id", "MC_track"=> "MC and track"  , "title" => "Title",  "primary_author_name" => "Main author", "content" => "Abstract" , "vote" => "Vote", "vote_by_MC" => "Vote by MC" , "all_comments" => "Comments"  ];
+    $fields_to_display=[ "id" => "id", "friendly_id" => "Conf id", "MC_track"=> "MC and track"  , "title" => "Title", "speaker_name" => "Speaker", "speaker_affiliation" => "Speaker's affiliation",  "content" => "Abstract" , "vote" => "Vote", "vote_by_MC" => "Vote by MC" , "all_comments" => "Comments"  ];
 } else {
-    $fields_to_display=[ "id" => "id", "friendly_id" => "Conf id", "MC_track"=> "MC and track"  , "title" => "Title",  "primary_author_name" => "Main author", "vote" => "Vote", "vote_by_MC" => "Vote by MC" , "all_comments" => "Comments"  ];
+    $fields_to_display=[ "id" => "id", "friendly_id" => "Conf id", "MC_track"=> "MC and track"  , "title" => "Title", "speaker_name" => "Speaker", "speaker_affiliation" => "Speaker's affiliation", "vote" => "Vote", "vote_by_MC" => "Vote by MC" , "all_comments" => "Comments"  ];
 }
 $num_fields=[  "id", "friendly_id" ];
 $link_fields=[ "id", "title" ];
@@ -72,8 +73,14 @@ $link_fields=[ "id", "title" ];
 
 $js_variables ="
 <script>
-var votes_to_cast = Array ( 4 , 7, 3, 4, 6, 7, 7, 2);
+var votes_to_cast = Array (8);
 ";
+
+//$js_variables .="console.log('votes_to_cast');\n";
+for ($imc=0; $imc<8; $imc++){
+    $js_variables .="votes_to_cast[".$imc."]=".$cws_config['SPC_tools']['votes_to_cast_by_MC'][$imc].";\n";
+}
+//$js_variables .="console.log(votes_to_cast);\n";
 
 $content .="<P>";
 if (str_contains($_SERVER["QUERY_STRING"],"text=1")){
@@ -86,7 +93,7 @@ $content .="</P>";
 $content .="<form>";
 $content .="<input type='button' id='btnHideAbs' value='Hide abstracts'>\n";
 $content .="<input type='button' id='btnShowAbs' value='Show abstracts'>\n";
-if (str_contains($_SERVER["QUERY_STRING"],"text=0")){
+if (!(str_contains($_SERVER["QUERY_STRING"],"text=1"))){
     $content .="<script>";
     $content .="document.getElementById('btnShowAbs').style.visibility = 'hidden';\n";
     $content .="document.getElementById('btnHideAbs').style.visibility = 'hidden';\n";
@@ -146,6 +153,10 @@ foreach ($fields_to_display as $field => $display){
         $column_width.="  width: 12em;\n";
      } else if ($field=="primary_author_name"){
         $column_width.="  width: 8em;\n";
+     } else if ($field=="speaker"){
+        $column_width.="  width: 8em;\n";
+     } else if ($field=="speaker_affiliation"){
+        $column_width.="  width: 8em;\n";
      } else if ($field=="content"){
         $column_width.="  width: 40em;\n";
         $js_variables .="col_content_width='40em';\n";
@@ -166,7 +177,6 @@ $js_variables .="
 </script>
 ";
 
-$content .=$js_variables;
  
 $_rqst_cfg=[];
 $_rqst_cfg['disable_cache'] =true;
@@ -185,10 +195,19 @@ foreach ($Indico->data[$data_key]['abstracts'] as $abstract) {
         //print_r($abstract["submitted_for_tracks"][0]);
         $abstract["MC_track"]=$abstract["MC"]." - ".$abstract["submitted_for_tracks"][0]["code"].": ".$abstract["submitted_for_tracks"][0]["title"];
         $abstract["primary_author_name"]="";
+        $abstract["speaker_name"]="";
+        $abstract["speaker_affiliation"]="";
         foreach($abstract["persons"] as $pers){
             if ($pers["author_type"]=="primary"){
                 if (empty($abstract["primary_author_name"])) {
                     $abstract["primary_author_name"]=$pers["first_name"]." ".$pers["last_name"];
+                }
+            }
+            if ($pers["is_speaker"]){
+                if (empty($abstract["speaker_name"])) {
+                    $abstract["speaker_name"]=$pers["first_name"]." ".$pers["last_name"];
+                    $abstract["speaker_affiliation"]=$pers["affiliation"];
+                    //var_dump($pers);
                 }
             }
         } //find primary author
@@ -323,6 +342,8 @@ $content .="</TBODY>\n";
 $content .="</TABLE>\n"; 
 $content .="</div>\n"; 
 
+$content .=$js_variables;
+
 //var_dump($votes_count);
 
 //Create the vote table
@@ -340,20 +361,46 @@ for ($imc=1; $imc<=8; $imc++){
 }
 $vote_table_content.="  </tr>\n";
 $vote_table_content.="</thead>  <tbody>\n";
-for($ivote=1; $ivote<=2; $ivote++){ 
+for($ivote=1; $ivote<=3; $ivote++){     
     $vote_table_content.="  <tr>\n";
     if ($ivote==1){
+        $choice="1";
         $vote_table_content.="  <td>First priority</td>\n";
-    } else {
+    } else if ($ivote==2){
+        $choice="2";
         $vote_table_content.="  <td>Second priority</td>\n";
+    } else {
+        $vote_table_content.="  <td>Expected votes </td>\n";
     }
     for ($imc=1; $imc<=8; $imc++){
-        $vote_table_content.="  <td> ".$votes_count["MC".$imc][$ivote]."</td>\n";  
+        if (($ivote==1)||($ivote==2)){
+            $vote_table_content.="  <td ";
+            if ($your_votes["MC".$imc][$choice]){
+                if (count($your_votes["MC".$imc][$choice])==$cws_config['SPC_tools']['votes_to_cast_by_MC'][$imc-1]){
+                    $vote_table_content.="style=\"background-color: #82E0AA ;\""; //green
+                } else if (count($your_votes["MC".$imc][$choice])<$cws_config['SPC_tools']['votes_to_cast_by_MC'][$imc-1]){
+                    $vote_table_content.="style=\"background-color:  #F7DC6F ;\""; //yellow
+                } else {
+                    $vote_table_content.="style=\"background-color:  #F1948A ;\""; //red
+                }
+                $vote_table_content.=" >";
+                $vote_table_content.=count($your_votes["MC".$imc][$choice]);
+            } else {
+                $vote_table_content.="style=\"background-color: #F7DC6F ;\""; //yellow
+                $vote_table_content.=" >";
+                $vote_table_content.=" - \n";  
+            }
+        } else {
+            $vote_table_content.="  <td>";
+            $vote_table_content.=" 2 * ".$cws_config['SPC_tools']['votes_to_cast_by_MC'][$imc-1]."\n";
+        }
+        $vote_table_content.="</td>\n";  
     }
     $vote_table_content.="  </tr>\n";
 }
 $vote_table_content.="  </tbody>\n";
 $vote_table_content.="</table></div>\n";
+$vote_table_content.="<A HREF='myvotes.php'>Click here to see the detail of your votes</A>\n";
 $vote_table_content.="</center></P>\n";
 
 $content =$vote_table_content.$content;
