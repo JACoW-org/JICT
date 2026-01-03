@@ -14,6 +14,7 @@ $data_key= $Indico->request( '/event/{id}/manage/abstracts/abstracts.json', 'GET
 $abstracts_states_count=[];
 $votes_count=[];
 $all_abstracts=[];
+$all_abstracts_by_friendly_id=[];
 $change_tracks=[];
 
 $your_votes=[];
@@ -55,7 +56,11 @@ foreach ($Indico->data[$data_key]['abstracts'] as $abstract) {
     if (!(array_key_exists($abstract["state"],$abstracts_states_count))){
         $abstracts_states_count[$abstract["state"]]=0;
     }
+    //var_dump($abstract);
+    //die("test in progress");
     $all_abstracts[$abstract["id"]]=$abstract;
+    $all_abstracts_by_friendly_id[$abstract["friendly_id"]]=$abstract["id"];
+
     $all_abstracts[$abstract["id"]]["1"]=0;
     $all_abstracts[$abstract["id"]]["2"]=0;
     $all_abstracts[$abstract["id"]]["3"]=0;

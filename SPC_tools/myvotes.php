@@ -3,7 +3,7 @@
 /* Created by Nicolas.Delerue@ijclab.in2p3.fr
 2025.11.12 1st version
 
-This page gives links to several tools needed by SPC.
+This page gives to each SPC member a summary of the votes they have cast.
 
 */
 if (str_contains($_SERVER["QUERY_STRING"],"debug")){
@@ -12,6 +12,7 @@ if (str_contains($_SERVER["QUERY_STRING"],"debug")){
     error_reporting(E_ALL);
 } //if debug on
 
+$code_testing=0;
 
 require( '../config.php' );
 require_lib( 'jict', '1.0' );
@@ -60,7 +61,113 @@ $content ="<BR/>";
 $content .="<BR/>";
 $content .="<BR/>";
 
+
 require_once('counter.php');
+
+
+if ($_POST["submit"]){
+    print("POST: ".$_POST["submit"]);
+    print_r($_POST);
+    $content .="<P><center>\n";
+    if ($_POST["submit"]=="Validate"){
+        $content .="<h3>Your votes (validated)</h3>\n";
+        $content .="<BR/>Counted in the summary table above.\n";
+    } else {
+        $content .="<h3>Your votes (to be validated)</h3>\n";
+        $content .="<BR/>Not yet counted in the summary table above.\n";
+    }
+    $content .="</center>\n";
+    $content .="<form action='manual_submission.php' method=\"post\">\n";
+    for ($iloop=1;$iloop<10;$iloop++){
+        if ($_POST[$iloop."_abstract_id"]){
+            if ($all_abstracts_by_friendly_id[$_POST[$iloop."_abstract_id"]]){
+                $abs=$all_abstracts_by_friendly_id[$_POST[$iloop."_abstract_id"]];
+            } else if ($all_abstracts[$_POST[$iloop."_abstract_id"]]){
+                $abs=$_POST[$iloop."_abstract_id"];
+            } else {
+                $abs=false;
+            }
+            if ($abs){
+                if (!($_POST[$iloop."_choice"])){
+                    $_POST[$iloop."_choice"]="2";
+                }
+                $content .="<BR/> Vote ".$iloop.": Abstract #".$all_abstracts[$abs]['friendly_id']." <A HREF='https://indico.jacow.org/event/".$cfg['indico_event_id'].'/abstracts/'.$abs."'>ID:". $abs." (".$all_abstracts[$abs]['title'].")</A>\n";
+                $content .=$all_abstracts[$abs]["submitted_for_tracks"][0]["code"]."\n";
+                $content .=" Priority: ".$_POST[$iloop."_choice"]." \n";
+                if ($_POST["submit"]=="Validate"){
+                    $vote_value=$_POST[$iloop."_choice"];
+                    if ($vote_value=="1"){
+                        $question1=1;
+                        $question2=0;
+                    } else if ($vote_value=="2") {
+                        $question1=0;
+                        $question2=1;
+                    } else {
+                        $question1=0;
+                        $question2=0;
+                    }
+                    $track_id=$all_abstracts[$abs]["submitted_for_tracks"][0]["id"];
+                    $post_data=array();
+                    // "track" => $track_id , 
+                    $post_data["track-".$track_id."-question_".$first_question_id] = $question1;
+                    $post_data["track-".$track_id."-question_".$second_question_id] =  $question2;
+                    if ($new_track_id>0){
+                    $post_data["track-".$track_id."-proposed_tracks"] = $new_track_id;
+                    $post_data["track-".$track_id."-proposed_action"]= "change_tracks";
+                    } else {
+                        $post_data["track-".$track_id."-proposed_action"]= "accept";
+                    }
+                    $review_id=0;
+                    $current_action="accept";
+                    foreach($all_abstracts[$abs]["reviews"] as $review){
+                        if ($review["user"]["full_name"]==$_SESSION['indico_oauth']['user']["full_name"]){
+                            $review_id=$review["id"];
+                        }
+                    } //for each review
+                    $content .=" Review ID: ".$review_id;  
+                    if ($review_id>0){
+                        $vote_base_url="/event/".$cws_config['global']['indico_event_id']."/abstracts/".$abs."/reviews/".$review_id."/edit";
+                    } else {
+                        $vote_base_url="/event/".$cws_config['global']['indico_event_id']."/abstracts/".$abstract_id."/review/track/".$track_id;
+                    }
+                    if ($code_testing==1) {
+                        echo "vote_base_url $vote_base_url \n";
+                        print_r($post_data);
+                    }
+                    $req =$Indico->request( $vote_base_url , 'POST', $post_data,  array(  'return_data' =>true, 'quiet' =>true, 'use_session_token' => true));
+                    if ($code_testing==1) {
+                        echo "Post data:\n";
+                        var_dump($post_data);
+                        //var_dump($req);
+                        echo "Result:\n";
+                    }
+                    if ($req["success"]==1){
+                    $content .=" - Vote recorded.<BR/>\n";
+                    } else {
+                    $content .=" - Unable to record this vote.<BR/>\n";
+                    }
+                } else {
+                    $content.= "<input type=\"hidden\" name=\"".$iloop."_abstract_id\" value=\"".$abs."\" >\n";
+                    $content.= "<INPUT type=\"hidden\" name=\"".$iloop."_choice\" value=\"".$_POST[$iloop."_choice"]."\">\n";
+                }
+            } else {
+                if ($_POST[$iloop."_abstract_id"]>0){
+                    $content .="<BR/> Vote ".$iloop.": #".$_POST[$iloop."_abstract_id"].": not found!\n";
+                }
+            }
+        }
+    } // for each vote
+    if ($_POST["submit"]=="Validate"){
+        require('counter.php');
+    } else {
+        $content.= "<BR/><INPUT type=\"submit\" name=\"submit\" value=\"Validate\">\n";
+    }
+    $content .="</form>\n";
+    $content .="<HR>";
+} else if ($vote_form){
+    $content .=$vote_form;
+    $content .="<HR>";
+}
 
 
 //Create the vote table
@@ -153,7 +260,7 @@ for ($imc=1; $imc<=8; $imc++){
             if (count($your_votes["MC".$imc][$choice])>0){
                 $content .=" <ul>\n";
                 foreach ($your_votes["MC".$imc][$choice] as $abs){
-                    $content .=" <li>Abstract <A HREF='https://indico.jacow.org/event/".$cfg['indico_event_id'].'/abstracts/'.$abs."'>". $abs." (".$all_abstracts[$abs]['title'].")</A>\n";
+                    $content .=" <li>Abstract #".$all_abstracts[$abs]['friendly_id']." <A HREF='https://indico.jacow.org/event/".$cfg['indico_event_id'].'/abstracts/'.$abs."'> ID:". $abs." (".$all_abstracts[$abs]['title'].")</A>\n";
                     $content .="</li>\n";
                 }
                 $content .=" </ul>\n";

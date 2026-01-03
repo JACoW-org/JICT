@@ -6,7 +6,7 @@
 This page records the vote on a given abstract passed by ID in a POST request.
 
 */
-$code_testing=1;
+$code_testing=0;
 
 if (str_contains($_SERVER["QUERY_STRING"],"debug")){
     ini_set('display_errors', 1);

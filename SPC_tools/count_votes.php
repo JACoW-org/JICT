@@ -73,7 +73,7 @@ foreach (array_keys($abstracts_states_count) as $state){
 $content .="<P><center>\n";
 $content .="<h3>Votes summary</h3>\n";
 $content .="<div class=\"table-wrap\"><table id=\"votes\" class=\"vote_table\">\n";
-$content .="  <caption> Votes count\n";
+$content .="  <caption> Votes counted\n";
 $content .="  </caption>\n";
 
 
@@ -153,7 +153,7 @@ for ($imc=1; $imc<=8; $imc++){
             foreach (array_keys($change_tracks["MC".$imc]) as $abs){
                 $content .=" <li>Abstract <A HREF='https://indico.jacow.org/event/".$cfg['indico_event_id'].'/abstracts/'.$abs."'> #". $all_abstracts[$abs]["friendly_id"]." (".$all_abstracts[$abs]['title'].")</A><ul>\n";
                 foreach (array_keys($change_tracks["MC".$imc][$abs]) as $target){
-                    $content .="<li>Move abstract <A HREF='https://indico.jacow.org/event/".$cfg['indico_event_id'].'/abstracts/'.$abs."'> #". $all_abstracts[$abs]["friendly_id"]." (".$all_abstracts[$abs]['title'].")</A> from track ".$all_abstracts[$abs]["submitted_for_tracks"][0]["code"]." to track ".$target.": ".$change_tracks["MC".$imc][$abs][$target]." vote";
+                    $content .="<li>Move abstract  <A HREF='https://indico.jacow.org/event/".$cfg['indico_event_id'].'/abstracts/'.$abs."'> #". $all_abstracts[$abs]["friendly_id"]." (".$all_abstracts[$abs]['title'].")</A> from track ".$all_abstracts[$abs]["submitted_for_tracks"][0]["code"]." to track ".$target.": ".$change_tracks["MC".$imc][$abs][$target]." vote";
                     if ($change_tracks["MC".$imc][$abs][$target]>1){
                     $content .="s";
                     }
@@ -197,7 +197,7 @@ if (strtotime("now")<strtotime("2026-01-15 12:00")){
     }
     foreach($all_abstracts as $abs){
         if ($abs["vote_score"]>0){
-            $ranking[$abs["MC"]] .=" <li> Score ". $abs["vote_score"]. " ( 2*".$abs["1"]. " + ".$abs["2"].")  <A HREF='https://indico.jacow.org/event/".$cfg['indico_event_id'].'/abstracts/'.$abs["id"]."'> Abstract #". $abs["friendly_id"]." (".$abs['title'].")</A></li>\n";
+            $ranking[$abs["MC"]] .=" <li> Score ". $abs["vote_score"]. " ( 2*".$abs["1"]. " + ".$abs["2"].") <A HREF='https://indico.jacow.org/event/".$cfg['indico_event_id'].'/abstracts/'.$abs["id"]."'> Abstract #". $abs["friendly_id"]." (".$abs['title'].")</A></li>\n";
         }
     }
     for ($imc=1; $imc<=8; $imc++){
@@ -221,6 +221,7 @@ for ($imc=1; $imc<=8; $imc++){
 //$T->set( 'column_width', $column_width);
 $T->set( 'submitted', $abstracts_states_count["submitted"]);
 $T->set( 'total_votes', $total_all);
+$T->set( 'total_votes_expected', 80*count(array_keys($votes_count)));
 $T->set( 'event_id', $cws_config['global']['indico_event_id'] );
 $T->set( 'user_name', $_SESSION['indico_oauth']["user"]["full_name"]);
 $T->set( 'user_first_name', $_SESSION['indico_oauth']["user"]["first_name"]);
