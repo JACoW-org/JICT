@@ -1,7 +1,9 @@
 <?php
 
-/* by Stefano.Deiuri@Elettra.Eu
+/* Initial version by Stefano.Deiuri@Elettra.Eu
 
+2025.11.20 - nicolas.delerue@ijclab.in2p3.fr: improve statistics
+2025.11.10 - nicolas.delerue@ijclab.in2p3.fr: fix problem related to $_server [PWD] being empty
 2025.06.05 - fix statistics
 2024.07.16 - updates
 2023.11.27 - handle public access mode
@@ -223,6 +225,11 @@ class INDICO extends JICT_OBJ {
 			$this->requests_api_count ++;
 			$t0 =time();
 			if ($verbose) $this->verbose( "# $_method ($cache_time) $req... ", 2 );
+			if ($_rqst_cfg['use_session_token']) {
+				//Without that the request's auther will be the app oauth token's owner
+				//print("Overriding authorization header with session token\n"); 
+			    $this->api->config( 'authorization_header', 'Bearer ' .$_SESSION['indico_oauth']['token'] );	
+			}
 			
 			$this->data[$req] =$this->api->request( $req, $_method, $_data_request );
 
@@ -619,6 +626,9 @@ class INDICO extends JICT_OBJ {
 		$conf_registrants =[];
         $registrants =[];
         $stats =[];
+        $gender_field=-1;
+        $gender_codes=[];
+
 
         $this->cfg['cache_time'] =3600*24;
 
@@ -631,7 +641,7 @@ class INDICO extends JICT_OBJ {
 		}
 
 		$data_key =$this->request( '/api/events/{id}/registrants' );
-		
+				
         foreach ($this->data[$data_key]['registrants'] as $r) {
 			$rid =$r['registrant_id'];
             $p =$r['personal_data'];
@@ -659,6 +669,7 @@ class INDICO extends JICT_OBJ {
                     'nation' =>$p['country'],
                     'country' =>$p['country'],
                     'country_code' =>$p['country_code'],
+                    'region' => get_region($p['country_code']),
                     'type' =>$type,
                     'tags' =>$r['tags'],
                     'present' =>$r['checked_in'],
@@ -666,19 +677,128 @@ class INDICO extends JICT_OBJ {
 					'paid' =>$conf_registrants[$rid]['paid'],
 					];
     
+					//print($registrants[$rid]['region']);
+					//print($p['country_code']);
+					//print(get_region($p['country_code']));
+					if ($registrants[$rid]['region']=="Unknown"){
+						print("registrant ".$rid.": country unknown");
+					}
+					if (get_region($p['country_code'])=="Unknown"){
+						print("regstrant ".$rid.": country unknown");
+					}
+					
+
                 if (!empty($r['tags'])) {
                     foreach ($r['tags'] as $tag) {
                         if (empty($stats['by_tag'][$tag])) $stats['by_tag'][$tag] =1;
                         else $stats['by_tag'][$tag] ++;
                     }
                 }
+
+                //status
+                $tag_status="";
+                $status_tags=[ "Student registration","EPS member","LOC team member","PCO team member","Exhibitor registration"];
+                foreach ($registrants[$rid]['tags'] as $tag){
+                    if (in_array($tag,$status_tags)){
+                        if (empty($tag_status)){
+                            $tag_status=$tag;
+                        } else {
+                            $tag_status="Multiple status";
+                        }
+                    }
+                }//foreach tag
+                if (empty($tag_status)){
+                    $tag_status="Normal";
+                }
+                $registrants[$rid]["tag_status"]=$tag_status;
                 
-                if (empty($stats['by_type'][$type])) $stats['by_type'][$type] =1;
-                else $stats['by_type'][$type] ++;
+                $stats_fields=[ 'by_dates', 'by_days_to_deadline', 'country', 'country_code' , 'region',  'paid', "tag_status"];
+                
+                //Get extra info on registrant
+                if ((!empty($cws_config['indico_stats_importer']['registrants_load_extra_data']))&&($cws_config['indico_stats_importer']['registrants_load_extra_data']==1)){
+                    $data_extra_key =$this->request( sprintf('/api/checkin/event/{id}/forms/%s/registrations/%s' ,  $cws_config['indico_stats_importer']['registrants_form_id'], $rid));
+                    echo "stats on extra key\n";
+                    $registrants_extra_stats=0;
+                    foreach ($cws_config['indico_stats_importer']['registrants_extra'] as $statitem){
+                        //$stats['registrants_extra_stats_'.strval($registrants_extra_stats)]["name"]=$statitem["name"];
+                        //var_dump($this->data[$data_extra_key]);
+                        foreach ($this->data[$data_extra_key]["registration_data"] as $part){
+                            //echo 'part title: '.$part["title"]."\n"; 
+                            foreach($part["fields"] as $formentry) {
+                                //echo "      formentry: ".$formentry["title"]."  ".$formentry["data"]."\n";
+								if (strlen($formentry["title"])>60){
+									$formentry["title"]=substr($formentry["title"],0,25)."...".substr($formentry["title"],strlen($formentry["title"])-25,25);
+									//print("Shortened title: ". $formentry["title"]);
+								}
+                                if (($statitem["type"]=="count")&&($formentry["title"]==$statitem["field"])){
+                                    if (gettype($formentry["data"])=="boolean"){
+                                        if ($formentry["data"]) {
+                                            $value="Yes";
+                                        } else {
+                                            $value="No";
+                                        }
+                                    } else {
+                                        $value=$formentry["data"];
+                                    }
+                                    if (empty($stats['registrants_extra_stats_'.strval($registrants_extra_stats)][strval($value)])) $stats['registrants_extra_stats_'.strval($registrants_extra_stats)][strval($value)] =1;
+                                    else $stats['registrants_extra_stats_'.strval($registrants_extra_stats)][strval($value)] ++;
+                                } else if (($statitem["type"]=="choice")&&($formentry["title"]==$statitem["field"])){
+                                    //echo "match ".$formentry["data"]." choice \n";
+                                    //var_dump($formentry);
+                                    if (count($formentry["data"])==0){
+                                        $value="None";
+                                    } else {
+                                        foreach($formentry["choices"] as $choice){
+                                            if ($choice["id"]==array_keys($formentry["data"])[0]){
+                                                $value=$choice["caption"];
+                                            }
+                                        }
+                                    }
+                                    //echo "value $value \n";
+                                    if (empty($stats['registrants_extra_stats_'.strval($registrants_extra_stats)][strval($value)])) $stats['registrants_extra_stats_'.strval($registrants_extra_stats)][strval($value)] =1;
+                                    else $stats['registrants_extra_stats_'.strval($registrants_extra_stats)][strval($value)] ++;
+                                } else if ($statitem["type"]=="multiple"){
+                                    foreach ($statitem["fields"] as $statfield){
+										if (strlen($statfield)>60){
+											$statfield=substr($statfield,0,25)."...".substr($statfield,strlen($statfield)-25,25);
+											//print("Shortened field: ". $statfield);
+										}
+
+                                        if ($formentry["title"]==$statfield){
+                                            //echo "match multiple".$formentry["data"]." \n";
+                                            if ($formentry["data"]){
+                                                if (empty($stats['registrants_extra_stats_'.strval($registrants_extra_stats)][$statfield])) $stats['registrants_extra_stats_'.strval($registrants_extra_stats)][$statfield] =1;
+                                                else $stats['registrants_extra_stats_'.strval($registrants_extra_stats)][$statfield] ++;
+                                            } //data==1
+                                        } //match
+                                    } //foreach statfield
+                                } //multiple
+                            } //foreach part formentry
+                        } //foreach part 
+                        $registrants_extra_stats++;
+                    } //foreach statitem
+                    //is paid
+                    $registrants[$rid]['is_paid']=$this->data[$data_extra_key]["is_paid"];
+                    array_push($stats_fields,'is_paid');
+                    //gender
+                    if ($gender_field==-1){
+                        for ($iloop=0;$iloop<count($this->data[$data_extra_key]["registration_data"][0]["fields"]);$iloop++){
+                            if (strtolower($this->data[$data_extra_key]["registration_data"][0]["fields"][$iloop]["title"])=="gender"){
+                                $gender_field=$iloop;
+                            }
+                        }
+                        //populating gender_codes
+                        for ($iloop=0;$iloop<count($this->data[$data_extra_key]["registration_data"][0]["fields"][$gender_field]["choices"]);$iloop++){
+                            $gender_codes[$this->data[$data_extra_key]["registration_data"][0]["fields"][$gender_field]["choices"][$iloop]["id"]]=$this->data[$data_extra_key]["registration_data"][0]["fields"][$gender_field]["choices"][$iloop]["caption"];                            
+                        }
+                    }
+                    $registrants[$rid]['gender']=$gender_codes[array_keys($this->data[$data_extra_key]["registration_data"][0]["fields"][$gender_field]["data"])[0]];
+                    array_push($stats_fields,'gender');
+                } // get extra info on registrant 
+                
             }         
         }
-
-        foreach ([ 'by_dates', 'by_days_to_deadline', 'country', 'country_code'] as $k) {
+        foreach ($stats_fields as $k) {
             $stats[$k] =[];
         }
 
@@ -688,7 +808,7 @@ class INDICO extends JICT_OBJ {
             $x['by_dates'] =date( 'Y-m-d', $x['ts'] );
             $x['by_days_to_deadline'] =-floor( ($ts_deadline -$x['ts']) /86400 );
 
-            foreach ([ 'by_dates', 'by_days_to_deadline', 'country', 'country_code'] as $k) {
+            foreach ($stats_fields as $k) {
                 if (empty($stats[$k][$x[$k]])) $stats[$k][$x[$k]] =1;
                 else $stats[$k][$x[$k]] ++;  
             }            
@@ -697,12 +817,15 @@ class INDICO extends JICT_OBJ {
         ksort( $stats['by_dates'] );
         ksort( $stats['by_days_to_deadline'] );
         arsort( $stats['country'] );
+        arsort( $stats['gender'] );
+        ksort( $stats['paid'] );
 
         $this->data['registrants'] =array( 
             'registrants' =>$registrants,
             'stats' =>$stats
             ); 
 
+        //echo "print stats\n";
         //print_r( $stats );
     }
 
@@ -722,16 +845,30 @@ class INDICO extends JICT_OBJ {
 
 		$this->data['affiliations'] =[];
         $affiliations =&$this->data['affiliations'];
-
+        $this->verbose( count($this->data[$data_key]['abstracts']) ." abstracts found");
+        
         foreach ($this->data[$data_key]['abstracts'] as $x) {
 			if ($x['state'] != 'withdrawn') {
 				$pabs =&$this->data['abstracts_sub'][$x['id']]; // previous abstracts
-
 				$cf =[];
 				foreach ($x['custom_fields'] as $cfa) {
 					$cf[$cfa['name']] =$cfa['value'];
 				}
 
+				if (!$x["submitter"]["affiliation_meta"]){
+					$metadata=[];
+					foreach($x['persons'] as $person){
+						if ($person['affiliation_link']){
+							$metadata=$person['affiliation_link'];
+						}
+						if ($person['author_type']=="primary"){
+							$x["submitter"]["affiliation_meta"]=$person['affiliation_link'];
+						}
+					} 						
+					if (!$x["submitter"]["affiliation_meta"]){
+						$x["submitter"]["affiliation_meta"]=$metadata;
+					}
+				}
 				$abstracts[ $x['id'] ] =[			
 					'title' =>$x['title'],
 					'title_bak' =>$pabs['title_bak'] ?? false,
@@ -739,9 +876,27 @@ class INDICO extends JICT_OBJ {
 					'content_bak' =>$pabs['content_bak'] ?? false,					
 					'stype' =>$x['submitted_contrib_type']['name'],
 					'ts' =>$pabs['ts'] ?? strtotime( $x['submitted_dt'] ),
-					'ts0' =>strtotime( $x['submitted_dt'] )
+					'ts0' =>strtotime( $x['submitted_dt'] ),
+					'mc'=>substr($x["submitted_for_tracks"][0]["code"],0,3),
+					'track'=> substr($x["submitted_for_tracks"][0]["code"],4,3),
+					'submitter_country'=> $x["submitter"]["affiliation_meta"]["country_name"],
+					'submitter_region'=> get_region($x["submitter"]["affiliation_meta"]["country_code"])
 					];
-
+                /*      
+				if (get_region($x["submitter"]["affiliation_meta"]["country_code"])=="Unknown"){
+					print("submitter: country unknown");
+					print("<BR/>");
+					print_r($x['id']);
+					print("<BR/>");
+					print("Submitter: ");
+					print_r($x["submitter"]["affiliation_meta"]);
+					print("<BR/>");
+					print_r($x["submitter"]);
+					print("<BR/>");
+					//print_r($x);
+					print("<BR/>");
+				}
+				*/
 				$abs =&$abstracts[ $x['id'] ];
 
 				if (!empty($pabs) && strtotime( $x['modified_dt'] ) != $pabs['ts']) {
@@ -786,32 +941,54 @@ class INDICO extends JICT_OBJ {
         $this->data['abstracts_sub'] =$abstracts;
         $this->data['persons'] =$persons;
 
-        ksort( $affiliations );		
+        if (!(is_null($affiliations))) ksort( $affiliations );		
 
         $chart_by_dates =[];
         $chart_by_days_to_deadline =[];
 
         $ts_deadline =strtotime($this->cfg['dates']['abstracts_submission']['deadline']);
 
+        $stats_fields=[ 'mc', 'track', 'submitter_country', 'submitter_region'];
+                            
+        foreach ($stats_fields as $k) {
+            $stats[$k] =[];
+        }
+
+
+
         foreach ($abstracts as $x) {
             $date =date( 'Y-m-d', $x['ts'] );
             if (empty($chart_by_dates[$date])) $chart_by_dates[$date] =1;
             else $chart_by_dates[$date] ++;        
-
             $days_to_deadline =-floor( ($ts_deadline -$x['ts']) /86400 );
             if (empty($chart_by_days_to_deadline[$days_to_deadline])) $chart_by_days_to_deadline[$days_to_deadline] =1;
             else $chart_by_days_to_deadline[$days_to_deadline] ++;                
+            foreach ($stats_fields as $k) {
+                if (empty($stats[$k][$x[$k]])) $stats[$k][$x[$k]] =1;
+                else $stats[$k][$x[$k]] ++;  
+            }            
         }
     
         ksort( $chart_by_dates );
         ksort( $chart_by_days_to_deadline );
 
+        foreach ($stats_fields as $k) {
+            ksort( $stats[$k] );
+        }
+        /*
+        echo "stats\n";
+        print_r($stats);
+        */
+
         $this->data['abstracts_submission'] =[
 			'by_dates' =>$chart_by_dates,
         	'by_days_to_deadline' =>$chart_by_days_to_deadline,
         	'count' =>count( $abstracts ),
-        	'withdrawn' =>$withdrawn
+        	'withdrawn' =>$withdrawn,
+            'stats' =>$stats
 			];
+			
+			
     }
 
 	//-------------------------------------------------------------------------
@@ -1156,7 +1333,7 @@ class INDICO extends JICT_OBJ {
 
 	//-----------------------------------------------------------------------------
 	function save_all( $_cfg =false ) {
-		foreach ($this->cfg as $c =>$fname ) {
+        foreach ($this->cfg as $c =>$fname ) {
 			if ($c != 'out_path' && substr( $c, 0, 4 ) == 'out_') {
 				$this->save_file( substr( $c, 4 ), $c, false, $_cfg );
 			}
@@ -1180,10 +1357,13 @@ class INDICO extends JICT_OBJ {
 
 		$fname =$this->cfg[$_file_id];
 		$this->verbose( "# Save $_label Data ($fname)... ", 2, false );
-
-        if (empty($this->data[$_data_id]) && empty($cfg['save_empty'])) {
+        if (empty($this->data[$_data_id])){
             $this->verbose_next( "NO_DATA" );
-            return;
+            if  (empty($cfg['save_empty'])) {
+                return;
+            } 
+        } else {
+            $this->verbose( "Array ".$_data_id." has ".count($this->data[$_data_id])." entries");
         }
 
 		$counter =false;

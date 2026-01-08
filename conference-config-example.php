@@ -98,6 +98,8 @@ $cws_config['hidden_sessions']
 $cws_config['indico_importer']['refs_final'] =false;
 
 $cws_config['indico_stats_importer']['registrants_form_id'] =70;
+$cws_config['indico_stats_importer']['registrants_load_extra_data']=1;
+
 
 $cws_config['page_authors_check']['filter'] =[ 'key' =>'status', 'value' =>'g' ];
 
@@ -112,8 +114,22 @@ $cws_config['page_edots']['paper_status_url']	=false;
 $cws_config['page_edots']['board_cols'] ='10';
 $cws_config['page_edots']['board_rows'] ='21';
 
+$cws_config['indico_stats_importer']['registrants_load_extra_data']=1; //read data from the registration form to extract statistics
+$cws_config['indico_stats_importer']['registrants_extra']=[ 
+    [ 'name' => 'Visa', 'type'=> "count", 'field' => "Do you need an invitation letter for visa" ], //count entries in the registration form for the field named "Do you need an invitation letter for visa"; "name" is the title that will be displayed on the chart.
+    [ 'name' => 'Visits', 'type'=> "choice", 'field' => "Facility Tours" ], //count entries for the different choices in the registration form for the field named "Facility Tours"
+    [ 'name' => 'Lunch boxes', 'type'=> "multiple", 'fields' => [ "Lunch box - Monday" , "Lunch box - Tuesday" , "Lunch box - Wednesday" , "Lunch box - Thursday" ,  "Lunch box - Friday" ]], //makes one chart with the entries from all the fieldds named in "fields"
+];
+
+$cws_config['page_dashboard']['order'] = [ 'abstracts', 'registrants', 'registrants_extra', 'delegates', 'paid_status', 'country', 'payments', 'papers' ];
+
+$cws_config['page_dashboard']['import_path'] =$cws_config['global']['root_path'].'/stats';
+$cws_config['page_dashboard']['import_past_conferences'] =[ 'IPAC23' ]; //you need to have ipac23.json for this to work
+
+
 
 $cws_config['page_dashboard']['order'] =[ 'papers', 'abstracts', 'registrants', 'country' ];
 
+if ((empty($cws_config['global']['indico_token']))||(empty($cws_config['global']['indico_oauth']))) require( 'conference-secrets.php' );
 
 ?>

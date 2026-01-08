@@ -32,6 +32,6 @@ $Indico->oauth( 'token' );
 
 $conf =in_array( $_GET['conf'], [ 'jfic', 'ipac23', 'ipac24' ]) ? '_' .$_GET['conf'] : false;
 
-header( "Location: /jict$conf/index.php" );
+header( "Location: ".$cws_config['global']['root_url']."/" );
 
 ?>

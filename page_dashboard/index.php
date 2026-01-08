@@ -1,7 +1,15 @@
 <?php
+if (str_contains($_SERVER["QUERY_STRING"],"debug")){
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+} //if debug on
+?>
+<?php
 
 /* by Stefano.Deiuri@Elettra.Eu
 
+2025.11.15 - add extra stats by Nicolas.Delerue@ijclab.in2p3.fr
 2024.05.08 - add export
 2024.05.08 - update
 2023.03.20 - Papers charts
@@ -31,7 +39,7 @@ if (!$user) exit;
 $old_confs =[];
 
 if (!empty($cfg['import_past_conferences'])) {
-    foreach ($cfg['import_past_conferences'] as $conf_name) {
+    foreach ($cfg['import_past_conferences'] as $conf_name) {        
         $old_confs[$conf_name] =import_data_conf( $conf_name );
     }
 }
@@ -45,7 +53,33 @@ $colors =[
     '114,135,206', // azzurro
     '255,126,0', // arancio
     ];
+$ratio_groups = [ 'registrants', 'abstracts_submission' , 'papers' ];
 
+$registrants_extra_stats=0;
+$registrants_extra_part='<div class="row">';
+foreach ($cws_config['indico_stats_importer']['registrants_extra'] as $statitem){
+    $registrants_extra_part.='<div class="col-md-6">
+    <canvas id="registrants_extra_'.strval($registrants_extra_stats).'" class="chart"></canvas>
+</div>';
+    $registrants_extra_stats++;
+
+} //foreach statitem
+$registrants_extra_part.='</div>';
+
+
+$ratios_charts='<div class="row">';
+foreach ($ratio_groups as $group){
+    $id ='by_days_to_deadline';
+    $chart_base_id ="${group}_${id}";
+    //var_dump($charts[$chart_base_id]['series'][$cfg['conf_name']]);
+    foreach ($old_confs as $cname =>$cdata) {
+        $chart_id="ratio_".$chart_base_id."_".$cname;
+        $ratios_charts.='<div class="col-md-6">
+    <canvas id="'.$chart_id.'" class="chart"></canvas>
+</div>';
+    } // for each old conf
+} //foreach ratio group
+$ratios_charts.='</div>';
 $main_parts =[ 
     'papers' =>
 '<div class="row">
@@ -70,7 +104,8 @@ $main_parts =[
     <canvas id="registrants_by_days_to_deadline" class="chart"></canvas>
 </div>
 </div>',
-
+    'registrants_extra' => $registrants_extra_part,
+    'ratios' => $ratios_charts,
     'payments' =>
 '<div class="row">
 <div class="col-md-6">
@@ -78,6 +113,16 @@ $main_parts =[
 </div>
 <div class="col-md-6">
     <canvas id="payments_by_days_to_deadline" class="chart"></canvas>
+</div>
+</div>',
+
+    'paid_status' =>
+'<div class="row">
+<div class="col-md-6">
+    <canvas id="paid_status_is_paid" class="chart"></canvas>
+</div>
+<div class="col-md-6">
+    <canvas id="paid_status_paid" class="chart"></canvas>
 </div>
 </div>',
 
@@ -89,6 +134,26 @@ $main_parts =[
 <div class="col-md-6">
     <canvas id="registrants_country_code" class="chart"></canvas>
 </div>
+<div class="col-md-6">
+    <canvas id="registrants_region" class="chart"></canvas>
+</div>
+</div>',
+
+    'delegates' =>
+'<div class="row">
+<div class="col-md-6">
+    <canvas id="registrants_gender" class="chart"></canvas>
+</div>
+<div class="col-md-6">
+    <canvas id="registrants_tag_status" class="chart"></canvas>
+</div>
+</div>',
+
+    'tag_status' =>
+'<div class="row">
+<div class="col-md-6">
+    <canvas id="registrants_tag_status" class="chart"></canvas>
+</div>
 </div>',
 
     'abstracts' =>
@@ -99,8 +164,21 @@ $main_parts =[
 <div class="col-md-6">
     <canvas id="abstracts_submission_by_days_to_deadline" class="chart"></canvas>
 </div>
+<div class="col-md-6">
+    <canvas id="abstracts_submission_mc" class="chart"></canvas>
+</div>
+<div class="col-md-6">
+    <canvas id="abstracts_submission_track" class="chart"></canvas>
+</div>
+<div class="col-md-6">
+    <canvas id="abstracts_submission_submitter_region" class="chart"></canvas>
+</div>
+<div class="col-md-6">
+    <canvas id="abstracts_submission_submitter_country" class="chart"></canvas>
+</div>
 </div>'
 ];
+
 
 $main =false;
 foreach ($cfg['order'] as $order) {
@@ -141,6 +219,7 @@ $Indico->data['papers']['by_dates'] =$Indico->data['stats']['papers_submission']
 $Indico->data['papers']['by_days_to_deadline'] =$Indico->data['stats']['papers_submission']['by_days_to_deadline'];
 $Indico->data['papers']['by_hours_to_deadline'] =$Indico->data['stats']['papers_submission']['by_hours_to_deadline'];
 
+
 $group ='papers';
 $id ='by_dates';
 $chart_id ="${group}_${id}";
@@ -167,7 +246,7 @@ $charts[$chart_id] =[
 $dtd_limit =-20;
 $x_upper_limit =10;
 
-$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit ] );
+$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group][$id],  [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit ] );
 $vars[ $group .'_n' ] =number_format( $sum, 0, ',', '.' );
 
 foreach ($old_confs as $cname =>$cdata) {
@@ -190,6 +269,49 @@ $x_upper_limit =24*7;
 
 $charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit ] );
 $vars[ $group .'_n' ] =number_format( $sum, 0, ',', '.' );
+
+
+
+
+// PAID status -------------------------------------------------------------------
+//$Indico->data['paid_status']['is_paid'] =$Indico->data['registrants']['stats']['is_paid'];
+$Indico->data['paid_status']['is_paid']['No'] =$Indico->data['registrants']['stats']['is_paid'][0];
+$Indico->data['paid_status']['is_paid']['Yes'] =$Indico->data['registrants']['stats']['is_paid'][1];
+
+$total_paid=0;
+foreach ($Indico->data['registrants']['stats']['paid'] as $name => $value) {
+    $Indico->data['paid_status']['paid'][strval($name)."€"] =$value;
+    $total_paid+=$name*$value;
+}
+
+$group ='paid_status';
+if (!empty($Indico->data[$group])) {
+    $id ='is_paid';
+    $chart_id ="${group}_${id}";
+    $charts[$chart_id] =[
+        'title' =>'Is paid?',
+        'type' =>'bar',
+        'y_label' => 'Registrants',
+        'series' =>false
+        ];
+    
+    $charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'],  $Indico->data[$group][$id]);
+        
+    $id ='paid';
+    $chart_id ="${group}_${id}";
+    $charts[$chart_id] =[
+        'title' =>' Amount paid',
+        'type' =>'bar',
+        'y_label' => 'Registrants',
+        'series' =>false
+        ];
+
+//        'x_label' =>'amount',
+
+    
+    $charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'],  $Indico->data[$group][$id] );
+    $vars['paid_n'] =$total_paid;
+}
 
 
 
@@ -222,8 +344,6 @@ if (!empty($Indico->data[$group])) {
     $vars[$group.'_n'] =number_format( $sum, 0, ',', '.' );
 }
 
-
-
 // ABSTRACTS -------------------------------------------------------------------
 $group ='abstracts_submission';
 $id ='by_dates';
@@ -248,17 +368,65 @@ $charts[$chart_id] =[
     'series' =>false
     ];
 
-$dtd_limit =-7;
+$dtd_limit =-100;
 $x_upper_limit =7;
 
-$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit ] );
+$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group][$id],  [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit ] );
 $vars['abstracts_n'] =number_format( $sum, 0, ',', '.' );
 
-$group ='abstracts';
 foreach ($old_confs as $cname =>$cdata) {
-    $charts[$chart_id]['series'][$cname] =get_chart_serie( $cname, $cdata[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit  ] );
+    $old_group ='abstracts';
+    $charts[$chart_id]['series'][$cname] =get_chart_serie( $cname, $cdata[$old_group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit  ] );
 }
 
+
+$group ='abstracts_submission';
+$id ='mc';
+$chart_id ="${group}_${id}";
+$charts[$chart_id] =[
+    'title' =>'Abstracts by MC',
+    'type' =>'bar',
+    'y_label' =>'abstracts',
+    'series' =>false
+    ];
+
+$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'] ."-$group", $Indico->data[$group]['stats'][$id] );
+
+$group ='abstracts_submission';
+$id ='track';
+$chart_id ="${group}_${id}";
+$charts[$chart_id] =[
+    'title' =>'Abstracts by track',
+    'type' =>'bar',
+    'y_label' =>'abstracts',
+    'series' =>false
+    ];
+
+$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'] ."-$group", $Indico->data[$group]['stats'][$id] );
+
+$group ='abstracts_submission';
+$id ='submitter_country';
+$chart_id ="${group}_${id}";
+$charts[$chart_id] =[
+    'title' =>"Abstracts by submitter country",
+    'type' =>'bar',
+    'y_label' =>'abstracts',
+    'series' =>false
+    ];
+
+$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'] ."-$group", $Indico->data[$group]['stats'][$id] );
+
+$group ='abstracts_submission';
+$id ='submitter_region';
+$chart_id ="${group}_${id}";
+$charts[$chart_id] =[
+    'title' =>"Abstracts by submitter region",
+    'type' =>'bar',
+    'y_label' =>'abstracts',
+    'series' =>false
+    ];
+
+$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'] ."-$group", $Indico->data[$group]['stats'][$id] );
 
 
 // REGISTRANTS -------------------------------------------------------------------
@@ -294,8 +462,37 @@ foreach ($old_confs as $cname =>$cdata) {
     $charts[$chart_id]['series'][$cname] =get_chart_serie( $cname, $cdata[$group][$id], [ 'sum' =>true, 'x_low_limit' =>$dtd_limit, 'x_upper_limit' =>$x_upper_limit ] );
 }
 
-/* $year =17;
-$charts[$chart_id]['series']['IPAC'.$year] =import_data( "${group}-ipac${year}.txt" ); */
+
+//Gender -------------------------------------------------------------------
+$id ='gender';
+$chart_id ="${group}_${id}";
+$charts[$chart_id] =[
+    'title' =>'Gender',
+    'type' =>'bar',
+    'y_label' =>'registrants',
+    'series' =>false
+    ];
+
+$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group]['stats'][$id] );
+//$vars['gender_n'] =count( $Indico->data[$group]['stats'][$id] );
+$gender_values =json_encode( $Indico->data[$group]['stats'][$id] );
+
+//Tag status -------------------------------------------------------------------
+$id ='tag_status';
+$chart_id ="${group}_${id}";
+$charts[$chart_id] =[
+    'title' =>'Delegate status',
+    'type' =>'bar',
+    'y_label' =>'registrants',
+    'series' =>false
+    ];
+
+$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group]['stats'][$id] );
+$vars['tag_status_n'] =count( $Indico->data[$group]['stats'][$id] );
+$tag_status_values =json_encode( $Indico->data[$group]['stats'][$id] );
+
+
+
 
 // COUNTRIES -------------------------------------------------------------------
 $id ='country';
@@ -314,8 +511,74 @@ $Indico->data[$group]['stats'][$id]['United States of America'] =$Indico->data[$
 
 $country_values =json_encode( $Indico->data[$group]['stats'][$id] );
 
+$id ='region';
+$chart_id ="${group}_${id}";
+$charts[$chart_id] =[
+    'title' =>'Affiliations by region',
+    'type' =>'bar',
+    'y_label' =>'registrants',
+    'series' =>false
+    ];
+
+$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group]['stats'][$id] );
 
 
+//Registrants extra
+$registrants_extra_stats=0;
+foreach ($cws_config['indico_stats_importer']['registrants_extra'] as $statitem){
+    $chart_id ="registrants_extra_".strval($registrants_extra_stats);
+    $charts[$chart_id] =[
+        'title' => $statitem["name"],
+        'type' =>'bar',
+        'series' =>false
+        ];
+    //'y_label' =>'registrants',
+    
+    $charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group]['stats']['registrants_extra_stats_'.strval($registrants_extra_stats)] );
+    $registrants_extra_stats++;
+    //var_dump($Indico->data[$group]['stats']['registrants_extra_stats_'.strval($registrants_extra_stats)]);
+} //foreach statitem
+
+//Ratio
+$ratios=[];
+foreach ($ratio_groups as $group){
+    $id ='by_days_to_deadline';
+    $chart_base_id ="${group}_${id}";
+    //var_dump($charts[$chart_base_id]['series'][$cfg['conf_name']]);
+    foreach ($old_confs as $cname =>$cdata) {
+        $chart_id="ratio_".$chart_base_id."_".$cname;
+        //echo("Calculating ratio chart $chart_id\n");
+        $ratios[$chart_id]=[];
+        foreach ($charts[$chart_base_id]['series'][$cfg['conf_name']] as $day){
+            $day_found=false;
+            foreach ($charts[$chart_base_id]['series'][$cname] as $old_day) {
+                if (($day['x']>=$old_day['x'])&&($day['y']>1)){    
+                    if (!($day_found)){
+                        $ratios[$chart_id][]=[];
+                        $day_found=true;           
+                    }
+                    //echo("day ".$day['x']." old_day ".$old_day['x']."\n");
+                    $ratios[$chart_id][array_key_last($ratios[$chart_id])]=['x'=>$day['x'], 'y'=> (floatval($day['y']) / floatval($old_day['y'])) ];
+                }
+            }
+        }
+        $vars['ratio_26_23_'.$group.'_n'] =$ratios[$chart_id][count($ratios[$chart_id])-2]['y'];
+        $vars['percent_26_23_'.$group.'_n'] =intval(($ratios[$chart_id][count($ratios[$chart_id])-2]['y'])*100);
+        //echo("Ratio chart $chart_id\n");
+        //var_dump($ratios[$chart_id]);
+        $charts[$chart_id] =[
+                'title' =>'Ratio: (IPAC26/'.$cname.") for ".$group,
+                'type' =>'scatter',
+                'y_label' =>'registrants',
+                'series' =>false
+        ];
+
+        //$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $ratios[$chart_id], [ 'sum' =>false, 'x_low_limit' =>-200, 'x_upper_limit' =>7] );
+        $charts[$chart_id]['series'][$cfg['conf_name']] = $ratios[$chart_id];
+        //echo("charts");
+        //var_dump($charts[$chart_id]['series'][$cfg['conf_name']]);
+    } // for each old conf
+} //calculate ratios
 
 if (!empty($_GET['export_data'])) {
     $export =[
@@ -401,7 +664,7 @@ const chart = new Chart(document.getElementById(\"registrants_country_code\").ge
 ";
 
 
-foreach([ 'papers', 'payments', 'country', 'registrants' ] as $k) {
+foreach([ 'papers', 'payments', 'country', 'registrants' , 'gender' , 'tag_status' , 'abstracts_submission'  ] as $k) {
     if (!$vars[$k.'_n']) {
         $vars['js'] .="$('#$k').hide();\n";
         $vars['js'] .="$('#grp_$k').hide();\n";
@@ -429,6 +692,7 @@ echo $T->get();
 function make_charts( $_def ) {
     global $vars, $colors;
 
+    
     $out =false;
 
     $cfg =[
@@ -480,7 +744,6 @@ function make_charts( $_def ) {
         foreach ($chart['series'] as $sid =>$serie) {
             $color1 ="rgba( " .$cfg['colors'][$s] .", 1 )";
             $color2 ="rgba( " .$cfg['colors'][$s] .", 0.5 )";
-
             $datasets[$s] =[ 
 //                'label' =>"$chart[y_label] $sid", 
                 'label' =>$sid, 
@@ -493,6 +756,7 @@ function make_charts( $_def ) {
                 'fill' =>true,
                 'showLine' =>true 
                 ];
+
 
             if ($chart['type'] == 'scatter') {
                 $datasets[$s]['pointRadius'] =count( $serie ) > 25 ? 0 : 1;
@@ -651,7 +915,6 @@ function get_chart_serie( $_serie_name, $_data, $_cfg =[]) {
     if (!isset($_cfg['x_upper_limit'])) $_cfg['x_upper_limit'] =false;    
 
     $ldate_ts =false;
-
     foreach ($_data as $x =>$y) {
         if (!empty($_cfg['by_dates_show_zero'])) {
             $date_ts =strtotime($x);
@@ -676,7 +939,7 @@ function get_chart_serie( $_serie_name, $_data, $_cfg =[]) {
 
         } else {
             if (($_cfg['x_low_limit'] === false || $x >= $_cfg['x_low_limit'])
-                && ($_cfg['x_upper_limit'] === false || $x <= $_cfg['x_upper_limit'])) $serie[] =[ 'x' =>$x, 'y' =>$val_y ];
+                && ($_cfg['x_upper_limit'] === false || $x <= $_cfg['x_upper_limit'])) $serie[] =[ 'x' =>$x, 'y' =>$val_y ];        
         }
 
     }
