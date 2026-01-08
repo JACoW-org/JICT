@@ -2,6 +2,7 @@
 
 /* bY Stefano.Deiuri@Elettra.Eu
 
+2026.01.07 - cron disabled warning
 2023.11.27 - handle public access mode
 2023.03.31 - update
 2022.08.29 - update
@@ -81,12 +82,20 @@ if (!empty( $gcfg['location'] )) $dates =$gcfg['location'] ."<br />" .$dates;
 
 $dates .=sprintf( "<br /><a href='%s/event/%d/manage' target='_blank'>Indico</a>", $gcfg['indico_server_url'], $gcfg['indico_event_id'] );
 
-$T->set( 'content',
-    __h( "div",
+$content =false;
+
+if (!file_exists( "./logs/cron.log" ) || (time() -filemtime( "./logs/cron.log" )) > 3600) 
+        $content .='<div class="alert alert-warning" role="alert">
+			<h4 class="alert-heading"><i class="icon fa fa-exclamation-triangle"></i> WARNING </h4>
+            <p class="mb-0">Data update disabled!</p>
+		</div>';
+
+$content .=__h( "div",
         __h( "div", __h( 'ul', "<li>" .implode( "</li>\n<li>", $links ) ."</li>\n" ), [ "class" =>"col-md-6" ])
         .__h( "div", "<br />$logo2<br />$dates", [ "class" =>"col-md-6 text-right" ]), 
-        [ 'class' =>'row' ])
-    );
+        [ 'class' =>'row' ]);
+
+$T->set( 'content', $content );
 
 echo $T->get();
 
