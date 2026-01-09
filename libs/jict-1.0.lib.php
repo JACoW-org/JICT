@@ -50,19 +50,44 @@ function need_file() {
 }
 
 
-function get_region($country_code){
-        $Asia_list=[ "AU", "CN", "IN", "JP", "KR", "KZ", "TH", "TW" ];
-        $Americas_list=[ "BR", "CA", "MX", "US" ];
-        $EMEAS_list=[ "AM", "AT", "BE", "CH", "CZ", "DE", "ES", "FR" , "GB", "HU", "IL", "IR", "IT", "JO", "LT", "MT", "NL", "PL", "RO", "RU", "SE", "SI", "TN", "TR",  "UA",  "UK", "ZA" ];
-        if (in_array($country_code,$Asia_list)) return "Asia";
-        if (in_array($country_code,$Americas_list)) return "Americas";
-        if (in_array($country_code,$EMEAS_list)) return "EMEA";
-        echo( "Unknown country code: ".$country_code."<BR/>\n" );
-    
-        return "Unknown";
-} //get_region
+//-----------------------------------------------------------------------------
+function get_region( $_country_code ) {
+    $codice = strtoupper(trim($_country_code));
 
+    static $mappaAree = [
+        'EMEA' => [
+            // EUROPA
+            'AT', 'BE', 'BG', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL', 'PL', 'PT', 'RO', 'SE', 'SI', 'SK', 'AL', 'AD', 'AM', 'AZ', 'BY', 'BA', 'GE', 'IS', 'KZ', 'LI', 'MC', 'MD', 'ME', 'MK', 'NO', 'RU', 'SM', 'RS', 'CH', 'TR', 'UA', 'VA',
+            // AFRICA
+            'DZ', 'AO', 'BJ', 'BW', 'BF', 'BI', 'CV', 'CM', 'CF', 'TD', 'KM', 'CG', 'CD', 'DJ', 'EG', 'GQ', 'ER', 'SZ', 'ET', 'GA', 'GM', 'GH', 'GN', 'GW', 'CI', 'KE', 'LS', 'LR', 'LY', 'MG', 'MW', 'ML', 'MR', 'MU', 'YT', 'MA', 'MZ', 'NA', 'NE', 'NG', 'RE', 'RW', 'ST', 'SN', 'SC', 'SL', 'SO', 'ZA', 'SS', 'SD', 'TZ', 'TG', 'TN', 'UG', 'EH', 'ZM', 'ZW'
+            ],
+        
+        'Americas' =>[
+            // AMERICA SETTENTRIONALE
+            'US', 'CA', 'BM', 'GL', 'PM',
+            // AMERICA CENTRO-MERIDIONALE E CARAIBI
+            'AR', 'BO', 'BR', 'CL', 'CO', 'EC', 'FK', 'GF', 'GY', 'PY', 'PE', 'SR', 'UY', 'VE', 'BS', 'BB', 'CU', 'DM', 'DO', 'GD', 'HT', 'JM', 'KN', 'LC', 'VC', 'TT', 'BZ', 'CR', 'SV', 'GT', 'HN', 'MX', 'NI', 'PA']
+            ,
+        
+        'Asia' => [
+            // ASIA
+            'AF', 'AM', 'AZ', 'BH', 'BD', 'BT', 'BN', 'KH', 'CN', 'CY', 'GE', 'IN', 'ID', 'IR', 'IQ', 'IL', 'JP', 'JO', 'KZ', 'KP', 'KR', 'KW', 'KG', 'LA', 'LB', 'MY', 'MV', 'MN', 'MM', 'NP', 'OM', 'PK', 'PS', 'PH', 'QA', 'SA', 'SG', 'LK', 'SY', 'TW', 'TJ', 'TH', 'TL', 'TR', 'TM', 'AE', 'UZ', 'VN', 'YE',
+            // OCEANIA
+            'AS', 'AU', 'CK', 'FJ', 'PF', 'GU', 'KI', 'MH', 'FM', 'NR', 'NC', 'NZ', 'NU', 'NF', 'MP', 'PW', 'PG', 'PN', 'WS', 'SB', 'TK', 'TO', 'TV', 'VU', 'WF'
+            ],
+        
+        // ANTARTIDE
+        'Antartide' => ['AQ', 'BV', 'TF', 'HM', 'GS']
+    ];
 
+    foreach ($mappaAree as $area => $codici) {
+        if (in_array($codice, $codici)) {
+            return $area;
+        }
+    }
+
+    return 'Unknown';
+}
 
 
 //-----------------------------------------------------------------------------
@@ -462,6 +487,7 @@ function file_write_json( $_filename, &$_obj ) {
     if (empty($_obj)) {
         echo "ERROR in file_write_json: empty obj ";
         return false;
+
     } else {
         $json =json_encode( $_obj, JSON_INVALID_UTF8_IGNORE );
         //$json =json_encode( $_obj);
@@ -475,14 +501,17 @@ function file_write_json( $_filename, &$_obj ) {
             $json =json_encode( $_obj,  JSON_THROW_ON_ERROR | JSON_THROW_ON_ERROR );
             echo "Json data size after 2nd attempt: ".strlen($json)."\n";
         }
+
         if ((!$json)||(empty($json))||(strlen($json)==0)) {
             echo "Third attempt...\n";
             $json =json_encode( $_obj);
             echo "Json data size after 3rd attempt: ".strlen($json)."\n";
         }
+
         if ((!$json)||(empty($json))||(strlen($json)==0)) {
             echo "ERROR in file_write_json: non existent or empty json ";
             return false;
+
         } else {
             //json OK
             if (!empty($_obj) && empty($json)) {
@@ -490,6 +519,7 @@ function file_write_json( $_filename, &$_obj ) {
                 return false;
             }
         } //json OK
+
         return file_write( $_filename, $json );
     }
 }

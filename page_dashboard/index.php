@@ -79,7 +79,9 @@ foreach ($ratio_groups as $group){
 </div>';
     } // for each old conf
 } //foreach ratio group
+
 $ratios_charts.='</div>';
+
 $main_parts =[ 
     'papers' =>
 '<div class="row">
@@ -104,8 +106,11 @@ $main_parts =[
     <canvas id="registrants_by_days_to_deadline" class="chart"></canvas>
 </div>
 </div>',
+
     'registrants_extra' => $registrants_extra_part,
+
     'ratios' => $ratios_charts,
+
     'payments' =>
 '<div class="row">
 <div class="col-md-6">
@@ -280,8 +285,8 @@ $Indico->data['paid_status']['is_paid']['Yes'] =$Indico->data['registrants']['st
 
 $total_paid=0;
 foreach ($Indico->data['registrants']['stats']['paid'] as $name => $value) {
-    $Indico->data['paid_status']['paid'][strval($name)."€"] =$value;
-    $total_paid+=$name*$value;
+    $Indico->data['paid_status']['paid'][strval($name) ." " .$cfg['currency']] =$value;
+    $total_paid +=$name *$value;
 }
 
 $group ='paid_status';
@@ -310,7 +315,7 @@ if (!empty($Indico->data[$group])) {
 
     
     $charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'],  $Indico->data[$group][$id] );
-    $vars['paid_n'] =$total_paid;
+    $vars['paid_n'] =number_format( $total_paid, 0, ',', '.' ) ."&nbsp;" .$cfg['currency'] ."&nbsp;";
 }
 
 
@@ -343,6 +348,9 @@ if (!empty($Indico->data[$group])) {
     $charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'],  $payments[$id]['count'], [ 'sum' =>true ] );
     $vars[$group.'_n'] =number_format( $sum, 0, ',', '.' );
 }
+
+
+
 
 // ABSTRACTS -------------------------------------------------------------------
 $group ='abstracts_submission';
@@ -479,17 +487,20 @@ $gender_values =json_encode( $Indico->data[$group]['stats'][$id] );
 
 //Tag status -------------------------------------------------------------------
 $id ='tag_status';
-$chart_id ="${group}_${id}";
-$charts[$chart_id] =[
-    'title' =>'Delegate status',
-    'type' =>'bar',
-    'y_label' =>'registrants',
-    'series' =>false
-    ];
 
-$charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group]['stats'][$id] );
-$vars['tag_status_n'] =count( $Indico->data[$group]['stats'][$id] );
-$tag_status_values =json_encode( $Indico->data[$group]['stats'][$id] );
+if (!empty($Indico->data[$group]['stats'][$id])) {
+    $chart_id ="${group}_${id}";
+    $charts[$chart_id] =[
+        'title' =>'Delegate status',
+        'type' =>'bar',
+        'y_label' =>'registrants',
+        'series' =>false
+        ];
+    
+    $charts[$chart_id]['series'][$cfg['conf_name']] =get_chart_serie( $cfg['conf_name'], $Indico->data[$group]['stats'][$id] );
+    $vars['tag_status_n'] =count( $Indico->data[$group]['stats'][$id] );
+    $tag_status_values =json_encode( $Indico->data[$group]['stats'][$id] );
+}
 
 
 

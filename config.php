@@ -31,6 +31,7 @@ $cws_config =[
 
 		'timezone'			=>'', // Australia/Melbourne
 		'difftime_sec'		=>0,
+		'currency'			=>false,
 		
         'dates' =>[
             'conference' =>[ 'from' =>'', 'to' =>'' ],
